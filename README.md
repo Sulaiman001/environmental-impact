@@ -1,6 +1,6 @@
 # environmental-impact
 
-The environmental application is a configuration of ArcGIS for Server and a JavaScript application
+The environmental impact application is a configuration of ArcGIS for Server and a JavaScript application
 that allows the public and individuals within an organization to determine potential impacts of development on the natural environment.
 
 ![Image of Environmental Impact](environmental-impact.png "Environmental Impact")
