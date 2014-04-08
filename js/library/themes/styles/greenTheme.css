@@ -1,0 +1,289 @@
+﻿/* Application header Styles */
+
+.esriCTApplicationHeader
+{
+    border-bottom: 1px solid #028D6A;
+}
+
+.esriCTApplicationHeaderText, .esriCTResultColor, .esriCTdivInfoTotalFeatureCount, .esriCTdivInfoFeatureCount, .esriCTAOILink, .esriCTHeaderPanelContent, .BasemapToggle .basemapTitle
+{
+    color: #028D6A !important;
+}
+
+/* Address container Styles */
+
+.esriCTAddressContent, .esriCTDivAppHolder, .esriCTDivShareContainer
+{
+    border-right: 1px solid #028D6A;
+    border-left: 1px solid #028D6A;
+    border-bottom: 1px solid #028D6A;
+}
+
+/* Share Container Styles */
+
+.esriCTTxtShare, .BasemapToggle .basemapImage
+{
+    border: 1px solid #028D6A;
+}
+
+/* Slider */
+
+.esriSimpleSliderDecrementButton, .esriSimpleSliderIncrementButton
+{
+    background-color: #028D6A !important;
+}
+
+.HomeButton .home, .HomeButton .home:hover
+{
+    background-color: #028D6A;
+}
+
+/* End of Slider */
+
+/* Basemap */
+
+.BasemapToggle .toggleButton
+{
+    border: 2px solid #028D6A !important;
+}
+
+.esriCTHeaderReportContainer
+{
+    border-left: 1px solid #028D6A;
+    border-right: 1px solid #028D6A;
+}
+
+.esriCTAreaOfInterestTabSelected
+{
+    color: #028D6A;
+    border-left: 1px solid #FAFAFA;
+    border-right: 1px solid #fff;
+}
+
+.esriCTAreaOfInterestTab
+{
+    border-bottom: 1px solid #028D6A;
+    color: #028D6A;
+    border-left: 1px solid #FAFAFA;
+    border-right: 1px solid #028D6A;
+}
+.esriCTReportTabSelected
+{
+    border-bottom: 1px solid #028D6A;
+    color: #028D6A;
+    border-left: 1px solid #028D6A;
+    border-right: 1px solid #FAFAFA;
+}
+
+.esriCTReportTab
+{
+    color: #028D6A;
+    border-left: 1px solid #fff;
+    border-right: 1px solid #FAFAFA;
+}
+
+.esriCTSearchButton
+{
+    background-color: #028D6A !important;
+    color: #fff;
+}
+/* End of AOI Panel */
+
+/* Splash Screen*/
+
+.esriCTCustomButton, .esriCTBrowseButton, .esriCTUploadButton
+{
+    background: #028D6A;
+}
+
+/* End of Splash Screen */
+
+/* CSS for shadow effect*/
+
+.esriCTBoxShadow
+{
+    border: 2px solid #028D6A;
+}
+
+/*Start of Infowindow style*/
+
+.esriCTInfoWindow, .esriCTLegendBoxInner
+{
+    border: 1px solid #028D6A;
+}
+
+.esriCTLinkContainer, .esriCTInfoPanel
+{
+    border-top: 1px solid #028D6A;
+}
+
+.dijitSliderBumperH, .dijitSliderBarH
+{
+    border-color: #fff;
+    background-color: #028D6A;
+}
+
+.claro .dijitSlider .dijitSliderProgressBarH, .claro .dijitSlider .dijitSliderLeftBumper
+{
+    border-color: #fff;
+    background-color: #028D6A;
+}
+
+.claro .dijitSlider .dijitSliderRemainingBarH, .claro .dijitSlider .dijitSliderRightBumper
+{
+    border-color: #fff;
+    background-color: #ddd;
+}
+
+.esriCTReportHeader
+{
+    color: #028D6A;
+    border-bottom: 1px solid #DFDFDF;
+}
+
+.esriCTSearchIcon
+{
+    background-image: url("../images/searchBtnGreen.png") !important;
+}
+
+.esriCTHeaderSearchSelected
+{
+    background-image: url("../images/locateSelectedGreen.png");
+}
+
+.esriCTImgSocialMediaSelected
+{
+    background-image: url("../images/shareSelectedGreen.png");
+}
+
+.esriCTReportsImgSelected
+{
+    background-image: url("../images/reportsSelectedGreen.png");
+}
+
+.esriCTFacebook
+{
+    background-image: url("../images/facebookGreen.png");
+}
+
+.esriCTTwitter
+{
+    background-image: url("../images/twitterGreen.png");
+}
+
+.esriCTEmail
+{
+    background-image: url("../images/emailGreen.png");
+}
+
+.esriCTEmbedding
+{
+    background-image: url('../images/embeddingGreen.png');
+}
+.esriCTLeftArrow
+{
+    background-image: url('../images/leftGreen.png');
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
+.esriCTRightArrow
+{
+    background-image: url('../images/rightGreen.png');
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+.esriCTInfoWindowRightArrow
+{
+    background: url("../images/rightArrowGreen.png");
+}
+
+.esriCTInfoWindowLeftArrow
+{
+    background: url("../images/leftArrowGreen.png");
+}
+
+.esriCTDivTriangle
+{
+    background-image: url("../images/bottomArrowGreen.png");
+}
+
+
+.drawPoint
+{
+    background-image: url("../images/point-green.png");
+}
+
+.drawDrawing
+{
+    background-image: url("../images/draw-green.png");
+}
+
+.drawRectangle
+{
+    background-image: url("../images/rectangle-green.png");
+}
+
+.drawPolygon
+{
+    background-image: url("../images/draw-polygon-green.png");
+}
+
+.select-on-map
+{
+    background-image: url("../images/select-on-map-green.png");
+}
+
+.esriCTMapClickPoint
+{
+    background-image: url("../images/pointMapClickGreen.png");
+}
+
+.dijitSliderImageHandleH
+{
+    background-image: url('../images/thumb-green.png') !important;
+}
+
+.claro .dijitSliderProgressBarH .dijitSliderThumbHover
+{
+    background-image: url('../images/thumb-green.png') !important;
+}
+
+
+@media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (-webkit-min-device-pixel-ratio: 2)
+{
+    .esriCTHeaderSearchSelected
+    {
+        background-image: url("../images/locateSelectedGreen@2x.png");
+    }
+
+    .esriCTImgSocialMediaSelected
+    {
+        background-image: url("../images/shareSelectedGreen@2x.png");
+    }
+
+    .esriCTReportsImgSelected
+    {
+        background-image: url("../images/reportsSelectedGreen@2x.png");
+    }
+
+    .esriCTFacebook
+    {
+        background-image: url("../images/facebookGreen@2x.png") !important;
+    }
+
+    .esriCTTwitter
+    {
+        background-image: url("../images/twitterGreen@2x.png") !important;
+    }
+
+    .esriCTEmail
+    {
+        background-image: url("../images/emailGreen@2x.png") !important;
+    }
+
+    .esriCTEmbedding
+    {
+        background-image: url('../images/embeddingGreen@2x.png') !important;
+    }
+}

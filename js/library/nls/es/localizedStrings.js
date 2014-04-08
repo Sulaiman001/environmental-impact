@@ -16,34 +16,70 @@
 | limitations under the License.
 */
 define({
-        showNullValue: "@@N/A",
-        buttons: {
-            okButtonText: "@@OK",
-            print: "@@Print",
-            back: "@@Back"
-        },
-        tooltips: {
-            search: "Buscar",
-            route: "@@Route",
-            locate: "Ubicación actual",
-            share: "Compartir",
-            help: "Ayuda"
-        },
-        titles: {
-            directionsDisplayText: "@@Directions",
-            informationPanelTitle: "@@Information for current map view",
-            webpageDisplayText: "@@Copy/paste HTML into your web page"
-        },
-        errorMessages: {
-            invalidSearch: "No hay resultados",
-            falseConfigParams: "Valores clave de configuración requeridos son null o no coincida exactamente con los atributos de capa, este mensaje puede aparecer varias veces."
-            invalidLocation: "@@Current Location not found.",
-            invalidProjection: "@@Unable to plot current location on the map.",
-            widgetNotLoaded: "@@Fail to load widgets.",
-            shareLoadingFailed: "@@Unable to load share options.",
-            shareFailed: "@@Unable to share."
-        },
-        notUsed: {
-            addressDisplayText: "@@Address"
-        }
+    showNullValue: "@es@ N/A",
+    buttons: {
+        okButtonText: "@es@ OK",
+        link: "@es@ Link",
+        email: "correo electrónico",  // Shown next to icon for sharing the current map extents via email; works with shareViaEmail tooltip
+        facebook: "Facebook",  // Shown next to icon for sharing the current map extents via a Facebook post; works with shareViaFacebook tooltip
+        twitter: "Twitter",  // Shown next to icon for sharing the current map extents via a Twitter tweet; works with shareViaTwitter tooltip
+        embedding: "@es@ Embedded URL",
+        go: "@es@ Go",
+        browse: "@es@ Browse",
+        upload: "@es@ Upload",
+        add: "@es@ Add"
+    },
+    tooltips: {
+        search: "Buscar",
+        reports: "@es@ Reports",
+        locate: "Ubicación actual",
+        share: "Compartir",
+        help: "Ayuda",
+        clearEntry: "@es@ Clear"
+    },
+    titles: {
+        areaOfInterestTabText: "@es@ Area of Interest",
+        reportTabText: "Report",
+        webpageDisplayText: "@es@ Copy/paste HTML into your web page",
+        pointToolText: "@es@ Point",
+        lineToolText: "@es@ Line",
+        rectangleToolText: "@es@ Rectangle",
+        polygonToolText: "@es@ Polygon",
+        selectFeatureText: "@es@ Select features"
+    },
+    messages: {
+        legendLoadingText: "@es@ Loading...",
+        sliderDisplayText: "@es@ Show results within ${defaultDistance}",
+        aoiOptionsText: "@es@ Alternatively you can",
+        uploadShapefileText: "@es@ Upload a zipped shapefile to define your AOI",
+        coordinatesText: "@es@ Enter coordinates, bearing and distance",
+        drawToolsText: "@es@ Use the Drawing tools to define your AOI",
+        bufferSliderText: "@es@ Buffer distance (Optional for polygon AOIs)",
+        radioBtnMiles: "@es@ Miles",
+        radioBtnFeet: "@es@ Feet",
+        radioBtnMeters: "@es@ Meters",
+        radioBtnKilometers: "@es@ Kilometers",
+        bearingContainerTitle: "@es@ Bearing and Distance",
+        bearingContainerText: "@es@ Enter coordinates for start point, bearing and distance from start point",
+        startPoint: "@es@ Define start point",
+        orText: "@es@ OR",
+        latitude: "@es@ Latitude",
+        longitude: "@es@ Longitude",
+        bearing: "@es@ Bearing",
+        bearingValue: "@es@ (0-360)",
+        distance: "@es@ Distance (Miles)",
+        reportPanelHeader: "@es@ Summary Report for Area of Interest"
+    },
+    errorMessages: {
+        invalidSearch: "No hay resultados",
+        falseConfigParams: "Valores clave de configuración requeridos son null o no coincida exactamente con los atributos de capa, este mensaje puede aparecer varias veces.",
+        invalidLocation: "@es@ Current location not found.",
+        invalidProjection: "@es@ Unable to plot current location on the map.",
+        widgetNotLoaded: "@es@ Unable to load widgets.",
+        shareLoadingFailed: "@es@ Unable to load share options.",
+        shareFailed: "@es@ Unable to share.",
+        emptyInfoWindowTitle: "@es@ No feature details",
+        emptyInfoWindowContent: "@es@ InfoWindow is disabled for the selected layer in webmap.",
+        bufferSliderValue: "Buffer slider should not be set to zero distance"
+    }
 });

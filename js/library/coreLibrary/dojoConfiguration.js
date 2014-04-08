@@ -1,4 +1,4 @@
-﻿/*global location, dojoConfig */
+﻿/*global location,dojoConfig:true */
 /*jslint sloppy:true */
 /** @license
 | Version 10.2
@@ -26,9 +26,14 @@ dojoConfig = {
     parseOnLoad: true,
     async: true,
     baseURL: root,
-    packages: [
-            { name: "application", location: root },
-            { name: "widgets", location: root + '/shared/widgets' },
-            { name: "coreLibrary", location: root + '/shared/coreLibrary' }
-        ]
+    packages: [{
+        name: "application",
+        location: root
+    }, {
+        name: "widgets",
+        location: root + '/js/library/widgets'
+    }, {
+        name: "coreLibrary",
+        location: root + '/js/library/coreLibrary'
+    }]
 };
