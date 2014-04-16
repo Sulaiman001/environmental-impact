@@ -20,32 +20,68 @@ define({
         showNullValue: "N/A",
         buttons: {
             okButtonText: "OK",
-            print: "Print",
-            back: "Back"
+            link: "Link",
+            email: "Email",  // Shown next to icon for sharing the current map extents via email; works with shareViaEmail tooltip
+            facebook: "Facebook",  // Shown next to icon for sharing the current map extents via a Facebook post; works with shareViaFacebook tooltip
+            twitter: "Twitter",  // Shown next to icon for sharing the current map extents via a Twitter tweet; works with shareViaTwitter tooltip
+            embedding: "Embedded URL",
+            go: "Go",
+            browse: "Browse",
+            upload: "Upload",
+            add: "Add"
         },
         tooltips: {
             search: "Search",
-            route: "Route",
+            reports: "Reports",
             locate: "Locate",
             share: "Share",
-            help: "Help"
+            help: "Help",
+            clearEntry: "Clear"
         },
         titles: {
-            directionsDisplayText: "Directions",
-            informationPanelTitle: "Information for current map view",
-            webpageDisplayText: "Copy/paste HTML into your web page"
+            areaOfInterestTabText: "Area of Interest",
+            reportTabText: "Report",
+            webpageDisplayText: "Copy/paste HTML into your web page",
+            pointToolText: "Point",
+            lineToolText: "Line",
+            rectangleToolText: "Rectangle",
+            polygonToolText: "Polygon",
+            selectFeatureText: "Select features"
+        },
+        messages: {
+            legendLoadingText: "Loading...",
+            sliderDisplayText: "Show results within ${defaultDistance}",
+            aoiOptionsText: "Alternatively you can",
+            uploadShapefileText: "Upload a zipped shapefile to define your AOI",
+            coordinatesText: "Enter coordinates, bearing and distance",
+            drawToolsText: "Use the Drawing tools to define your AOI",
+            bufferSliderText: "Buffer distance (Optional for polygon AOIs)",
+            radioBtnMiles: "Miles",
+            radioBtnFeet: "Feet",
+            radioBtnMeters: "Meters",
+            radioBtnKilometers: "Kilometers",
+            bearingContainerTitle: "Bearing and Distance",
+            bearingContainerText: "Enter coordinates for start point, bearing and distance from start point",
+            startPoint: "Define start point",
+            orText: "OR",
+            latitude: "Latitude",
+            longitude: "Longitude",
+            bearing: "Bearing",
+            bearingValue: "(0-360)",
+            distance: "Distance (Miles)",
+            reportPanelHeader: "Summary Report for Area of Interest"
         },
         errorMessages: {
             invalidSearch: "No results found",
             falseConfigParams: "Required configuration key values are either null or not exactly matching with layer attributes. This message may appear multiple times.",
-            invalidLocation: "Current Location not found.",
+            invalidLocation: "Current location not found.",
             invalidProjection: "Unable to plot current location on the map.",
-            widgetNotLoaded: "Fail to load widgets.",
+            widgetNotLoaded: "Unable to load widgets.",
             shareLoadingFailed: "Unable to load share options.",
-            shareFailed: "Unable to share."
-        },
-        notUsed: {
-            addressDisplayText: "Address"
+            shareFailed: "Unable to share.",
+            emptyInfoWindowTitle: "No feature details",
+            emptyInfoWindowContent: "InfoWindow is disabled for the selected layer in webmap.",
+            bufferSliderValue: "Buffer slider should not be set to zero distance"
         }
     },
     es: true,

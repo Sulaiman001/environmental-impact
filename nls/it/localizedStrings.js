@@ -16,14 +16,13 @@
  | limitations under the License.
  */
 define({
-        titles: {
-            informationDisplayText: "@it@ 511 Information",
-            reRouteDisplayText: "@it@ Traffic Incidents found on this road"
-        },
-        messages: {
-            splashScreenContent: "Un'applicazione che permette al pubblico di trovare informazioni sulle condizioni stradali, 511 avvisi, incidenti stradali, et al."
-        },
-        notUsed: {
-            incidentInformationDisplayText: "@it@ Incident Information"
-        }
+    messages: {
+        splashScreenContent: "Un'applicazione che permette al pubblico di trovare informazioni sulle condizioni stradali, 511 avvisi, incidenti stradali, et al."
+    },
+    errorMessages: {
+        layerTitleError: "Title and/or QueryLayerId parameters in SearchSettings do not match with configured operational layers.",
+        titleNotMatching: "Title and/or QueryLayerId parameters in the InfoWindowSettings and SearchSettings do not match.",
+        lengthDoNotMatch: "The number of objects in InfoWindowSettings and SearchSettings do not match.",
+        webmapTitleError: "Title and/or QueryLayerId parameters in SearchSettings do not match with configured webmap"
+    }
 });

@@ -1,4 +1,4 @@
-﻿/*global require */
+﻿/*global require,dojo,dojoConfig,esri,esriConfig,alert */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true */
 /*
  | Copyright 2013 Esri
@@ -18,24 +18,26 @@
 //============================================================================================================================//
 
 require([
-        "coreLibrary/widgetLoader",
-        "application/config",
-        "dojo/domReady!"
-    ], function (widgetLoader, config, domReady) {
+    "coreLibrary/widgetLoader",
+    "application/js/library/config",
+    "esri/config",
+    "dojo/domReady!"
+], function (WidgetLoader, config, esriConfig) {
+    //========================================================================================================================//
 
-        //========================================================================================================================//
+    try {
+        esri.config.defaults.io.proxyUrl = dojoConfig.baseURL + "/proxy.ashx";
+        esriConfig.defaults.io.alwaysUseProxy = false;
+        esriConfig.defaults.io.timeout = 180000;
+        /**
+        * load application configuration settings from configuration file
+        * create an object of widget loader class
+        */
+        dojo.configData = config;
+        var applicationWidgetLoader = new WidgetLoader();
+        applicationWidgetLoader.startup();
 
-        try {
-
-            /**
-            * load application configuration settings from configuration file
-            * create an object of widget loader class
-            */
-            dojo.configData = config;
-            var applicationWidgetLoader = new widgetLoader();
-            applicationWidgetLoader.startup();
-
-        } catch (ex) {
-            alert(ex.message);
-        }
-    });
+    } catch (ex) {
+        alert(ex.message);
+    }
+});

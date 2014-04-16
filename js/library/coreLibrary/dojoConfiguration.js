@@ -1,4 +1,4 @@
-﻿/*global location,dojoConfig */
+﻿/*global location,dojoConfig:true */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true */
 /*
  | Copyright 2013 Esri
@@ -25,9 +25,14 @@ dojoConfig = {
     parseOnLoad: true,
     async: true,
     baseURL: root,
-    packages: [
-            { name: "application", location: root },
-            { name: "widgets", location: root + '/shared/widgets' },
-            { name: "coreLibrary", location: root + '/shared/coreLibrary' }
-        ]
+    packages: [{
+        name: "application",
+        location: root
+    }, {
+        name: "widgets",
+        location: root + '/js/library/widgets'
+    }, {
+        name: "coreLibrary",
+        location: root + '/js/library/coreLibrary'
+    }]
 };
