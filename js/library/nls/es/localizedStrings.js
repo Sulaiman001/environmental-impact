@@ -45,7 +45,8 @@ define({
         lineToolText: "@es@ Line",
         rectangleToolText: "@es@ Rectangle",
         polygonToolText: "@es@ Polygon",
-        selectFeatureText: "@es@ Select features"
+        selectFeatureText: "@es@ Select features",
+        areaStandardUnit: "@es@ acres"
     },
     messages: {
         legendLoadingText: "@es@ Loading...",

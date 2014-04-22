@@ -353,7 +353,7 @@ define([
         _addlegendListWidth: function (legendListWidth) {
             var listWidth = legendListWidth, total = 0, j, boxWidth;
             for (j = 0; j < listWidth.length; j++) {
-                total += listWidth[j] << 0;
+                total += listWidth[j];
             }
             domStyle.set(query(".esriCTLegendContent")[0], "width", (total + 5) + "px");
             if (domClass.contains(query(".esriCTHeaderReportContainer")[0], "esriCTShowContainerHeight")) {

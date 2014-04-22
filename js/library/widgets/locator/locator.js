@@ -1,4 +1,4 @@
-﻿/*global define,dojo,dojoConfig,alert,esri */
+﻿/*global define,dojo,dojoConfig,alert,esri,locatorParams */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true */
 /*
  | Copyright 2013 Esri
@@ -756,10 +756,8 @@ define([
                     fieldNames = string.substitute(infoPopupFieldsCollection[key].FieldName, attributes);
                     if (string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("http:") || string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("https:")) {
                         link = fieldNames;
-                        divLink = domConstruct.create("div", { "class": "esriCTLink", "innerHTML": sharedNls.buttons.link }, this.divInfoFieldValue);
-                        on(divLink, "click", lang.hitch(this, function () {
-                            window.open(link);
-                        }));
+                        divLink = domConstruct.create("div", { "class": "esriCTLink", "link": link, "innerHTML": sharedNls.buttons.link }, this.divInfoFieldValue);
+                        on(divLink, "click", this._openDetailWindow);
                     } else {
                         this.divInfoFieldValue.innerHTML = fieldNames;
                     }
@@ -773,6 +771,11 @@ define([
                 this._setInfoWindowZoomLevel(mapPoint, infoTitle, divInfoDetailsTab, infoPopupWidth, infoPopupHeight, count, zoomToFeature);
                 topic.publish("hideProgressIndicator");
             }
+        },
+
+        _openDetailWindow: function () {
+            var link = domAttr.get(this, "link");
+            window.open(link);
         },
 
         utcTimestampFromMs: function (utcMilliseconds) { // returns Date
@@ -849,7 +852,6 @@ define([
 
         _locateAddressOnMap: function (mapPoint, locatorParams) {
             var geoLocationPushpin, locatorMarkupSymbol, graphic;
-
             this.map.setLevel(dojo.configData.ZoomLevel);
             this.map.centerAt(mapPoint);
             geoLocationPushpin = dojoConfig.baseURL + dojo.configData.LocatorSettings.DefaultLocatorSymbol;
