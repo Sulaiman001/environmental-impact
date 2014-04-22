@@ -1691,7 +1691,7 @@ input
 {
     border-bottom: 1px solid #DFDFDF;
     float: left;
-    width: 90%;
+    width: 95%;
     padding: 10px 0;
 }
 .esriCTReportDisplayPanel
@@ -1734,8 +1734,28 @@ input
 
 .esriCTReportZoneName
 {
-    padding: 0 0 0 25px;
+    padding: 5px 10px 5px 5px;
     clear: both;
+}
+
+.esriCTReportZoneList
+{
+    padding: 0px 20px 8px 15px;
+    clear: both;
+    display: table;
+    width: 90%;
+}
+
+.esriCTReportZoneField
+{
+    vertical-align: middle;
+    float: left;
+}
+
+.esriCTReportZoneCount
+{
+    vertical-align: middle;
+    float: left;
 }
 
 .esriCTInfoLoader
@@ -1752,4 +1772,86 @@ input
     overflow: hidden;
     width: 100% !important;
     position: relative;
+}
+
+
+/**************************Dialog Box styles***************************************/
+
+
+
+
+.claro .dijitDialogPaneContent
+{
+    height: 200px !important;
+}
+
+.settingDilogContainer
+{
+    width: 100%;
+    text-align: center;
+}
+
+.esriCTReportFieldshead
+{
+    font-weight: bold;
+    text-align: left;
+    padding: 0 0 10px 0;
+    width: 100%;
+}
+.esriCTCheckboxContainer
+{
+    float: left;
+    text-align: left;
+    height: 140px;
+    width: 100%;
+}
+
+span .dijitReset .dijitInline .dijitButtonNode
+{
+    position: absolute !important;
+    bottom: 10% !important;
+    vertical-align: middle !important;
+    left: 50% !important;
+}
+.claro .dijitCheckBox, .claro .dijitCheckBoxIcon
+{
+    float: left;
+}
+.esriCTDiv
+{
+    float: left;
+    display: inline-block;
+    padding-left: 10px;
+}
+.claro .dijitButton .dijitButtonNode, .claro .dijitDropDownButton .dijitButtonNode, .claro .dijitComboButton .dijitButtonNode, .claro .dijitToggleButton .dijitButtonNode
+{
+    background-image: none !important;
+    background-repeat: repeat-x;
+    border: none !important;
+    border-radius: 0px !important;
+    box-shadow: none !important;
+    padding: 2px 6px 6px;
+}
+
+.claro .dijitDialogCloseIcon
+{
+    height: 20px !important;
+    width: 20px !important;
+    position: absolute;
+    right: 5px;
+}
+
+.claro .dijitDialogTitleBar
+{
+    -moz-border-bottom-colors: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    background-image: none !important;
+    background-repeat: repeat-x;
+    border-image: none;
+    border-style: none solid solid;
+    border-width: medium 0 0;
+    height: 20px;
+    padding: 7px 7px 4px;
 }

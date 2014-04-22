@@ -256,6 +256,32 @@
     background-image: url('../images/thumbBlue.png') !important;
 }
 
+.claro .dijitDialogTitleBar
+{
+    background-color: #007ac2 !important;
+}
+.claro .dijitDialog
+{
+    border: 1px solid #007ac2 !important;
+    box-shadow: none !important;
+}
+.claro .dijitButton .dijitButtonNode, .claro .dijitDropDownButton .dijitButtonNode, .claro .dijitComboButton .dijitButtonNode, .claro .dijitToggleButton .dijitButtonNode
+{
+    background-color: #007ac2 !important;
+    color: #fff !important;
+}
+.claro .dijitDialogCloseIcon
+{
+    background: url("../images/close.png") no-repeat scroll 0 0 rgba(0, 0, 0, 0) !important;
+}
+.dijitDialogTitle
+{
+    color: #fff !important;
+}
+.esriCTDiv
+{
+    color: #007ac2;
+}
 @media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (-webkit-min-device-pixel-ratio: 2)
 {
     .esriCTHeaderSearchSelected

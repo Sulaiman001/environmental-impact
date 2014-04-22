@@ -54,6 +54,7 @@ define([
         map: null,
         templateString: template,
         tempGraphicsLayerId: "esriGraphicsLayerMapSettings",
+        tempBufferLayer: "tempBufferLayer",
         sharedNls: sharedNls,
         appNls: appNls,
         infoWindowPanel: null,
@@ -329,6 +330,10 @@ define([
             graphicsLayer = new GraphicsLayer();
             graphicsLayer.id = this.tempGraphicsLayerId;
             this.map.addLayer(graphicsLayer);
+
+            graphicsLayer = new GraphicsLayer();
+            graphicsLayer.id = this.tempBufferLayer;
+            this.map.addLayer(graphicsLayer);
         },
 
         _onSetMapTipPosition: function (selectedPoint, map, infoWindow) {
@@ -455,18 +460,13 @@ define([
         },
 
         _getQueryString: function (key) {
-            var _default, regex, qs;
-            if (!_default) {
-                _default = "";
-            }
-            key = key.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+            var extentValue = "", regex, qs;
             regex = new RegExp("[\\?&]" + key + "=([^&#]*)");
             qs = regex.exec(window.location.href);
-            if (!qs) {
-                return _default;
-            } else {
-                return qs[1];
+            if (qs && qs.length > 0) {
+                extentValue = qs[1];
             }
+            return extentValue;
         },
 
         _generateLayerURL: function (operationalLayers) {

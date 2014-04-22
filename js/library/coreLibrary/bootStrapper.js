@@ -26,14 +26,14 @@ require([
     //========================================================================================================================//
 
     try {
-        esri.config.defaults.io.proxyUrl = dojoConfig.baseURL + "/proxy/proxy.ashx";
+        dojo.configData = config;
+        esri.config.defaults.io.proxyUrl = dojoConfig.baseURL + dojo.configData.ProxyUrl;
         esriConfig.defaults.io.alwaysUseProxy = false;
         esriConfig.defaults.io.timeout = 180000;
         /**
         * load application configuration settings from configuration file
         * create an object of widget loader class
         */
-        dojo.configData = config;
         var applicationWidgetLoader = new WidgetLoader();
         applicationWidgetLoader.startup();
 

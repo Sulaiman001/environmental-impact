@@ -1,4 +1,4 @@
-﻿/*global define,dojo,dojoConfig,esri,esriConfig,alert */
+﻿/*global define,dojo,dojoConfig,esri,esriConfig,alert,dijit,params,dialog:true*/
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true */
 /*
  | Copyright 2013 Esri
@@ -30,6 +30,7 @@ define([
     "dojo/dom-class",
     "dojo/dom-geometry",
     "esri/tasks/GeometryService",
+     "dijit/Dialog",
     "dojo/string",
     "dojo/_base/html",
     "dojo/text!./templates/reportsTemplate.html",
@@ -38,6 +39,10 @@ define([
     "esri/symbols/SimpleFillSymbol",
     "esri/symbols/SimpleMarkerSymbol",
     "esri/symbols/PictureMarkerSymbol",
+     "dijit/TooltipDialog",
+     "dijit/place",
+    "dijit/form/CheckBox",
+     "dijit/form/Button",
     "esri/graphic",
     "esri/tasks/BufferParameters",
     "dijit/_WidgetBase",
@@ -55,9 +60,13 @@ define([
     "dojo/Deferred",
     "dojo/DeferredList",
     "esri/tasks/query",
-    "esri/tasks/QueryTask"
+    "esri/tasks/QueryTask",
+     "esri/tasks/AreasAndLengthsParameters",
+     "esri/request",
+     "dojo/_base/json",
+    "dojo/string"
 
-], function (declare, domConstruct, on, topic, lang, array, domStyle, domAttr, dom, query, domClass, domGeom, GeometryService, string, html, template, Color, SimpleLineSymbol, SimpleFillSymbol, SimpleMarkerSymbol, PictureMarkerSymbol, Graphic, BufferParameters, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, appNls, GraphicsLayer, Draw, HorizontalSlider, HorizontalRule, HorizontalRuleLabels, RadioButton, ScrollBar, Deferred, DeferredList, Query, QueryTask) {
+], function (declare, domConstruct, on, topic, lang, array, domStyle, domAttr, dom, query, domClass, domGeom, GeometryService, Dialog, string, html, template, Color, SimpleLineSymbol, SimpleFillSymbol, SimpleMarkerSymbol, PictureMarkerSymbol, TooltipDialog, Place, CheckBox, Button, Graphic, BufferParameters, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, appNls, GraphicsLayer, Draw, HorizontalSlider, HorizontalRule, HorizontalRuleLabels, RadioButton, ScrollBar, Deferred, DeferredList, Query, QueryTask, AreasAndLengthsParameters, esriRequest, dojoJson, dojoString) {
 
     //========================================================================================================================//
 
@@ -98,8 +107,12 @@ define([
             }));
             this.domNode = domConstruct.create("div", { "title": sharedNls.tooltips.reports, "class": "esriCTHeaderIcons esriCTReportsImg" }, null);
             this._showHideContainer();
+            topic.subscribe("addPushpinOnMap", lang.hitch(this, this.addPushpinOnMap));
+            topic.subscribe("_creatingBuffer", lang.hitch(this, this._creatingBuffer));
             topic.subscribe("resizeAOIPanel", lang.hitch(this, this.resizeAOIPanel));
             topic.subscribe("resizeReportsPanel", lang.hitch(this, this.resizeReportsPanel));
+            topic.subscribe("showMapTipForRoad", lang.hitch(this, this.showMapTipForRoad));
+            topic.subscribe("hideMapTip", lang.hitch(this, this.hideMapTip));
             topic.subscribe("createBuffer", lang.hitch(this, this._createBuffer));
             /**
             * minimize other open header panel widgets and show AOI panel
@@ -125,6 +138,16 @@ define([
 
             this._createSelectionTool();
 
+            this.own(on(dom.byId("selectonmap"), "click", lang.hitch(this, function () {
+                dojo.addPushPin = true;
+                if (dojo.mouseMoveHandle) {
+                    dojo.mouseMoveHandle.remove();
+                }
+                dojo.mouseMoveHandle = this.map.on("mouse-move", lang.hitch(this, function (evt) {
+                    topic.publish("showMapTipForRoad", evt);
+                }));
+            })));
+
             topic.publish("setDefaultTextboxValue", this.txtAOIAddress, "defaultAOIAddress", dojo.configData.LocatorSettings.LocatorDefaultAOIAddress);
             this.txtAOIAddress.value = domAttr.get(this.txtAOIAddress, "defaultAOIAddress");
             var locatorParams = {
@@ -141,6 +164,12 @@ define([
             this.reportsLoader = domConstruct.create("img", { "class": "esriCTInfoLoader" }, this.reportContent);
             domAttr.set(this.reportsLoader, "src", dojoConfig.baseURL + "/js/library/themes/images/loader.gif");
             this._hideLoadingIndicatorReports();
+
+            this.myDialog = new Dialog({
+                style: "width: 400px",
+                title: "Managed Lands",
+                "class": "esriDijitDialog"
+            });
         },
 
         _showHideContainer: function () {
@@ -192,7 +221,7 @@ define([
         },
 
         _createSelectionTool: function () {
-            var divAreaIntContainer, divSelectionContainer, toolbar, _self, horizontalSlider, radioBtnValue, radioContent, divRadioBtn, index, i, radioButton, radioLabel;
+            var divAreaIntContainer, divSelectionContainer, toolbar, _self, radioBtnValue, radioContent, divRadioBtn, index, i, radioButton, radioLabel;
             divAreaIntContainer = domConstruct.create("div", { "class": "esriCTAreaIntContainer" }, null);
             domConstruct.place(divAreaIntContainer, this.divAOIAddressContent, "before");
 
@@ -212,11 +241,12 @@ define([
                     _self.activateTool(this.id, toolbar);
                 }));
             });
+
             toolbar.on("draw-end", function (evt) {
-                _self.addToMap(evt, toolbar);
+                _self.addToMap(evt, toolbar, this.sliderUnitValue);
             });
 
-            horizontalSlider = new HorizontalSlider({
+            this._horizontalSlider = new HorizontalSlider({
                 value: dojo.configData.BufferSliderSettings.defaultValue,
                 minimum: dojo.configData.BufferSliderSettings.minValue,
                 maximum: dojo.configData.BufferSliderSettings.maxValue,
@@ -240,27 +270,24 @@ define([
                 radioLabel = domConstruct.create("label", {}, radioContent);
                 domAttr.set(radioLabel, "for", radioButton.id);
                 domAttr.set(radioLabel, "innerHTML", dojo.configData.DistanceUnitSettings[i].DistanceUnitName);
-                this.own(on(dom.byId(radioButton.id), "change", lang.hitch(this, function (value) {
-                    index = Number(domAttr.get(value.target, "index"));
-                    this.sliderUnitValue = this._sliderStartEndValue(value.target.value, horizontalSlider, index, true);
-                })));
+                this.own(on(dom.byId(radioButton.id), "change", lang.hitch(this, this._getSliderValue)));
             }
 
             radioBtnValue = query("input:checked")[0].value;
             index = Number(domAttr.get(dom.byId(query("input:checked")[0].id), "index"));
-            this.sliderUnitValue = this._sliderStartEndValue(radioBtnValue, horizontalSlider, index, null);
+            this.sliderUnitValue = this._sliderStartEndValue(radioBtnValue, this._horizontalSlider, index, null);
 
             domAttr.set(this.sliderMessage, "innerHTML", string.substitute(sharedNls.messages.sliderDisplayText, { defaultDistance: dojo.configData.BufferSliderSettings.defaultValue }) + " " + radioBtnValue);
 
-            this.own(on(horizontalSlider, "change", lang.hitch(this, function (value) {
+            this.own(on(this._horizontalSlider, "change", lang.hitch(this, function (value) {
                 var sliderText, message;
                 sliderText = this.sliderMessage.innerHTML.split(/\d+/g);
                 message = sliderText[0] + " " + Math.round(value) + " " + sliderText[1];
                 this.sliderMessage.innerHTML = message;
                 this.sliderDistance = Math.round(value);
                 if (this.map.graphics.graphics[0].symbol) {
-                    setTimeout(lang.hitch(this, function () {
-                        this._createBuffer(this.featureGeometry);
+                    setTimeout(lang.hitch(this, function () {                        
+		       topic.publish("createBuffer", this.featureGeometry, this.sliderUnitValue);
                     }), 500);
                 }
             })));
@@ -268,6 +295,33 @@ define([
             domConstruct.place(this.divRadioButtonContainer, this.divSliderContainer, "after");
             this._createLinkContainer(divAreaIntContainer);
         },
+
+        _getSliderValue: function (value) {
+            var index;
+            index = Number(domAttr.get(value.target, "index"));
+            this.sliderUnitValue = this._sliderStartEndValue(value.target.value, this._horizontalSlider, index, true);
+        },
+
+        _createRadioButtonContainer: function (i, horizontalSlider) {
+            var radioContent, divRadioBtn, radioButton, radioLabel, index;
+            radioContent = domConstruct.create("div", { "class": "esriCTRadioBtn esriCTRadioButtonDiv" }, this.divRadioButtonContainer);
+            divRadioBtn = domConstruct.create("div", { "class": "esriCTRadioBtn esriCTRadioButtonDiv" }, radioContent);
+            radioButton = new RadioButton({
+                checked: dojo.configData.DistanceUnitSettings[i].Checked,
+                value: dojo.configData.DistanceUnitSettings[i].DistanceUnitName,
+                name: "distance",
+                id: "radio" + dojo.configData.DistanceUnitSettings[i].DistanceUnitName
+            }, divRadioBtn);
+            domAttr.set(dom.byId(radioButton.id), "index", i);
+            radioLabel = domConstruct.create("label", {}, radioContent);
+            domAttr.set(radioLabel, "for", radioButton.id);
+            domAttr.set(radioLabel, "innerHTML", dojo.configData.DistanceUnitSettings[i].DistanceUnitName);
+            this.own(on(dom.byId(radioButton.id), "change", lang.hitch(this, function (value) {
+                index = Number(domAttr.get(value.target, "index"));
+                this.sliderUnitValue = this._sliderStartEndValue(value.target.value, horizontalSlider, index, true);
+            })));
+        },
+
 
         _createLinkContainer: function (divAreaIntContainer) {
             var divLinkContainer, divLinkUpload, divLinkDrawTool, divLinkCoordinates;
@@ -353,10 +407,10 @@ define([
             domAttr.set(query(".dijitRuleLabel")[0], "innerHTML", sliderStartValue);
             domAttr.set(query(".dijitRuleLabel")[1], "innerHTML", sliderEndValue);
 
-            horizontalSlider.minimum = sliderStartValue;
-            horizontalSlider.maximum = sliderEndValue;
+            this._horizontalSlider.minimum = sliderStartValue;
+            this._horizontalSlider.maximum = sliderEndValue;
             if (radioClicked) {
-                horizontalSlider.setValue(0);
+                this._horizontalSlider.setValue(0);
             }
             domAttr.set(this.sliderMessage, "innerHTML", string.substitute(sharedNls.messages.sliderDisplayText, { defaultDistance: dojo.configData.BufferSliderSettings.defaultValue }) + " " + radioBtnValue);
             return this.sliderUnitValue;
@@ -369,9 +423,10 @@ define([
             toolbar.activate(Draw[tool]);
         },
 
-        addToMap: function (evt, toolbar) {
+        addToMap: function (evt, toolbar, sliderUnitValue) {
             var symbol, graphic, geometry;
             this.map.graphics.clear();
+            this.map.getLayer("tempBufferLayer").clear();
             toolbar.deactivate();
             switch (evt.geometry.type) {
                 case "point":
@@ -395,216 +450,172 @@ define([
             }
             graphic = new Graphic(evt.geometry, symbol);
             this.map.graphics.add(graphic);
-            this._createBuffer(evt.geometry);
+            topic.publish("createBuffer", evt.geometry, this.sliderUnitValue);            
         },
 
-        _createBuffer: function (geometry) {
+        _createBuffer: function (geometry, sliderUnitValue) {
             var geometryService, params;
-            domConstruct.empty(this.reportScrollContent);
+            this._showReportsTab();
             this._showLoadingIndicatorReports();
             geometryService = new GeometryService(dojo.configData.GeometryService);
             this.featureGeometry = geometry;
             dojo.activatedDrawTool = false;
-            //setup the buffer parameters
-            params = new BufferParameters();
-            params.distances = [this.sliderDistance];
-            params.bufferSpatialReference = new esri.SpatialReference({ "wkid": this.map.spatialReference.wkid });
-            params.outSpatialReference = this.map.spatialReference;
-            params.unit = GeometryService[this.sliderUnitValue];
             if (this.sliderDistance !== 0) {
+                //setup the buffer parameters
+                params = new BufferParameters();
+                params.distances = [this.sliderDistance];
+                params.bufferSpatialReference = new esri.SpatialReference({ "wkid": this.map.spatialReference.wkid });
+                params.outSpatialReference = this.map.spatialReference;
+                params.unit = GeometryService[sliderUnitValue];
+
                 if (this.featureGeometry.type === "polygon") {
-                    //if geometry is a polygon then simplify polygon. This will make the user drawn polygon topologically correct.
+                    //if geometry is a polygon then simplify polygon.  This will make the user drawn polygon topologically correct.
                     geometryService.simplify([this.featureGeometry], lang.hitch(this, function (geometries) {
                         params.geometries = geometries;
                         geometryService.buffer(params, lang.hitch(this, function (geometries) {
-                            this.showBuffer(geometries);
+                            this.showBuffer(geometries, sliderUnitValue);
                         }));
                     }));
                 } else {
                     params.geometries = [this.featureGeometry];
                     geometryService.buffer(params, lang.hitch(this, function (geometries) {
-                        this.showBuffer(geometries);
+                        this.showBuffer(geometries, sliderUnitValue);
                     }));
                 }
             } else {
                 if (this.featureGeometry.type === "polygon") {
-                    this._showReportsTab();
-                    //if geometry is a polygon and buffer is not drawn, then also query the layers
-                    this._queryLayers(this.featureGeometry);
-                } else {
+                    //if geometry is a polygon then simplify polygon. This will make the user drawn polygon topologically correct.
+                    geometryService.simplify([this.featureGeometry], lang.hitch(this, function (geometries) {
+                        params.geometries = geometries;
+                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
+                            this.showBuffer(geometries, sliderUnitValue);
+                        }));
+                    }));
+                }
+
+                else {
                     alert(sharedNls.errorMessages.bufferSliderValue);
                 }
             }
         },
 
-        showBuffer: function (bufferedGeometries) {
-            this._showReportsTab();
+
+        showBuffer: function (bufferedGeometries, sliderUnitValue) {
             var _self, symbol;
             _self = this;
-            symbol = new SimpleFillSymbol(
-                    SimpleFillSymbol.STYLE_SOLID,
-                    new SimpleLineSymbol(
-                      SimpleLineSymbol.STYLE_SOLID,
-                      new Color([parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[0], 10), parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[1], 10), parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.BufferSymbology.LineSymbolTransparency.split(",")[0], 10)]), 2
-                    ),
-                    new Color([parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[0], 10), parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[1], 10), parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.BufferSymbology.FillSymbolTransparency.split(",")[0], 10)])
-                  );
+            symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID, new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([255, 0, 0, 0.65]), 2),
+        new Color([255, 0, 0, 0.35]));
             array.forEach(bufferedGeometries, function (geometry) {
                 var graphic = new Graphic(geometry, symbol);
-                _self.map.graphics.add(graphic);
-                _self._queryLayers(geometry);
+                _self.map.getLayer("tempBufferLayer").add(graphic);
+                _self._queryLayers(geometry, sliderUnitValue);
             });
         },
 
-        _queryLayers: function (geometry) {
-            var index,
-                deferredListResult,
-                onMapFeaturArray = [],
-                featureArrayCollection = [],
-                featureArray = [];
+        _queryLayers: function (geometry, sliderUnitValue) {
+            var _self = this, statisticResultArray = [], layerFieldCount = [], reportFields, staticFieldName, reportFieldName, staticTypeValue,
+             index,
+                deferredListResult, requestHandle,
+                onMapFeaturArray = [];
             this.counter = 0;
             for (index = 0; index < dojo.configData.SearchSettings.length; index++) {
-                this._executeQueryTaskReport(index, geometry, onMapFeaturArray);
+                requestHandle = esriRequest({
+                    "url": dojo.configData.SearchSettings[index].QueryURL,
+                    "content": {
+                        "f": "json"
+                    },
+                    "callbackParamName": "callback"
+                });
+                requestHandle.then(_self.requestSucceeded, _self.requestFailed);
+                onMapFeaturArray.push(requestHandle);
             }
             deferredListResult = new DeferredList(onMapFeaturArray);
             deferredListResult.then(lang.hitch(this, function (result) {
-                var j, i;
-
+                var i, statisticType, layerInfoCollection = [], reportFieldsCount = 0, count, countPointFields = 0, standardPointLayerUnit;
+                layerInfoCollection.push(result);
                 if (result) {
-                    for (j = 0; j < result.length; j++) {
-                        if (result[j][0] === true) {
-                            if (result[j][1].features.length > 0) {
-                                featureArrayCollection = [];
-                                for (i = 0; i < result[j][1].features.length; i++) {
-                                    featureArrayCollection.push({
-                                        attr: result[j][1].features[i],
-                                        layerId: j,
-                                        fields: result[j][1].fields
-                                    });
+                    for (i = 0; i < dojo.configData.SearchSettings.length; i++) {
+                        if (result[i][1].geometryType === "esriGeometryPoint") {
+                            statisticType = "COUNT";
+                            staticTypeValue = "count";
+                            standardPointLayerUnit = "";
+                            reportFields = (dojo.configData.SearchSettings[i].QuickSummaryReportFields + "," + dojo.configData.SearchSettings[i].DetailSummaryReportFields).split(",");
+                            reportFieldsCount = reportFields.length;
+                            layerFieldCount.push(reportFieldsCount);
+                            for (count = 0; count < reportFieldsCount; count++) {
+                                reportFieldName = reportFields[count];
+                                staticFieldName = reportFieldName;
+                                countPointFields = reportFieldsCount;
+                                statisticResultArray.push(this._executeQueryTaskPointReport(i, geometry, statisticType, reportFieldName, staticFieldName, staticTypeValue, standardPointLayerUnit));
+                            }
 
-                                }
-                                featureArray.push({
-                                    layer: j,
-                                    features: featureArrayCollection
-                                });
+                        }
+
+                        if (result[i][1].geometryType === "esriGeometryPolygon") {
+                            statisticType = "SUM";
+                            staticTypeValue = "area";
+                            reportFields = (dojo.configData.SearchSettings[i].GroupByField + "," + dojo.configData.SearchSettings[i].DetailSummaryReportFields).split(",");
+                            reportFieldsCount = reportFields.length;
+                            layerFieldCount.push(reportFieldsCount);
+                            for (count = 0; count < reportFieldsCount; count++) {
+                                reportFieldName = reportFields[count];
+                                staticFieldName = dojo.configData.SearchSettings[i].QuickSummaryReportFields;
+                                statisticResultArray.push(this._executeQueryTaskPointReport(i, geometry, statisticType, reportFieldName, staticFieldName, staticTypeValue, sharedNls.titles.areaStandardUnit));
                             }
                         }
                     }
-                    this._fetchBufferResults(featureArray, geometry);
+                    deferredListResult = new DeferredList(statisticResultArray);
+                    deferredListResult.then(lang.hitch(this, function (result) {
+                        this.queryAllResults = result;
+                        if (result) {
+                            this._createReport();
+                        }
+                    }));
                 }
-            }), function (err) {
+            }),
+            function (err) {
                 alert(err.message);
             });
         },
 
-        _executeQueryTaskReport: function (index, geometry, onMapFeaturArray) {
-            var queryTask, queryLayer, queryOnReportTask, statDef, deferred, self;
-            self = this;
-            deferred = new Deferred();
-            statDef = new esri.tasks.StatisticDefinition();
-            statDef.statisticType = "count";
-            statDef.onStatisticField = dojo.configData.SearchSettings[index].QuickSummaryReportFields;
-            statDef.outStatisticName = "Total";
+        _createReport: function (DialogBoxId) {
+            this.featureArrayCollection = [];
+            var isFieldAdded = true, i, index;
+            this.featureArrayCollection.length = 0;
+            for (index = 0; index < dojo.configData.SearchSettings.length; index++) {
+                for (i = 0; i < this.queryAllResults.length; i++) {
 
-            queryTask = new QueryTask(dojo.configData.SearchSettings[index].QueryURL);
-            queryLayer = new Query();
-            queryLayer.outSpatialReference = this.map.spatialReference;
-            queryLayer.returnGeometry = false;
-            queryLayer.geometry = geometry;
-            queryLayer.outStatistics = [statDef];
-            queryLayer.groupByFieldsForStatistics = [dojo.configData.SearchSettings[index].QuickSummaryReportFields];
-            queryLayer.outFields = ["*"];
-            queryOnReportTask = queryTask.execute(queryLayer, lang.hitch(this, function (results) {
-                deferred.resolve(results);
-                return deferred.promise;
-            }), function (err) {
-                alert(err.message);
-                deferred.resolve(err);
-                self._hideLoadingIndicatorReports();
-            });
-            onMapFeaturArray.push(queryOnReportTask);
-        },
-
-        _fetchBufferQueryResults: function (featureArray, geometry, i, j) {
-            var queryTask, queryLayer, deferredBuffer, obj, reportFieldValue, value;
-            for (value in featureArray[i].features[j].attr.attributes) {
-                if (featureArray[i].features[j].attr.attributes.hasOwnProperty(value)) {
-                    if (!featureArray[i].features[j].attr.attributes[value]) {
-                        featureArray[i].features[j].attr.attributes[value] = sharedNls.showNullValue;
+                    if ((dojo.configData.SearchSettings[index].QuickSummaryReportFields === this.queryAllResults[i][1].reportFieldName) || (dojo.configData.SearchSettings[index].GroupByField === this.queryAllResults[i][1].reportFieldName)) {
+                        this.featureArrayCollection.push({
+                            attr: this.queryAllResults[i][1].result.features,
+                            FieldName: this.queryAllResults[i][1].reportFieldName,
+                            FieldTypeValue: this.queryAllResults[i][1].statictypevalue,
+                            unitType: this.queryAllResults[i][1].unit
+                        });
                     }
-                }
-            }
-            deferredBuffer = new Deferred();
-            queryTask = new QueryTask(dojo.configData.SearchSettings[featureArray[i].layer].QueryURL);
-            queryLayer = new Query();
-            queryLayer.outSpatialReference = this.map.spatialReference;
-            queryLayer.returnGeometry = true;
-            queryLayer.geometry = geometry;
-            reportFieldValue = string.substitute("${" + dojo.configData.SearchSettings[featureArray[i].layer].QuickSummaryReportFields + "}", featureArray[i].features[j].attr.attributes);
-            queryLayer.where = dojo.configData.SearchSettings[featureArray[i].layer].QuickSummaryReportFields + " = " + "'" + reportFieldValue + "'";
-            queryLayer.outFields = ["*"];
-            queryTask.execute(queryLayer, lang.hitch(this, function (results) {
-                var res;
-                for (res in results.features[0].attributes) {
-                    if (results.features[0].attributes.hasOwnProperty(res)) {
-                        if (!results.features[0].attributes[res]) {
-                            results.features[0].attributes[res] = sharedNls.showNullValue;
+                    if (this.dialogBoxTrue && isFieldAdded) {
+                        if (this.queryAllResults[i][1].reportFieldName === DialogBoxId) {
+                            isFieldAdded = false;
+                            this.featureArrayCollection.push({
+                                attr: this.queryAllResults[i][1].result.features,
+                                FieldName: this.queryAllResults[i][1].reportFieldName,
+                                FieldTypeValue: this.queryAllResults[i][1].statictypevalue,
+                                unitType: this.queryAllResults[i][1].unit
+                            });
                         }
                     }
-                }
-                obj = {
-                    name: i,
-                    results: results,
-                    value: string.substitute("${" + dojo.configData.SearchSettings[i].QuickSummaryReportFields + "}", results.features[0].attributes)
-                };
-                deferredBuffer.resolve(obj);
-            }), function (err) {
-                alert(err.message);
-                deferredBuffer.resolve(err);
-            });
-            return deferredBuffer.promise;
-        },
 
-        _fetchBufferResults: function (featureArray, geometry) {
-            var deferredListBuffer, onBufferFeaturArray = [], i, j;
-            for (i = 0; i < featureArray.length; i++) {
-                for (j = 0; j < featureArray[i].features.length; j++) {
-                    onBufferFeaturArray.push(this._fetchBufferQueryResults(featureArray, geometry, i, j));
                 }
             }
-            deferredListBuffer = new DeferredList(onBufferFeaturArray);
-            deferredListBuffer.then(lang.hitch(this, function (result) {
-                this._createReport(result);
-            }));
+            this._displayReport(this.featureArrayCollection);
         },
 
-        _createReport: function (result) {
-            var i, j, divReportLayerPanel, divReportLayerSettingPanel, divFieldTypeContent, reportPanelHeight;
+        _displayReport: function (featureArrayCollection) {
+            var featureCollection, reportPanelHeight;
+            domConstruct.empty(this.reportScrollContent);
             this._hideLoadingIndicatorReports();
-            for (i = 0; i < result.length; i++) {
-                if (result[i][1].results) {
-                    if (i !== 0) {
-                        if ((result[i][1].name) !== (result[j][1].name)) {
-                            divReportLayerPanel = domConstruct.create("div", { "class": "esriCTReportLayerPanel" }, this.reportScrollContent);
-                            divReportLayerSettingPanel = domConstruct.create("div", { "class": "esriCTReportSettingPanel" }, divReportLayerPanel);
-                            domConstruct.create("div", { "class": "divReportLayerTitle", "innerHTML": dojo.configData.SearchSettings[result[i][1].name].SearchDisplayTitle }, divReportLayerSettingPanel);
-                            domConstruct.create("div", { "class": "esriCTsettingIcon" }, divReportLayerSettingPanel);
-                            domConstruct.create("div", { "class": "esriCTReportTitle", "innerHTML": dojo.configData.SearchSettings[result[i][1].name].QuickSummaryReportFields }, divReportLayerPanel);
-                        }
-                    } else {
-                        divReportLayerPanel = domConstruct.create("div", { "class": "esriCTReportLayerPanel" }, this.reportScrollContent);
-                        divReportLayerSettingPanel = domConstruct.create("div", { "class": "esriCTReportSettingPanel" }, divReportLayerPanel);
-                        domConstruct.create("div", { "class": "divReportLayerTitle", "innerHTML": dojo.configData.SearchSettings[result[i][1].name].SearchDisplayTitle }, divReportLayerSettingPanel);
-                        domConstruct.create("div", { "class": "esriCTsettingIcon" }, divReportLayerSettingPanel);
-                        domConstruct.create("div", { "class": "esriCTReportTitle", "innerHTML": dojo.configData.SearchSettings[result[i][1].name].QuickSummaryReportFields }, divReportLayerPanel);
-                    }
-                    divFieldTypeContent = domConstruct.create("div", { "class": "esriCTReportZoneName" }, divReportLayerPanel);
-                    domConstruct.create("span", { "innerHTML": result[i][1].value }, divFieldTypeContent);
-                    domConstruct.create("span", { "innerHTML": " (count - " + result[i][1].results.features.length + ")" }, divFieldTypeContent);
-                    j = i;
-                } else {
-                    alert(sharedNls.errorMessages.invalidSearch);
-                }
+            for (featureCollection = 0; featureCollection < dojo.configData.SearchSettings.length; featureCollection++) {
+                this._createReportPanelContent(featureCollection, featureArrayCollection);
             }
             if (this.reportPanelScrollbar) {
                 domClass.add(this.reportPanelScrollbar._scrollBarContent, "esriCTZeroHeight");
@@ -615,7 +626,93 @@ define([
             this.reportPanelScrollbar = new ScrollBar({ domNode: this.reportContent });
             this.reportPanelScrollbar.setContent(this.reportScrollContent);
             this.reportPanelScrollbar.createScrollBar();
+
         },
+
+        _createReportPanelContent: function (featureCollection, featureArrayCollection) {
+            var count, j, target, divReportLayerSettingPanel, divReportLayerPanel, divReportLayersettingIcon, divFieldTypeContent;
+            divReportLayerPanel = domConstruct.create("div", { "class": "esriCTReportLayerPanel" }, this.reportScrollContent);
+            divReportLayerSettingPanel = domConstruct.create("div", { "class": "esriCTReportSettingPanel" }, divReportLayerPanel);
+            domConstruct.create("div", { "class": "divReportLayerTitle", "innerHTML": dojo.configData.SearchSettings[featureCollection].SearchDisplayTitle }, divReportLayerSettingPanel);
+            divReportLayersettingIcon = domConstruct.create("div", { "class": "esriCTsettingIcon", "id": dojo.configData.SearchSettings[featureCollection].QueryLayerId }, divReportLayerSettingPanel);
+
+            this.own(on(divReportLayersettingIcon, "click", lang.hitch(this, function (evt) {
+                target = evt.currentTarget || evt.srcElement;
+                this._configureDialogBox(target.id);
+            })));
+            for (count = 0; count < featureArrayCollection.length; count++) {
+                if ((featureArrayCollection[count].FieldName === dojo.configData.SearchSettings[featureCollection].QuickSummaryReportFields) ||
+                    (featureArrayCollection[count].FieldName === dojo.configData.SearchSettings[featureCollection].GroupByField) ||
+                    (featureArrayCollection[count].FieldName === dojo.configData.SearchSettings[featureCollection].DetailSummaryReportFields[0])) {
+                    domConstruct.create("div", { "class": "esriCTReportZoneName", "innerHTML": featureArrayCollection[count].FieldName }, divReportLayerPanel, "last");
+                    for (j = 0; j < featureArrayCollection[count].attr.length; j++) {
+                        this.value = string.substitute("${" + featureArrayCollection[count].FieldName + "}",
+                    featureArrayCollection[count].attr[j].attributes);
+                        this.StatisticTypeValue = string.substitute("${Total}", featureArrayCollection[count].attr[j].attributes);
+                        if (typeof (featureArrayCollection[count].attr[j].attributes.Total) === "number" && this.StatisticTypeValue.indexOf(".") !== -1) 
+			{
+                            this.StatisticTypeValue = parseFloat(this.StatisticTypeValue);
+                            this.StatisticTypeValue = (this.StatisticTypeValue * 0.00024711);
+                        }
+                        divFieldTypeContent = domConstruct.create("div", { "class": "esriCTReportZoneList" }, divReportLayerPanel);
+                        domConstruct.create("span", { "class": "esriCTReportZoneField", "innerHTML": this.value }, divFieldTypeContent);
+                        domConstruct.create("span", { "class": "esriCTReportZoneCount", "innerHTML": ("(" + featureArrayCollection[featureCollection].FieldTypeValue + " " + " - " + parseInt(this.StatisticTypeValue, 10) + (featureArrayCollection[featureCollection].unitType === "" ? "" : " ") + featureArrayCollection[featureCollection].unitType + ")") }, divFieldTypeContent);
+                    }
+                }
+            }
+        },
+
+
+        _configureDialogBox: function (dialogBoxId) {
+            var _self = this,
+             DetailFieldValues, createContent, i;
+            for (i = 0; i < dojo.configData.SearchSettings.length; i++) {
+                if (dojo.configData.SearchSettings[i].QueryLayerId === dialogBoxId) {
+                    DetailFieldValues = dojo.configData.SearchSettings[i].DetailSummaryReportFields;
+                    createContent = _self.createContent(DetailFieldValues, dialogBoxId);
+                    _self.myDialog.set("content", createContent);
+                    _self.myDialog.show();
+                }
+            }
+        },
+
+        requestSucceeded: function (response, io) {
+            var deferred = new Deferred();
+            deferred.resolve(response);
+        },
+
+        requestFailed: function (error, io) {
+            alert(error.message);
+        },
+
+        _executeQueryTaskPointReport: function (index, geometry, statisticType, reportFieldName, staticFieldName, staticTypeValue, unit) {
+            var obj = {},
+            queryTask, queryLayer, statDef, deferred;
+            statDef = new esri.tasks.StatisticDefinition();
+            statDef.statisticType = statisticType;
+            statDef.onStatisticField = staticFieldName;
+            statDef.outStatisticFieldName = "Total";
+            queryTask = new esri.tasks.QueryTask(dojo.configData.SearchSettings[index].QueryURL);
+            queryLayer = new esri.tasks.Query();
+            queryLayer.outSpatialReference = this.map.spatialReference;
+            queryLayer.returnGeometry = false;
+            queryLayer.geometry = geometry;
+            queryLayer.outStatistics = [statDef];
+            queryLayer.groupByFieldsForStatistics = [reportFieldName];
+            queryLayer.outFields = ["*"];
+            deferred = new Deferred();
+            queryTask.execute(queryLayer, lang.hitch(this, function (results) {
+                obj.result = results;
+                obj.reportFieldName = reportFieldName;
+                obj.statictypevalue = staticTypeValue;
+                obj.unit = unit;
+                deferred.resolve(obj);
+            }), function (err) {
+                alert(err.message);
+            });
+            return deferred.promise;
+        },
+
 
         resizeAOIPanel: function () {
             var aoiPanelHeight;
@@ -653,7 +750,75 @@ define([
 
         _hideLoadingIndicatorReports: function () {
             domStyle.set(this.reportsLoader, "display", "none");
+        },
+
+        createContent: function (DetailFieldValues, dialogBoxId) {
+            var _self = this, detailReportFieldLength, addReportCheckBox, myButton;
+            this.div1 = domConstruct.create("div", { "class": "settingDilogContainer" }, null);
+            this.div3 = domConstruct.create("div", { "class": "esriCTReportFieldshead", "innerHTML": "Select Report Fields" }, this.div1);
+            this.div2 = domConstruct.create("div", { "class": "esriCTCheckboxContainer" }, this.div1);
+
+            for (detailReportFieldLength = 0; detailReportFieldLength < DetailFieldValues.length; detailReportFieldLength++) {
+                this.divCheckBox = domConstruct.create("div", {}, this.div2);
+                addReportCheckBox = new CheckBox({
+                    name: "TypecheckBox",
+                    checked: false,
+                    "class": "inputValues",
+                    value: DetailFieldValues[detailReportFieldLength]
+                });
+                addReportCheckBox.placeAt(this.divCheckBox, "first");
+                this.divDetailReportField = domConstruct.create("div", { "class": "esriCTDiv" }, this.divCheckBox);
+                this.divDetailReportField.innerHTML = DetailFieldValues[detailReportFieldLength];
+            }
+
+            this.dijitDialogPaneActionControl = domConstruct.create("div", {}, this.div1);
+            myButton = new Button({
+                label: "OK",
+                onClick: function () {
+                    _self.myDialog.hide();
+                    _self._findSelectedCheckBox(this.divCheckBox, dialogBoxId);
+                }
+            }, this.dijitDialogPaneActionControl);
+            return this.div1;
+
+        },
+
+        _findSelectedCheckBox: function (addReportCheckBox, dialogBoxId) {
+            this.dialogBoxTrue = true;
+            var value,
+            t = query(".inputValues"), i;
+            for (i = 0; i < t.length; i++) {
+                if (t[i].childNodes[i].checked) {
+                    value = t[i].childNodes[i].value;
+                    this._createReport(value);
+                }
+
+            }
+        },
+
+
+        showMapTipForRoad: function (evt) {
+            topic.publish("hideMapTip");
+            dialog = new TooltipDialog({
+                content: "Press double click to stop",
+                id: "toolTipDialogues",
+                style: "position: absolute; z-index:1000;"
+            });
+            dialog.startup();
+            domStyle.set(dialog.domNode, "opacity", 0.80);
+            Place.at(dialog.domNode, { x: evt.pageX, y: evt.pageY }, ["TL", "TR"], { x: 5, y: 5 });
+        },
+
+        hideMapTip: function () {
+            if (dijit.byId('toolTipDialogues')) {
+                dijit.byId('toolTipDialogues').destroy();
+            }
+        },
+
+        _creatingBuffer: function (geometry, val) {
+            topic.publish("createBuffer", params.geometries, val);
         }
+
 
     });
 });

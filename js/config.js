@@ -52,6 +52,9 @@ define([], function () {
 
         // Set application logo url
         CustomLogoUrl: "",
+		
+        // Set Proxy URL
+        ProxyUrl:"/proxy/proxy.ashx",
 
         // Set splash window content - Message that appears when the application starts
         SplashScreen: {
@@ -153,14 +156,18 @@ define([], function () {
             SearchDisplayTitle: "Placenames in Florida",
             SearchDisplayFields: "${FEATURE_NA}",
             SearchExpression: "UPPER(FEATURE_NA) LIKE UPPER('%${0}%')",
-            QuickSummaryReportFields: "COUNTY_NAM"
-        },  {
+            QuickSummaryReportFields: "COUNTY_NAM",
+            GroupByField: "COUNTY_NAM",
+            DetailSummaryReportFields: ["COUNTY_NUM"]
+        }, {
             Title: "EIAPoly",
             QueryLayerId: "10",
             SearchDisplayTitle: "Florida Managed Areas",
             SearchDisplayFields: "${MANAME}",
             SearchExpression: "UPPER(MANAME) LIKE UPPER('%${0}%')",
-            QuickSummaryReportFields: "MATYPE"
+            QuickSummaryReportFields: "Shape_Area",
+            GroupByField: "MANAME",
+            DetailSummaryReportFields: ["COUNTY"]
         }],
 
         // Following zoom level will be set for the map upon searching an address
