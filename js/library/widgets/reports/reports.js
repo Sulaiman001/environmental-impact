@@ -286,8 +286,8 @@ define([
                 this.sliderMessage.innerHTML = message;
                 this.sliderDistance = Math.round(value);
                 if (this.map.graphics.graphics[0].symbol) {
-                    setTimeout(lang.hitch(this, function () {                        
-		       topic.publish("createBuffer", this.featureGeometry, this.sliderUnitValue);
+                    setTimeout(lang.hitch(this, function () {
+               topic.publish("createBuffer", this.featureGeometry, this.sliderUnitValue);
                     }), 500);
                 }
             })));
@@ -450,7 +450,7 @@ define([
             }
             graphic = new Graphic(evt.geometry, symbol);
             this.map.graphics.add(graphic);
-            topic.publish("createBuffer", evt.geometry, this.sliderUnitValue);            
+            topic.publish("createBuffer", evt.geometry, this.sliderUnitValue);
         },
 
         _createBuffer: function (geometry, sliderUnitValue) {
@@ -649,8 +649,8 @@ define([
                         this.value = string.substitute("${" + featureArrayCollection[count].FieldName + "}",
                     featureArrayCollection[count].attr[j].attributes);
                         this.StatisticTypeValue = string.substitute("${Total}", featureArrayCollection[count].attr[j].attributes);
-                        if (typeof (featureArrayCollection[count].attr[j].attributes.Total) === "number" && this.StatisticTypeValue.indexOf(".") !== -1) 
-			{
+                        if (typeof (featureArrayCollection[count].attr[j].attributes.Total) === "number" && this.StatisticTypeValue.indexOf(".") !== -1)
+            {
                             this.StatisticTypeValue = parseFloat(this.StatisticTypeValue);
                             this.StatisticTypeValue = (this.StatisticTypeValue * 0.00024711);
                         }

@@ -52,7 +52,7 @@ define([], function () {
 
         // Set application logo url
         CustomLogoUrl: "",
-		
+
         // Set Proxy URL
         ProxyUrl:"/proxy/proxy.ashx",
 
