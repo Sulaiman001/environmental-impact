@@ -229,15 +229,15 @@ define([
         */
         _shareOptions: function (site, url) {
             switch (site) {
-                case "facebook":
-                    window.open(string.substitute(dojo.configData.MapSharingOptions.FacebookShareURL, [url]));
-                    break;
-                case "twitter":
-                    window.open(string.substitute(dojo.configData.MapSharingOptions.TwitterShareURL, [url]));
-                    break;
-                case "email":
-                    parent.location = string.substitute(dojo.configData.MapSharingOptions.ShareByMailLink, [url]);
-                    break;
+            case "facebook":
+                window.open(string.substitute(dojo.configData.MapSharingOptions.FacebookShareURL, [url]));
+                break;
+            case "twitter":
+                window.open(string.substitute(dojo.configData.MapSharingOptions.TwitterShareURL, [url]));
+                break;
+            case "email":
+                parent.location = string.substitute(dojo.configData.MapSharingOptions.ShareByMailLink, [url]);
+                break;
             }
         }
     });

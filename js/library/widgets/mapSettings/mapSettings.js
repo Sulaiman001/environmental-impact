@@ -590,15 +590,15 @@ define([
             * set layerMode of the operational layer if it's type is feature
             */
             switch (layerInfo.layermode && layerInfo.layermode.toLowerCase()) {
-                case "ondemand":
-                    layerMode = FeatureLayer.MODE_ONDEMAND;
-                    break;
-                case "selection":
-                    layerMode = FeatureLayer.MODE_SELECTION;
-                    break;
-                default:
-                    layerMode = FeatureLayer.MODE_SNAPSHOT;
-                    break;
+            case "ondemand":
+                layerMode = FeatureLayer.MODE_ONDEMAND;
+                break;
+            case "selection":
+                layerMode = FeatureLayer.MODE_SELECTION;
+                break;
+            default:
+                layerMode = FeatureLayer.MODE_SNAPSHOT;
+                break;
             }
 
             /**

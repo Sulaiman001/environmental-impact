@@ -113,8 +113,7 @@ define([
             domAttr.set(this.divAddressContainer, "title", "");
 
             this._setDefaultTextboxValue(this.txtAddress, "defaultAddress", dojo.configData.LocatorSettings.LocatorDefaultAddress);
-            var locatorParams =
-            {
+            var locatorParams = {
                 divSearch: this.divSearch,
                 close: this.close,
                 imgSearchLoader: this.imgSearchLoader,
@@ -655,10 +654,26 @@ define([
                     } else {
                         if (candidate.geometry.type === "point") {
                             _this.map.centerAt(candidate.geometry);
-                            highlightSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_CIRCLE, 15,
-                            new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
-                            new Color([parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[0], 10), parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[1], 10), parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolTransparency.split(",")[0], 10)]), 2),
-                            new Color([parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[0], 10), parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[1], 10), parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)]));
+                            highlightSymbol = new SimpleMarkerSymbol(
+                                SimpleMarkerSymbol.STYLE_CIRCLE,
+                                15,
+                                new SimpleLineSymbol(
+                                    SimpleLineSymbol.STYLE_SOLID,
+                                    new Color([
+                                        parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[0], 10),
+                                        parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[1], 10),
+                                        parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[2], 10),
+                                        parseFloat(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolTransparency.split(",")[0], 10)
+                                    ]),
+                                    2
+                                ),
+                                new Color([
+                                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[0], 10),
+                                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[1], 10),
+                                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10),
+                                    parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)
+                                ])
+                            );
                             highlightGraphic = new Graphic(candidate.geometry, highlightSymbol);
                             _this.map.graphics.add(highlightGraphic);
                             topic.publish("hideProgressIndicator");
@@ -669,10 +684,19 @@ define([
                             highlightSymbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
                                 new SimpleLineSymbol(
                                     SimpleLineSymbol.STYLE_SOLID,
-                                    new Color([parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[0], 10), parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[1], 10), parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.HighlightFeaturesSymbology.LineSymbolTransparency.split(",")[0], 10)]), 2
+                                    new Color([
+                                        parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[0], 10),
+                                        parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[1], 10),
+                                        parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[2], 10),
+                                        parseFloat(dojo.configData.HighlightFeaturesSymbology.LineSymbolTransparency.split(",")[0], 10)]),
+                                    2
                                 ),
-                                new Color([parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[0], 10), parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[1], 10), parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)])
-                            );
+                                new Color([
+                                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[0], 10),
+                                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[1], 10),
+                                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10),
+                                    parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)])
+                                );
                             highlightGraphic = new Graphic(candidate.geometry, highlightSymbol);
                             _this.map.graphics.add(highlightGraphic);
                             topic.publish("hideProgressIndicator");

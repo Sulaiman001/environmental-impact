@@ -30,7 +30,7 @@ define([
     "dojo/dom-class",
     "dojo/dom-geometry",
     "esri/tasks/GeometryService",
-     "dijit/Dialog",
+    "dijit/Dialog",
     "dojo/string",
     "dojo/_base/html",
     "dojo/text!./templates/reportsTemplate.html",
@@ -39,10 +39,10 @@ define([
     "esri/symbols/SimpleFillSymbol",
     "esri/symbols/SimpleMarkerSymbol",
     "esri/symbols/PictureMarkerSymbol",
-     "dijit/TooltipDialog",
-     "dijit/place",
+    "dijit/TooltipDialog",
+    "dijit/place",
     "dijit/form/CheckBox",
-     "dijit/form/Button",
+    "dijit/form/Button",
     "esri/graphic",
     "esri/tasks/BufferParameters",
     "dijit/_WidgetBase",
@@ -61,9 +61,9 @@ define([
     "dojo/DeferredList",
     "esri/tasks/query",
     "esri/tasks/QueryTask",
-     "esri/tasks/AreasAndLengthsParameters",
-     "esri/request",
-     "dojo/_base/json",
+    "esri/tasks/AreasAndLengthsParameters",
+    "esri/request",
+    "dojo/_base/json",
     "dojo/string"
 
 ], function (declare, domConstruct, on, topic, lang, array, domStyle, domAttr, dom, query, domClass, domGeom, GeometryService, Dialog, string, html, template, Color, SimpleLineSymbol, SimpleFillSymbol, SimpleMarkerSymbol, PictureMarkerSymbol, TooltipDialog, Place, CheckBox, Button, Graphic, BufferParameters, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, appNls, GraphicsLayer, Draw, HorizontalSlider, HorizontalRule, HorizontalRuleLabels, RadioButton, ScrollBar, Deferred, DeferredList, Query, QueryTask, AreasAndLengthsParameters, esriRequest, dojoJson, dojoString) {
@@ -287,7 +287,7 @@ define([
                 this.sliderDistance = Math.round(value);
                 if (this.map.graphics.graphics[0].symbol) {
                     setTimeout(lang.hitch(this, function () {
-               topic.publish("createBuffer", this.featureGeometry, this.sliderUnitValue);
+                        topic.publish("createBuffer", this.featureGeometry, this.sliderUnitValue);
                     }), 500);
                 }
             })));
@@ -378,31 +378,31 @@ define([
         _sliderStartEndValue: function (radioBtnValue, horizontalSlider, index, radioClicked) {
             var sliderStartValue, sliderEndValue;
             switch (radioBtnValue) {
-                case "Miles":
-                    sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue;
-                    sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue;
-                    this.sliderUnitValue = "UNIT_STATUTE_MILE";
-                    break;
-                case "Feet":
-                    sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue;
-                    sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue;
-                    this.sliderUnitValue = "UNIT_FOOT";
-                    break;
-                case "Meters":
-                    sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue;
-                    sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue;
-                    this.sliderUnitValue = "UNIT_METER";
-                    break;
-                case "Kilometers":
-                    sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue;
-                    sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue;
-                    this.sliderUnitValue = "UNIT_KILOMETER";
-                    break;
-                default:
-                    sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue;
-                    sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue;
-                    this.sliderUnitValue = "UNIT_STATUTE_MILE";
-                    break;
+            case "Miles":
+                sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue;
+                sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue;
+                this.sliderUnitValue = "UNIT_STATUTE_MILE";
+                break;
+            case "Feet":
+                sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue;
+                sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue;
+                this.sliderUnitValue = "UNIT_FOOT";
+                break;
+            case "Meters":
+                sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue;
+                sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue;
+                this.sliderUnitValue = "UNIT_METER";
+                break;
+            case "Kilometers":
+                sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue;
+                sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue;
+                this.sliderUnitValue = "UNIT_KILOMETER";
+                break;
+            default:
+                sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue;
+                sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue;
+                this.sliderUnitValue = "UNIT_STATUTE_MILE";
+                break;
             }
             domAttr.set(query(".dijitRuleLabel")[0], "innerHTML", sliderStartValue);
             domAttr.set(query(".dijitRuleLabel")[1], "innerHTML", sliderEndValue);
@@ -429,24 +429,24 @@ define([
             this.map.getLayer("tempBufferLayer").clear();
             toolbar.deactivate();
             switch (evt.geometry.type) {
-                case "point":
-                case "multipoint":
-                    symbol = new SimpleMarkerSymbol();
-                    break;
-                case "polyline":
-                    symbol = new SimpleLineSymbol();
-                    break;
-                case "extent":
-                    geometry = evt.geometry;
-                    symbol = new esri.geometry.Polygon(geometry.spatialReference);
-                    symbol.addRing([[geometry.xmin, geometry.ymin], [geometry.xmin, geometry.ymax], [geometry.xmax, geometry.ymax], [geometry.xmax, geometry.ymin], [geometry.xmin, geometry.ymin]]);
-                    break;
-                case "polygon":
-                    symbol = new SimpleLineSymbol();
-                    break;
-                default:
-                    symbol = new SimpleFillSymbol();
-                    break;
+            case "point":
+            case "multipoint":
+                symbol = new SimpleMarkerSymbol();
+                break;
+            case "polyline":
+                symbol = new SimpleLineSymbol();
+                break;
+            case "extent":
+                geometry = evt.geometry;
+                symbol = new esri.geometry.Polygon(geometry.spatialReference);
+                symbol.addRing([[geometry.xmin, geometry.ymin], [geometry.xmin, geometry.ymax], [geometry.xmax, geometry.ymax], [geometry.xmax, geometry.ymin], [geometry.xmin, geometry.ymin]]);
+                break;
+            case "polygon":
+                symbol = new SimpleLineSymbol();
+                break;
+            default:
+                symbol = new SimpleFillSymbol();
+                break;
             }
             graphic = new Graphic(evt.geometry, symbol);
             this.map.graphics.add(graphic);
@@ -491,9 +491,7 @@ define([
                             this.showBuffer(geometries, sliderUnitValue);
                         }));
                     }));
-                }
-
-                else {
+                } else {
                     alert(sharedNls.errorMessages.bufferSliderValue);
                 }
             }
@@ -504,7 +502,7 @@ define([
             var _self, symbol;
             _self = this;
             symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID, new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([255, 0, 0, 0.65]), 2),
-        new Color([255, 0, 0, 0.35]));
+                new Color([255, 0, 0, 0.35]));
             array.forEach(bufferedGeometries, function (geometry) {
                 var graphic = new Graphic(geometry, symbol);
                 _self.map.getLayer("tempBufferLayer").add(graphic);
@@ -514,7 +512,7 @@ define([
 
         _queryLayers: function (geometry, sliderUnitValue) {
             var _self = this, statisticResultArray = [], layerFieldCount = [], reportFields, staticFieldName, reportFieldName, staticTypeValue,
-             index,
+                index,
                 deferredListResult, requestHandle,
                 onMapFeaturArray = [];
             this.counter = 0;
@@ -531,7 +529,7 @@ define([
             }
             deferredListResult = new DeferredList(onMapFeaturArray);
             deferredListResult.then(lang.hitch(this, function (result) {
-                var i, statisticType, layerInfoCollection = [], reportFieldsCount = 0, count, countPointFields = 0, standardPointLayerUnit;
+                var i, statisticType, layerInfoCollection = [], reportFieldsCount = 0, count, standardPointLayerUnit;
                 layerInfoCollection.push(result);
                 if (result) {
                     for (i = 0; i < dojo.configData.SearchSettings.length; i++) {
@@ -545,7 +543,6 @@ define([
                             for (count = 0; count < reportFieldsCount; count++) {
                                 reportFieldName = reportFields[count];
                                 staticFieldName = reportFieldName;
-                                countPointFields = reportFieldsCount;
                                 statisticResultArray.push(this._executeQueryTaskPointReport(i, geometry, statisticType, reportFieldName, staticFieldName, staticTypeValue, standardPointLayerUnit));
                             }
 
@@ -572,8 +569,7 @@ define([
                         }
                     }));
                 }
-            }),
-            function (err) {
+            }), function (err) {
                 alert(err.message);
             });
         },
@@ -642,15 +638,15 @@ define([
             })));
             for (count = 0; count < featureArrayCollection.length; count++) {
                 if ((featureArrayCollection[count].FieldName === dojo.configData.SearchSettings[featureCollection].QuickSummaryReportFields) ||
-                    (featureArrayCollection[count].FieldName === dojo.configData.SearchSettings[featureCollection].GroupByField) ||
-                    (featureArrayCollection[count].FieldName === dojo.configData.SearchSettings[featureCollection].DetailSummaryReportFields[0])) {
+                        (featureArrayCollection[count].FieldName === dojo.configData.SearchSettings[featureCollection].GroupByField) ||
+                        (featureArrayCollection[count].FieldName === dojo.configData.SearchSettings[featureCollection].DetailSummaryReportFields[0])
+                        ) {
                     domConstruct.create("div", { "class": "esriCTReportZoneName", "innerHTML": featureArrayCollection[count].FieldName }, divReportLayerPanel, "last");
                     for (j = 0; j < featureArrayCollection[count].attr.length; j++) {
                         this.value = string.substitute("${" + featureArrayCollection[count].FieldName + "}",
-                    featureArrayCollection[count].attr[j].attributes);
+                            featureArrayCollection[count].attr[j].attributes);
                         this.StatisticTypeValue = string.substitute("${Total}", featureArrayCollection[count].attr[j].attributes);
-                        if (typeof (featureArrayCollection[count].attr[j].attributes.Total) === "number" && this.StatisticTypeValue.indexOf(".") !== -1)
-            {
+                        if (typeof (featureArrayCollection[count].attr[j].attributes.Total) === "number" && this.StatisticTypeValue.indexOf(".") !== -1) {
                             this.StatisticTypeValue = parseFloat(this.StatisticTypeValue);
                             this.StatisticTypeValue = (this.StatisticTypeValue * 0.00024711);
                         }
@@ -664,8 +660,7 @@ define([
 
 
         _configureDialogBox: function (dialogBoxId) {
-            var _self = this,
-             DetailFieldValues, createContent, i;
+            var _self = this, DetailFieldValues, createContent, i;
             for (i = 0; i < dojo.configData.SearchSettings.length; i++) {
                 if (dojo.configData.SearchSettings[i].QueryLayerId === dialogBoxId) {
                     DetailFieldValues = dojo.configData.SearchSettings[i].DetailSummaryReportFields;
@@ -686,8 +681,7 @@ define([
         },
 
         _executeQueryTaskPointReport: function (index, geometry, statisticType, reportFieldName, staticFieldName, staticTypeValue, unit) {
-            var obj = {},
-            queryTask, queryLayer, statDef, deferred;
+            var obj = {}, queryTask, queryLayer, statDef, deferred;
             statDef = new esri.tasks.StatisticDefinition();
             statDef.statisticType = statisticType;
             statDef.onStatisticField = staticFieldName;
@@ -784,9 +778,10 @@ define([
         },
 
         _findSelectedCheckBox: function (addReportCheckBox, dialogBoxId) {
+            var value, t, i;
+
             this.dialogBoxTrue = true;
-            var value,
-            t = query(".inputValues"), i;
+            t = query(".inputValues");
             for (i = 0; i < t.length; i++) {
                 if (t[i].childNodes[i].checked) {
                     value = t[i].childNodes[i].value;
