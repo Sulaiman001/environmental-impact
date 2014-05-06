@@ -1,5 +1,5 @@
 ﻿/*global define,dojo,dojoConfig,alert,esri,locatorParams */
-/*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true */
+/*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4 */
 /*
  | Copyright 2013 Esri
  |
@@ -48,8 +48,10 @@ define([
     "esri/symbols/SimpleFillSymbol",
     "esri/symbols/SimpleMarkerSymbol",
     "dojo/_base/Color",
-    "esri/graphic"
-], function (declare, domConstruct, domStyle, domAttr, lang, on, domGeom, dom, domClass, query, string, Locator, Query, ScrollBar, Deferred, DeferredList, QueryTask, Geometry, cookie, Point, template, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, appNls, topic, SimpleLineSymbol, SimpleFillSymbol, SimpleMarkerSymbol, Color, Graphic) {
+    "esri/graphic",
+    "esri/geometry/webMercatorUtils",
+    "dojo/query"
+], function (declare, domConstruct, domStyle, domAttr, lang, on, domGeom, dom, domClass, query, string, Locator, Query, ScrollBar, Deferred, DeferredList, QueryTask, Geometry, cookie, Point, template, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, appNls, topic, SimpleLineSymbol, SimpleFillSymbol, SimpleMarkerSymbol, Color, Graphic, webMercatorUtils, dojoQuery) {
     //========================================================================================================================//
 
     return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
@@ -60,6 +62,7 @@ define([
         stagedSearch: null,
         locatorScrollbar: null,
         locatorAOIScrollbar: null,
+        locatorAOIBearingScrollbar: null,
         screenPoint: null,
 
         /**
@@ -121,7 +124,8 @@ define([
                 divResults: this.divAddressResults,
                 divAddressContent: this.divAddressContent,
                 divAddressScrollContent: this.divAddressScrollContent,
-                isAOISearch: false
+                isAOISearch: false,
+                isAOIBearingSearch: false
             };
             this._attachLocatorEvents(locatorParams);
         },
@@ -491,7 +495,7 @@ define([
                 candidateArray, divAddressCounty, candidate, listContainer, i, divAddressSearchCell;
 
             domConstruct.empty(locatorParams.divResults);
-            if (locatorParams.isAOISearch) {
+            if (locatorParams.isAOISearch || locatorParams.isAOIBearingSearch) {
                 domStyle.set(locatorParams.divAddressScrollContent, "display", "block");
             }
             if (lang.trim(locatorParams.textAddress.value) === "") {
@@ -515,7 +519,7 @@ define([
             * display all the located address in the address container
             * 'this.divAddressResults' div dom element contains located addresses, created in widget template
             */
-            if (!locatorParams.isAOISearch) {
+            if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch) {
                 if (this.locatorScrollbar) {
                     domClass.add(this.locatorScrollbar._scrollBarContent, "esriCTZeroHeight");
                     this.locatorScrollbar.removeScrollBar();
@@ -523,6 +527,15 @@ define([
                 this.locatorScrollbar = new ScrollBar({ domNode: locatorParams.divAddressScrollContent });
                 this.locatorScrollbar.setContent(locatorParams.divResults);
                 this.locatorScrollbar.createScrollBar();
+            } else if (!locatorParams.isAOISearch && locatorParams.isAOIBearingSearch) {
+                if (this.locatorAOIBearingScrollbar) {
+                    domClass.add(this.locatorAOIBearingScrollbar._scrollBarContent, "esriCTZeroHeight");
+                    this.locatorAOIBearingScrollbar.removeScrollBar();
+                }
+                this.locatorAOIBearingScrollbar = new ScrollBar({ domNode: locatorParams.divAddressScrollContent });
+                this.locatorAOIBearingScrollbar.setContent(locatorParams.divResults);
+                this.locatorAOIBearingScrollbar.createScrollBar();
+
             } else {
                 if (this.locatorAOIScrollbar) {
                     domClass.add(this.locatorAOIScrollbar._scrollBarContent, "esriCTZeroHeight");
@@ -544,10 +557,14 @@ define([
                             domStyle.set(locatorParams.imgSearchLoader, "display", "none");
                             domStyle.set(locatorParams.close, "display", "block");
                             addrList.push(divAddressSearchCell);
-                            if (!locatorParams.isAOISearch) {
+                            if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch) {
                                 this._toggleAddressList(addrList, addrListCount, locatorParams);
                                 addrListCount++;
                                 listContainer = domConstruct.create("div", { "class": "listContainer esriCTHideAddressList" }, locatorParams.divResults);
+                            } else if (!locatorParams.isAOISearch && locatorParams.isAOIBearingSearch) {
+                                this._toggleAddressList(addrList, addrListCount, locatorParams);
+                                addrListCount++;
+                                listContainer = domConstruct.create("div", { "class": "listContainerBearingAOI esriCTHideAddressList" }, locatorParams.divResults);
                             } else {
                                 this._toggleAddressList(addrList, addrListCount, locatorParams);
                                 addrListCount++;
@@ -571,8 +588,10 @@ define([
         _toggleAddressList: function (addressList, idx, locatorParams) {
             on(addressList[idx], "click", lang.hitch(this, function () {
                 var listContainer, listStatusSymbol;
-                if (!locatorParams.isAOISearch) {
+                if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch) {
                     listContainer = query(".listContainer")[idx];
+                } else if (!locatorParams.isAOISearch && locatorParams.isAOIBearingSearch) {
+                    listContainer = query(".listContainerBearingAOI")[idx];
                 } else {
                     listContainer = query(".listContainerAOI")[idx];
                 }
@@ -580,8 +599,10 @@ define([
                     domClass.toggle(listContainer, "esriCTShowAddressList");
                     listStatusSymbol = (domAttr.get(query(".esriCTPlusMinus")[idx], "innerHTML") === "+") ? "-" : "+";
                     domAttr.set(query(".esriCTPlusMinus")[idx], "innerHTML", listStatusSymbol);
-                    if (!locatorParams.isAOISearch) {
+                    if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch) {
                         this.locatorScrollbar.resetScrollBar();
+                    } else if (!locatorParams.isAOISearch && locatorParams.isAOIBearingSearch) {
+                        this.locatorAOIBearingScrollbar.resetScrollBar();
                     } else {
                         this.locatorAOIScrollbar.resetScrollBar();
                     }
@@ -589,8 +610,10 @@ define([
                 }
                 domClass.add(listContainer, "esriCTShowAddressList");
                 domAttr.set(query(".esriCTPlusMinus")[idx], "innerHTML", "-");
-                if (!locatorParams.isAOISearch) {
+                if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch) {
                     this.locatorScrollbar.resetScrollBar();
+                } else if (!locatorParams.isAOISearch && locatorParams.isAOIBearingSearch) {
+                    this.locatorAOIBearingScrollbar.resetScrollBar();
                 } else {
                     this.locatorAOIScrollbar.resetScrollBar();
                 }
@@ -604,7 +627,7 @@ define([
         * @memberOf widgets/locator/locator
         */
         _displayValidLocations: function (candidate, index, candidateArray, listContainer, locatorParams) {
-            var _this = this, candidateAddress, divAddressRow;
+            var _this = this, candidateAddress, divAddressRow, normalizedVal, layer, infoIndex, intialLat, initiallong, highlightSymbol, highlightGraphic;
             domClass.remove(locatorParams.divAddressContent, "esriCTAddressResultHeight");
             domClass.add(locatorParams.divAddressContent, "esriCTAddressContainerHeight");
             divAddressRow = domConstruct.create("div", { "class": "esriCTrowTable" }, listContainer);
@@ -625,14 +648,14 @@ define([
                 alert(sharedNls.errorMessages.falseConfigParams);
             }
             candidateAddress.onclick = function () {
-                var layer, infoIndex, highlightSymbol, highlightGraphic;
+
                 topic.publish("showProgressIndicator");
                 if (_this.map.infoWindow) {
                     _this.map.infoWindow.hide();
                 }
                 locatorParams.textAddress.value = this.innerHTML;
                 domAttr.set(locatorParams.textAddress, "defaultAddress", locatorParams.textAddress.value);
-                if (!locatorParams.isAOISearch) {
+                if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch) {
                     _this._hideAddressContainer();
                 } else {
                     domStyle.set(locatorParams.divAddressScrollContent, "display", "none");
@@ -641,8 +664,18 @@ define([
                 if (candidate.attributes.location) {
                     _this.mapPoint = new Point(domAttr.get(this, "x"), domAttr.get(this, "y"), _this.map.spatialReference);
                     _this._locateAddressOnMap(_this.mapPoint, locatorParams);
+                    normalizedVal = webMercatorUtils.xyToLngLat(_this.mapPoint.x, _this.mapPoint.y);
+                    if (locatorParams.isAOIBearingSearch) {
+                        intialLat = dojoQuery(".esriCTaddLatitudeValue");
+                        intialLat[0].value = normalizedVal[0];
+                        intialLat[0].innerHTML = normalizedVal[0];
+                        initiallong = dojoQuery(".esriCTaddLongitudeValue");
+                        initiallong[0].value = normalizedVal[1];
+                        initiallong[0].innerHTML = normalizedVal[1];
+                    }
+
                 } else {
-                    if (!locatorParams.isAOISearch) {
+                    if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch) {
                         if (candidateArray[domAttr.get(candidateAddress, "index", index)]) {
                             layer = candidateArray[domAttr.get(candidateAddress, "index", index)].layer.QueryURL;
                             for (infoIndex = 0; infoIndex < dojo.configData.SearchSettings.length; infoIndex++) {
@@ -653,31 +686,36 @@ define([
                         }
                     } else {
                         if (candidate.geometry.type === "point") {
-                            _this.map.centerAt(candidate.geometry);
-                            highlightSymbol = new SimpleMarkerSymbol(
-                                SimpleMarkerSymbol.STYLE_CIRCLE,
-                                15,
-                                new SimpleLineSymbol(
-                                    SimpleLineSymbol.STYLE_SOLID,
+                            if (locatorParams.isAOIBearingSearch) {
+                                normalizedVal = webMercatorUtils.xyToLngLat(candidate.geometry.x, candidate.geometry.y);
+                                intialLat = dojoQuery(".esriCTaddLatitudeValue");
+                                intialLat[0].value = normalizedVal[0];
+                                intialLat[0].innerHTML = normalizedVal[0];
+                                initiallong = dojoQuery(".esriCTaddLongitudeValue");
+                                initiallong[0].value = normalizedVal[1];
+                                initiallong[0].innerHTML = normalizedVal[1];
+                                topic.publish("hideProgressIndicator");
+                            } else {
+                                _this.map.centerAt(candidate.geometry);
+                                highlightSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_CIRCLE, 15,
+                                    new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
+                                        new Color([
+                                            parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[0], 10),
+                                            parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[1], 10),
+                                            parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[2], 10),
+                                            parseFloat(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolTransparency.split(",")[0], 10)
+                                        ]), 2),
                                     new Color([
-                                        parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[0], 10),
-                                        parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[1], 10),
-                                        parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[2], 10),
-                                        parseFloat(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolTransparency.split(",")[0], 10)
-                                    ]),
-                                    2
-                                ),
-                                new Color([
-                                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[0], 10),
-                                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[1], 10),
-                                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10),
-                                    parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)
-                                ])
-                            );
-                            highlightGraphic = new Graphic(candidate.geometry, highlightSymbol);
-                            _this.map.graphics.add(highlightGraphic);
-                            topic.publish("hideProgressIndicator");
-                            topic.publish("createBuffer", candidate.geometry, null);
+                                        parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[0], 10),
+                                        parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[1], 10),
+                                        parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10),
+                                        parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)
+                                    ]));
+                                highlightGraphic = new Graphic(candidate.geometry, highlightSymbol);
+                                _this.map.graphics.add(highlightGraphic);
+                                topic.publish("hideProgressIndicator");
+                                topic.publish("createBuffer", candidate.geometry, null);
+                            }
                         } else {
                             _this.map.setExtent(candidate.geometry.getExtent());
                             _this.map.graphics.clear();
@@ -881,8 +919,10 @@ define([
             geoLocationPushpin = dojoConfig.baseURL + dojo.configData.LocatorSettings.DefaultLocatorSymbol;
             locatorMarkupSymbol = new esri.symbol.PictureMarkerSymbol(geoLocationPushpin, dojo.configData.LocatorSettings.MarkupSymbolSize.width, dojo.configData.LocatorSettings.MarkupSymbolSize.height);
             graphic = new esri.Graphic(mapPoint, locatorMarkupSymbol, {}, null);
-            this.map.getLayer("esriGraphicsLayerMapSettings").clear();
-            this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+            if (!locatorParams.isAOIBearingSearch) {
+                this.map.getLayer("esriGraphicsLayerMapSettings").clear();
+                this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+            }
             if (locatorParams.isAOISearch) {
                 topic.publish("createBuffer", mapPoint, null);
             }

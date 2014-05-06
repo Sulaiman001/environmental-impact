@@ -1,5 +1,5 @@
 ﻿/*global define */
-/*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true */
+/*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4  */
 /*
  | Copyright 2013 Esri
  |
@@ -54,7 +54,7 @@ define([], function () {
         CustomLogoUrl: "",
 
         // Set Proxy URL
-        ProxyUrl:"/proxy/proxy.ashx",
+        ProxyUrl: "/proxy/proxy.ashx",
 
         // Set splash window content - Message that appears when the application starts
         SplashScreen: {
@@ -179,6 +179,8 @@ define([], function () {
         // Minimum width should be 330 for the info-popup in pixels
         InfoPopupWidth: 300,
 
+        rendererColor: "#1C86EE",
+
         BufferSliderSettings: {
             defaultValue: 0,
             minValue: 0,
@@ -199,7 +201,7 @@ define([], function () {
             FillSymbolTransparency: "0.30",
             LineSymbolColor: "255,0,0",
             LineSymbolTransparency: "1",
-            MarkerSymbolColor:"255,0,0",
+            MarkerSymbolColor: "255,0,0",
             MarkerSymbolTransparency: "1"
         },
 
@@ -207,22 +209,22 @@ define([], function () {
             DistanceUnitName: "Miles",
             MinimumValue: 0,
             MaximumValue: 100,
-            Checked:true
-        },{
+            Checked: true
+        }, {
             DistanceUnitName: "Feet",
             MinimumValue: 0,
             MaximumValue: 1000,
-            Checked:false
-        },{
+            Checked: false
+        }, {
             DistanceUnitName: "Meters",
             MinimumValue: 0,
             MaximumValue: 1000,
-            Checked:false
+            Checked: false
         }, {
             DistanceUnitName: "Kilometers",
             MinimumValue: 0,
             MaximumValue: 100,
-            Checked:false
+            Checked: false
         }],
 
         ShowMapAttribution: true,
@@ -259,7 +261,7 @@ define([], function () {
                 DisplayText: "Date Created:",
                 FieldName: "${DATE_CREAT}"
             }]
-        },  {
+        }, {
             Title: "EIAPoly",
             QueryLayerId: "10",
             InfoWindowHeaderField: "${MANAME}",
@@ -310,6 +312,7 @@ define([], function () {
             DisplayText: "Address",
             LocatorDefaultAddress: "Grandview Ln N, Bismarck, ND, 58503",
             LocatorDefaultAOIAddress: "Mulberry, Florida",
+            LocatorDefaultAOIBearingAddress: "Mulberry, Florida",
             LocatorParameters: {
                 SearchField: "SingleLine",
                 SearchBoundaryField: "searchExtent"
@@ -324,6 +327,13 @@ define([], function () {
             FilterFieldName: 'Addr_Type',
             FilterFieldValues: ["StreetAddress", "StreetName", "PointAddress", "POI"],
             MaxResults: 200
+        },
+
+        AOISymbology: {
+            PointFillSymbolColor: "#FFFFFF",
+            PointSymbolBorder: "#0000FF",
+            PointSymbolBorderWidth: "2",
+            LineSymbolColor: "#0000FF"
         },
 
         // ------------------------------------------------------------------------------------------------------------------------
