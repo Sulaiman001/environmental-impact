@@ -376,6 +376,7 @@ define([
             }));
 
             on(divLinkDrawTool, "click", lang.hitch(this, function () {
+                dojo.initialCoordinates = false;
                 this._showDrawContainer(divAreaIntContainer, divLinkUpload, divLinkDrawTool, divLinkCoordinates);
             }));
 
@@ -1021,6 +1022,7 @@ define([
                 this.map.setLevel(dojo.configData.ZoomLevel);
                 this.map.centerAt(this.mapPoint);
                 if (this.flagMultiplePoints === 0) {
+                    this.map.graphics.clear();
                     this.map.getLayer("esriGraphicsLayerMapSettings").clear();
                     this.polyLine.addPath([[this.mapPoint.x, this.mapPoint.y]]);
                     this.flagMultiplePoints++;
@@ -1062,11 +1064,11 @@ define([
                     this.mapPoint = graphicsLayer.graphics[0].geometry;
                     topic.publish("createBuffer", this.mapPoint, null);
                 } else {
+                    this.map.getLayer("tempBufferLayer").clear();
                     this.map.graphics.clear();
                     this.mapPoint = null;
                     this.flagMultiplePoints = 0;
                 }
-
             }
         },
 

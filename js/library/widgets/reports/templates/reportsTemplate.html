@@ -62,7 +62,18 @@
                 </div>
                 <div data-dojo-attach-point="divRadioButtonContainer">
                 </div>
-
+                <div data-dojo-attach-point="divFileUploadContainer" class="esriCTUploadContainer">
+                    <input type="text" id="fileName" class="file_input_textbox" readonly />
+                    <div class="esriCTFileInputDiv">
+                        <div class="esriCTBrowseButton">
+                            <label>
+                                ${sharedNls.buttons.browse}</label>
+                            <input type="file" class="esriCTFileInputHidden" />
+                        </div>
+                        <div class="esriCTUploadButton">
+                            ${sharedNls.buttons.upload}</div>
+                    </div>
+                </div>
                 <div data-dojo-attach-point="divBearingContainer" style="display: none">
                     <div class="esriCTBearingLableConatiner">
                         <div class="esriCTBearingLable">
