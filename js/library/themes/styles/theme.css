@@ -162,6 +162,17 @@ html, body
     position: relative;
 }
 
+.esriCTAOIAddressBearingScrollContent
+{
+     overflow: hidden;
+    width: 90%;
+    float: right !important;
+    margin-right: 5px;
+    height: 100px !important;
+    position: relative;
+
+    }
+
 .esriCTAddressContentHeight
 {
     height: 312px !important;
@@ -1756,6 +1767,7 @@ input
 {
     vertical-align: middle;
     float: left;
+    padding-left:2px;
 }
 
 .esriCTInfoLoader

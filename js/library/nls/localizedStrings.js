@@ -1,5 +1,5 @@
 ﻿/*global define */
-/*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true */
+/*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4 */
 /*
  | Copyright 2013 Esri
  |
@@ -36,7 +36,8 @@ define({
             locate: "Locate",
             share: "Share",
             help: "Help",
-            clearEntry: "Clear"
+            clearEntry: "Clear",
+            selectInitialCoordinates: "select Initial Coordinates"
         },
         titles: {
             areaOfInterestTabText: "Area of Interest",
@@ -82,7 +83,11 @@ define({
             shareFailed: "Unable to share.",
             emptyInfoWindowTitle: "No feature details",
             emptyInfoWindowContent: "InfoWindow is disabled for the selected layer in webmap.",
-            bufferSliderValue: "Buffer slider should not be set to zero distance"
+            bufferSliderValue: "Buffer slider should not be set to zero distance",
+            addLattitudeValue: "Please enter valid Lattitude",
+            addLongitudeValue: "Please enter valid Longitude.",
+            addBearingValue: "Please add Bearing value.",
+            addDistanceMiles: "Please add Distance in miles."
         }
     },
     es: true,

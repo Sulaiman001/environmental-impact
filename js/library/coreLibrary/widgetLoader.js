@@ -1,5 +1,5 @@
 ﻿/*global define,dojo,require,alert */
-/*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true */
+/*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4 */
 /*
  | Copyright 2013 Esri
  |
@@ -101,7 +101,6 @@ define([
                     * create application header
                     */
                     this._createApplicationHeader(widgets);
-                   // topic.publish("createLegend");
                 } catch (ex) {
                     alert(sharedNls.errorMessages.widgetNotLoaded);
                 }

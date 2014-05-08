@@ -103,8 +103,8 @@
                                         <div data-dojo-attach-point="divAddressScrollContainer" class="esriCTAddressScrollContainerReport"
                                             align="left">
                                             <div data-dojo-attach-point="divAOIBearingAddressScrollContent" style="display: none"
-                                                class="esriCTAOIAddressScrollContent">
-                                                <div data-dojo-attach-point="divAOIAddressResults" class="esriCTFullWidth">
+                                                class="esriCTAOIAddressBearingScrollContent">
+                                                <div data-dojo-attach-point="divAOIBearingAddressResults" class="esriCTFullWidth">
                                                 </div>
                                             </div>
                                         </div>
@@ -119,7 +119,7 @@
                         <div>
                             <div class="esriCTStartPoint">
                                 ${sharedNls.messages.startPoint}</div>
-                            <div class="esriCTSelectionIconMapClick esriCTMapClickPoint">
+                            <div class="esriCTSelectionIconMapClick esriCTMapClickPoint" data-dojo-attach-point="divInitialCoordinates">
                             </div>
                         </div>
                         <div data-dojo-attach-point="divBearingTextboxContainer" class="esriCTBearingTextboxContainer">
@@ -138,29 +138,15 @@
                             </div>
                             <div class="esriCTBearingTextbox">
                                 <div class="esriCTBearingFirstColumn">
-                                    <input type="text" /></div>
+                                    <input type="text" data-dojo-attach-point="addLatitudeValue" class="esriCTaddLatitudeValue" /></div>
                                 <div class="esriCTBearingSecondColumn">
-                                    <input type="text" /></div>
+                                    <input type="text" data-dojo-attach-point="addLongitudeValue" class="esriCTaddLongitudeValue" /></div>
                                 <div class="esriCTBearingThirdColumn">
-                                    <input type="text" /></div>
+                                    <input type="text" data-dojo-attach-point="addBearingValue" class="esriCTaddBearingValue" /></div>
                                 <div class="esriCTBearingFourthColumn">
-                                    <input type="text" /></div>
-                                <div class="esriCTBearingFifthColumn">
+                                    <input type="text" data-dojo-attach-point="addDistanceMiles" class="esriCTaddDistanceMiles" /></div>
+                                <div class="esriCTBearingFifthColumn" data-dojo-attach-point="addBearingTextBox">
                                     <a href="#">${sharedNls.buttons.add}</a></div>
-                            </div>
-                            <div class="esriCTBearingTextbox">
-                                <div class="esriCTBearingFirstColumn">
-                                    <input type="text" /></div>
-                                <div class="esriCTBearingSecondColumn">
-                                    <input type="text" /></div>
-                                <div class="esriCTBearingThirdColumn">
-                                    <input type="text" /></div>
-                                <div class="esriCTBearingFourthColumn">
-                                    <input type="text" /></div>
-                                <div class="esriCTBearingFifthColumn">
-                                    <div class="esriCTCloseIcon">
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
