@@ -28,7 +28,6 @@ define([
     "dojo/dom-class",
     "dijit/_WidgetBase",
     "dojo/i18n!application/js/library/nls/localizedStrings",
-    "dojo/i18n!application/nls/localizedStrings",
     "esri/map",
     "esri/layers/ImageParameters",
     "esri/layers/FeatureLayer",
@@ -46,8 +45,9 @@ define([
     "esri/layers/ArcGISDynamicMapServiceLayer",
     "esri/geometry/webMercatorUtils",
     "dojo/query",
+    "dojo/_base/array",
     "dojo/domReady!"
-], function (declare, domConstruct, domStyle, lang, esriUtils, dom, domAttr, query, domClass, _WidgetBase, sharedNls, appNls, esriMap, ImageParameters, FeatureLayer, GraphicsLayer, BaseMapGallery, Legends, GeometryExtent, HomeButton, Deferred, DeferredList, topic, on, InfoWindow, template, ArcGISDynamicMapServiceLayer, webMercatorUtils, dojoQuery) {
+], function (declare, domConstruct, domStyle, lang, esriUtils, dom, domAttr, query, domClass, _WidgetBase, sharedNls, esriMap, ImageParameters, FeatureLayer, GraphicsLayer, BaseMapGallery, Legends, GeometryExtent, HomeButton, Deferred, DeferredList, topic, on, InfoWindow, template, ArcGISDynamicMapServiceLayer, webMercatorUtils, dojoQuery, array) {
 
     //========================================================================================================================//
 
@@ -57,8 +57,8 @@ define([
         templateString: template,
         tempGraphicsLayerId: "esriGraphicsLayerMapSettings",
         tempBufferLayer: "tempBufferLayer",
+        tempShapeFileGraphicsLayer: "addShapeFileGraphicsLayer",
         sharedNls: sharedNls,
-        appNls: appNls,
         infoWindowPanel: null,
 
         /**
@@ -73,6 +73,8 @@ define([
             topic.subscribe("setInfoWindowOnMap", lang.hitch(this, function (infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count) {
                 this._onSetInfoWindowPosition(infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count);
             }));
+
+
             /**
             * load map
             * @param {string} dojo.configData.BaseMapLayers Basemap settings specified in configuration file
@@ -89,6 +91,15 @@ define([
                 mapDeferred.then(lang.hitch(this, function (response) {
                     clearTimeout(this.stagedSearch);
                     this.map = response.map;
+                    dojo.selectedBasemapIndex = 0;
+                    if (response.itemInfo.itemData.baseMap.baseMapLayers && response.itemInfo.itemData.baseMap.baseMapLayers[0].id) {
+                        if (response.itemInfo.itemData.baseMap.baseMapLayers[0].id !== "defaultBasemap") {
+                            this.map.getLayer(response.itemInfo.itemData.baseMap.baseMapLayers[0].id).id = "defaultBasemap";
+                            this.map._layers.defaultBasemap = this.map.getLayer(response.itemInfo.itemData.baseMap.baseMapLayers[0].id);
+                            delete this.map._layers[response.itemInfo.itemData.baseMap.baseMapLayers[0].id];
+                            this.map.layerIds[0] = "defaultBasemap";
+                        }
+                    }
                     this._fetchWebMapData(response);
                     topic.publish("setMap", this.map);
                     topic.publish("hideProgressIndicator");
@@ -105,13 +116,26 @@ define([
                 this.map = esriMap("esriCTParentDivContainer", {
                     showAttribution: dojo.configData.ShowMapAttribution
                 });
-                layer = new esri.layers.ArcGISTiledMapServiceLayer(dojo.configData.BaseMapLayers[0].MapURL, { id: "esriCTbasemap", visible: true });
-                this.map.addLayer(layer, 0);
+                if (dojo.configData.BaseMapLayers[0].length > 1) {
+                    array.forEach(dojo.configData.BaseMapLayers[0], lang.hitch(this, function (basemapLayer, index) {
+                        layer = new esri.layers.ArcGISTiledMapServiceLayer(basemapLayer.MapURL, { id: "defaultBasemap" + index, visible: true });
+                        this.map.addLayer(layer);
+                    }));
+                } else {
+                    layer = new esri.layers.ArcGISTiledMapServiceLayer(dojo.configData.BaseMapLayers[0].MapURL, { id: "defaultBasemap", visible: true });
+                    this.map.addLayer(layer);
+                }
                 this.map.on("load", lang.hitch(this, function () {
                     this._mapOnLoad();
                 }));
                 this._mapEvents();
             }
+
+            on(window, "resize", lang.hitch(this, function () {
+                topic.publish("resizeAOIPanel");
+                topic.publish("resizeReportsPanel");
+            }));
+
         },
 
         _fetchWebMapData: function (response) {
@@ -209,7 +233,7 @@ define([
                         }
                     }
                 } else {
-                    alert(appNls.errorMessages.webmapTitleError);
+                    alert(sharedNls.appErrorMessage.webmapTitleError);
                 }
             }
         },
@@ -309,7 +333,7 @@ define([
                                 }
                             }
                         } else {
-                            alert(appNls.errorMessages.layerTitleError);
+                            alert(sharedNls.appErrorMessage.layerTitleError);
                         }
                     }
                     for (x = 0; x < searchSettings.length; x++) {
@@ -319,10 +343,10 @@ define([
                         }
                     }
                     if (count !== dojo.configData.InfoWindowSettings.length) {
-                        alert(appNls.errorMessages.titleNotMatching);
+                        alert(sharedNls.appErrorMessage.titleNotMatching);
                     }
                 } else {
-                    alert(appNls.errorMessages.lengthDoNotMatch);
+                    alert(sharedNls.appErrorMessage.lengthDoNotMatch);
                 }
 
                 if (dojo.configData.BaseMapLayers.length > 1) {
@@ -340,6 +364,11 @@ define([
 
             graphicsLayer = new GraphicsLayer();
             graphicsLayer.id = this.tempBufferLayer;
+            this.map.addLayer(graphicsLayer);
+
+            graphicsLayer = new GraphicsLayer();
+            graphicsLayer.id = this.tempShapeFileGraphicsLayer;
+            graphicsLayer.spatialReference = this.map.extent.spatialReference;
             this.map.addLayer(graphicsLayer);
         },
 
@@ -443,7 +472,6 @@ define([
                     };
                 }
             } else {
-                alert(sharedNls.errorMessages.invalidSearch);
                 topic.publish("hideProgressIndicator");
             }
         },

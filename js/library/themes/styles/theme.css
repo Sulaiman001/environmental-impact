@@ -63,7 +63,7 @@ html, body
     background: #fff;
 }
 
-.esriCTApplicationHeaderText
+.esriCTApplicationHeaderTextTD
 {
     float: left;
     font-size: 22px;
@@ -91,27 +91,44 @@ html, body
 
 .esriCTHeaderSearch
 {
-    background-image: url("../images/locate.png");
+    background-image: url("../images/img24x24/search-24.png");
 }
 
 .esriCTHelpImg
 {
-    background-image: url("../images/help.png");
+    background-image: url("../images/img24x24/Help-24.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    margin: 12px 24px;
+    height: 26px;
+    width: 26px;
+    float: left;
+    cursor: pointer;
+    background-size: 26px auto;
 }
 
-.esriCTGeolocation
+
+.esriCTTdGeolocation
 {
-    background-image: url("../images/geolocation.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    margin: 12px 24px;
+    height: 26px;
+    width: 26px;
+    float: left;
+    cursor: pointer;
+    background-size: 26px auto;
+    background-image: url("../images/img24x24/imgGeolocation-24.png");
 }
 
 .esriCTImgSocialMedia
 {
-    background-image: url("../images/share.png");
+    background-image: url("../images/img24x24/imgSocialMedia-24.png");
 }
 
 .esriCTReportsImg
 {
-    background-image: url("../images/reports.png");
+    background-image: url("../images/img24x24/AOI-24.png");
 }
 
 .esriCTApplicationHeaderIcon
@@ -164,14 +181,13 @@ html, body
 
 .esriCTAOIAddressBearingScrollContent
 {
-     overflow: hidden;
+    overflow: hidden;
     width: 90%;
     float: right !important;
     margin-right: 5px;
     height: 100px !important;
     position: relative;
-
-    }
+}
 
 .esriCTAddressContentHeight
 {
@@ -209,6 +225,7 @@ html, body
     vertical-align: middle !important;
     height: 18px;
 }
+
 .esriCTTxtAddressReport
 {
     border: #DFDFDF solid 1px;
@@ -220,15 +237,17 @@ html, body
     vertical-align: middle !important;
     height: 18px;
 }
+
 input
 {
-    -webkit-appearance: none;
+
     border-radius: 0;
     font-size: 11px !important;
     color: #808080 !important;
     font-family: Verdana !important;
 }
 
+input[type="text"]{-webkit-appearance: none;}
 .esriCTTxtAddress::-ms-clear
 {
     display: none;
@@ -680,8 +699,9 @@ input
     margin-top: 49px;
 }
 
-.esriCTMapLogoURL
+.mapLogoUrl
 {
+    position: relative !important;
     margin-bottom: 32px;
 }
 
@@ -700,29 +720,37 @@ input
 
 /* Splash Screen*/
 
-.esriCTSplashScreenScrollBarContainer
-{
-    width: 100% !important;
-    position: relative !important;
-}
+.splashScreenScrollBarContainer
+ {
+     width: 100% !important;
+ }
 
 .esriCTSplashScreenDialog
 {
-    z-index: 10007;
-    padding: 5px;
+    z-index: 10002;
     background-color: #fff;
     color: #6e6e6e;
     width: 350px;
     height: 290px;
+    text-align:left;
+    position:relative;
 }
 
-.esriCTSplashScreenContent
+.divSplashContainer
+{
+    overflow: hidden;
+    position: relative;
+    height: 100%;
+}
+
+.esriGovtSplashContent
 {
     overflow: hidden;
     width: 90% !important;
     margin-top: 10px;
-    padding-left: 10px;
+    padding-left: 15px;
     position: relative;
+    text-align: justify;
 }
 
 .esriCTSplashScreenContainer
@@ -733,19 +761,19 @@ input
     text-align: justify;
 }
 
-.esriCTSplashTblDisplay
+.splashTbldspl
 {
     display: table;
     width: 100%;
     height: 100%;
 }
 
-.esriCTSplashTblDisplayRow
+.splashTbldsplRow
 {
     display: table-row;
 }
 
-.esriCTSplashTblDisplayCell
+.splashTbldsplCell
 {
     display: table-cell;
     vertical-align: middle;
@@ -762,12 +790,34 @@ input
     margin: 10px auto;
 }
 
-.esriCTCustomButtonInner
+.customButtonContainer
+{
+    width: 100%;
+    position: absolute;
+    bottom: 5px;
+    background: #fff;
+}
+
+.customButton
+{
+    border: none;
+    cursor: pointer;
+    width: 75px;
+    height: 25px !important;
+    margin: 10PX AUTO;
+}
+
+.customButtonInner
 {
     width: 100%;
     height: 100%;
     text-align: center;
     padding-top: 5px;
+}
+
+.esriCTRoundedCorner
+{
+    behavior: url("esri_template/core_library/PIE.htc");
 }
 
 /* End of splash Screen */
@@ -827,7 +877,7 @@ input
     z-index: 1000;
 }
 
-.esriCTBasemapThumbnail
+.basemapThumbnail
 {
     height: 90px;
     margin: 1px;
@@ -836,6 +886,7 @@ input
     -moz-box-shadow: 0 0 5px #666;
     -webkit-box-shadow: 0 0 5px #666;
     box-shadow: 0 0 5px #666;
+    behavior: url("PIE.htc");
     border: 4px solid #fff;
 }
 
@@ -850,17 +901,29 @@ input
 
 /* Loading indicator Styles */
 
-.esriCTLoadingIndicator
+.esriGovtLoadSpashScreen
 {
     top: 0px;
     left: 0px;
-    -pie-background: rgba(0,0,0,0.6);
-    background: rgba(0,0,0,0.6);
     position: absolute;
     width: 100%;
     height: 100%;
-    z-index: 10001;
-    cursor: default;
+}
+
+.esriCTLoadingIndicator
+{
+    height: 100%;
+    width: 100%;
+    z-index: 10001 !important;
+    position: absolute;
+    bottom: 0;
+    filter: alpha(opacity = 40);
+    -moz-opacity: 0.4;
+    -khtml-opacity: 0.4;
+    opacity: 0.4;
+    top: 0;
+    left: 0;
+    background-color:#000;
 }
 
 .esriCTFullContainer
@@ -931,10 +994,9 @@ input
     padding: 5px 2px;
 }
 
-/* Legend Styles */
+/*legends */
 
-.esriCTDivLegendContainer
-{
+.esriCTdivLegendbox {
     height: 31px;
     position: absolute;
     z-index: 998;
@@ -943,21 +1005,19 @@ input
     bottom: 0px;
 }
 
-.esriCTLegendBox
-{
+.divlegendLoadingContainer {
+    margin-top: 5px;
+    float: left;
+}
+
+.legendbox {
     float: none;
-    background: #FFFFFF;
     width: auto;
     overflow: hidden;
+    background: #FFFFFF;
 }
 
-.esriCTLegendBoxInner
-{
-    border-bottom: none !important;
-}
-
-.esriCTLegend
-{
+.legend {
     padding: 0;
     margin: 0;
     line-height: 40px;
@@ -966,79 +1026,79 @@ input
     margin-right: 5px;
 }
 
-.esriCTLegend img
-{
+.legend img {
     width: 16px !important;
     height: 16px !important;
 }
 
-.esriCTLegendLabel
-{
-    color: #6e6e6e;
+.legendlbl {
     line-height: 33px;
     display: table-cell;
     vertical-align: middle;
     margin-right: 25px;
 }
 
-.esriCTLegendBoxInner div
-{
+.legenboxInner div {
     float: left;
 }
 
-.esriCTLegendBoxInner div
-{
-    color: #464646;
-}
-
-.esriCTLegendRightBox
-{
-    width: 350px;
+.legendrightbox {
+    width: 287px;
     float: right;
     background: transparent;
 }
 
-.esriCTLegendRightBoxShift
-{
+.legendrightboxTest {
     width: 0px;
 }
 
-.esriCTLegendContent
-{
+.divlegendContent {
     padding-left: 10px;
     position: relative;
 }
 
-.esriCTLegendContainer
-{
+.divLegendlist {
+    display: table;
+}
+
+.divlegendContainer {
     height: 30px;
     overflow: hidden;
     position: relative;
     width: 100%;
 }
 
-.esriCTLegendListContent
-{
-    display: table;
-}
-
-.esriCTLegendList
-{
+.divlegendList {
     height: 100%;
     width: 100%;
 }
 
-.esriCTRightArrow
-{
+.esriCTLeftArrow {
+    overflow: hidden;
+    position: absolute;
+    left: 0px;
+    padding-bottom: 1px;
+    height: 30px;
+    width: 30px;
+    background-image: url("../images/left.png");
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.esriCTRightArrow {
     position: absolute;
     height: 30px;
     width: 30px;
-    right: 350px;
+    right: 0px;
     overflow: hidden;
+    padding-bottom: 1px;
+    background-image: url('../images/right.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: pointer !important;
 }
 
-.esriCTRightArrowShift
-{
+.divRightArrowRightMargin {
     position: absolute;
     height: 30px;
     width: 30px;
@@ -1046,28 +1106,13 @@ input
     overflow: hidden;
 }
 
-.esriCTLeftArrow
-{
-    overflow: hidden;
-    position: absolute;
-    left: 0px;
+.esriCTArrow {
     height: 30px;
     width: 30px;
 }
 
-.esriCTArrow
-{
-    height: 30px;
-    width: 30px;
-}
+/* End of legends */
 
-.esriCTLegendLoadingContainer
-{
-    margin-top: 5px;
-    float: left;
-}
-
-/* End of legend */
 
 /*Start of Infowindow style*/
 
@@ -1556,9 +1601,10 @@ input
 
 .esriCTBrowseButton label
 {
+    cursor: pointer;
+    line-height: 30px;
     position: absolute;
     width: 70px;
-    line-height: 30px;
 }
 
 .esriCTUploadButton
@@ -1705,6 +1751,14 @@ input
     width: 95%;
     padding: 10px 0;
 }
+
+.esriCTAnalysisReportLayerPanel
+{
+    float: left;
+    width: 95%;
+    padding: 10px 0;
+}
+
 .esriCTReportDisplayPanel
 {
     clear: both;
@@ -1735,6 +1789,7 @@ input
     height: 20px !important;
     width: 20px;
     padding-right: 20px;
+    cursor:pointer;
 }
 
 .esriCTReportTitle
@@ -1767,7 +1822,7 @@ input
 {
     vertical-align: middle;
     float: left;
-    padding-left:2px;
+    padding-left: 2px;
 }
 
 .esriCTInfoLoader
@@ -1866,4 +1921,130 @@ span .dijitReset .dijitInline .dijitButtonNode
     border-width: medium 0 0;
     height: 20px;
     padding: 7px 7px 4px;
+}
+
+.esriCTSelect
+{
+    border: none;
+    outline: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    margin-top: -1px;
+}
+
+.claro .dijitSelectFocused, .claro .dijitSelect, .dijitArrowButton, .claro .dijitSelect .dijitButtonContents, .claro, .dijitSelectHover, .dijitSelectLabel
+{
+    border: none !important;
+    background-color: transparent !important;
+    margin-top: -3px;
+}
+
+.claro .dijitSelect .dijitArrowButtonInner, .claro .dijitComboBox .dijitArrowButtonInner, .dijit, .dijitReset, .dijitInline, .dijitLeft, .dijitDownArrowButton, .dijitSelect, .dijitValidationTextBox
+{
+    border: none !important;
+}
+
+.claro .dijitSelectLabel, .claro .dijitTextBox .dijitInputInner, .claro .dijitValidationTextBox .dijitValidationContainer
+{
+    padding: 0 0 3px !important;
+    margin-left: 2px;
+}
+
+.dijitReset
+{
+    -moz-font-feature-settings: inherit;
+    -moz-font-language-override: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    font-size-adjust: inherit;
+    font-stretch: inherit;
+    font-style: inherit;
+    font-variant: inherit;
+    font-weight: inherit;
+    line-height: normal;
+}
+
+.esriCTuploadShapeContainer
+{
+
+    border-bottom: 1px solid #DFDFDF;
+    clear: both;
+    float: left;
+    padding: 10px 20px;
+    width: 96%;
+}
+
+.esriCTChangeUnitContainer
+{
+
+    border-bottom: 1px solid #DFDFDF;
+    clear: both;
+    float: right;
+    padding: 10px 20px;
+    width: 100%;
+    cursor:pointer;
+}
+
+.esriCTchangeUnit
+{
+    cursor:pointer;
+    clear: both;
+    float: right;
+    width: 50%;
+
+}
+.esriCTUploadHeading
+{
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+.esriCTUploadInputReportContainer
+{
+    clear: both;
+    margin-top: 10px;
+    float: left;
+}
+
+.esriCTUploadInput
+{
+    float:left;
+    width:125px;
+}
+
+.esriCTUploadInput input.esriCTTxtAddress
+{
+    width:125px;
+}
+
+.esriCTDownloadReportRow
+{
+    clear:both;
+    width:100%;
+    float:left;
+    margin:5px 0;
+}
+
+.esriCTDownloadReportRow div.esriCTcheckkbox
+{
+    float:left;
+    margin:0px;
+}
+
+.esriCTDownloadReportRow div.esriCTlabel
+{
+    float:left;
+    margin:2px 2px;
+}
+
+.esriCTDownloadReportRow div.esriCTFormat
+{
+    float:left;
+    margin:0 2px;
+}
+
+.esriCTDownloadReportRow div.esriCTRadio
+{
+    float:left;
+    margin:0px;
 }

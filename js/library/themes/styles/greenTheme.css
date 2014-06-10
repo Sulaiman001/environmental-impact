@@ -5,7 +5,7 @@
     border-bottom: 1px solid #028D6A;
 }
 
-.esriCTApplicationHeaderText, .esriCTResultColor, .esriCTdivInfoTotalFeatureCount, .esriCTdivInfoFeatureCount, .esriCTAOILink, .esriCTHeaderPanelContent, .BasemapToggle .basemapTitle
+.esriCTApplicationHeaderTextTD, .esriCTResultColor, .esriCTdivInfoTotalFeatureCount, .esriCTdivInfoFeatureCount, .esriCTAOILink, .esriCTHeaderPanelContent, .BasemapToggle .basemapTitle
 {
     color: #028D6A !important;
 }
@@ -53,6 +53,10 @@
     border-right: 1px solid #028D6A;
 }
 
+.esriCTUnitLabel
+{
+    color: #028D6A;
+}
 .esriCTAreaOfInterestTabSelected
 {
     color: #028D6A;
@@ -87,12 +91,51 @@
     background-color: #028D6A !important;
     color: #fff;
 }
+
+.dijitReset {
+    color:  #fff !important;
+}
+
+esriCTspanDialogBox
+{
+    color: #fff !important;
+
+}
+
+.claro .dijitSelect, .dijitArrowButtonInner, .claro .dijitComboBox, .dijitArrowButtonInner {
+    background-image: url("../images/green-arrow.png")!important;
+    background-position: right center !important;
+    background-repeat: no-repeat !important;
+    margin: 0px !important;
+    width: 16px !important;
+    padding: 0px!important;
+}
+
+.claro .dijitSelectFocused .dijitArrowButton{ background-color: #fff !important; background-image: url("../images/green-arrow.png" )!important;  background-position: right center !important;  background-repeat: no-repeat !important;margin: 0px !important;    width: 16px !important;  padding: 0px!important;}
+
+.claro .dijitMenu .digitMenuItemSelected td, .claro .dijitComboBoxMenu .dijitMenuItemSelected {
+    background-color: #028D6A !important;
+}
+.claro .dijitMenu .dijitMenuItemHover td, .claro .dijitMenu .dijitMenuItemSelected td, .claro .dijitMenuItemHover, .claro .dijitComboBoxMenu .dijitMenuItemHover, .claro .digitMenuItemSelected {
+    background-image: none !important;
+    background-color:  #028D6A !important;
+    color: white !important;
+}
+.esriCTselectbox {
+    border-color: #028D6A !important;
+}
 /* End of AOI Panel */
 
 /* Splash Screen*/
 
 .esriCTCustomButton, .esriCTBrowseButton, .esriCTUploadButton
 {
+    background: #028D6A;
+}
+
+.customButton
+{
+    color: #fff;
     background: #028D6A;
 }
 
@@ -107,7 +150,7 @@
 
 /*Start of Infowindow style*/
 
-.esriCTInfoWindow, .esriCTLegendBoxInner
+.esriCTInfoWindow, .legenboxInner
 {
     border: 1px solid #028D6A;
 }
@@ -148,32 +191,32 @@
 
 .esriCTHeaderSearchSelected
 {
-    background-image: url("../images/locateSelectedGreen.png");
+    background-image: url("../images/img24x24/search-select-green-24.png");
 }
 
 .esriCTImgSocialMediaSelected
 {
-    background-image: url("../images/shareSelectedGreen.png");
+     background-image: url("../images/img24x24/imgSocialMedia_green-24.png");
 }
 
 .esriCTReportsImgSelected
 {
-    background-image: url("../images/reportsSelectedGreen.png");
+    background-image: url("../images/img24x24/AOI-24-green.png") !important;
 }
 
 .esriCTFacebook
 {
-    background-image: url("../images/facebookGreen.png");
+    background-image: url("../images/img2X/img_twitter@2x-green.png") !important;
 }
 
 .esriCTTwitter
 {
-    background-image: url("../images/twitterGreen.png");
+   background-image: url("../images/img2X/img_twitter@2x-green.png") !important;
 }
 
 .esriCTEmail
 {
-    background-image: url("../images/emailGreen.png");
+   background-image: url("../images/img2X/img-email@2x-green.png") !important;
 }
 
 .esriCTEmbedding
@@ -310,5 +353,10 @@
     .esriCTEmbedding
     {
         background-image: url('../images/embeddingGreen@2x.png') !important;
+    }
+
+     .esriCTHelpImg
+    {
+        background-image: url("../images/img2X/help@2X.png") !important;
     }
 }

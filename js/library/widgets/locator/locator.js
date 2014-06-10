@@ -42,7 +42,6 @@ define([
     "dijit/_TemplatedMixin",
     "dijit/_WidgetsInTemplateMixin",
     "dojo/i18n!application/js/library/nls/localizedStrings",
-    "dojo/i18n!application/nls/localizedStrings",
     "dojo/topic",
     "esri/symbols/SimpleLineSymbol",
     "esri/symbols/SimpleFillSymbol",
@@ -51,13 +50,12 @@ define([
     "esri/graphic",
     "esri/geometry/webMercatorUtils",
     "dojo/query"
-], function (declare, domConstruct, domStyle, domAttr, lang, on, domGeom, dom, domClass, query, string, Locator, Query, ScrollBar, Deferred, DeferredList, QueryTask, Geometry, cookie, Point, template, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, appNls, topic, SimpleLineSymbol, SimpleFillSymbol, SimpleMarkerSymbol, Color, Graphic, webMercatorUtils, dojoQuery) {
+], function (declare, domConstruct, domStyle, domAttr, lang, on, domGeom, dom, domClass, query, string, Locator, Query, ScrollBar, Deferred, DeferredList, QueryTask, Geometry, cookie, Point, template, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, topic, SimpleLineSymbol, SimpleFillSymbol, SimpleMarkerSymbol, Color, Graphic, webMercatorUtils, dojoQuery) {
     //========================================================================================================================//
 
     return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
         templateString: template,
         sharedNls: sharedNls,
-        appNls: appNls,
         lastSearchString: null,
         stagedSearch: null,
         locatorScrollbar: null,
@@ -232,7 +230,6 @@ define([
                 this.txtAddress.value = domAttr.get(this.txtAddress, "defaultAddress");
                 this.lastSearchString = lang.trim(this.txtAddress.value);
             }
-            this._setHeightAddressResults(locatorParams);
         },
 
         /**
@@ -340,7 +337,6 @@ define([
             domStyle.set(locatorParams.imgSearchLoader, "display", "block");
             domStyle.set(locatorParams.close, "display", "none");
             domAttr.set(locatorParams.textAddress, "defaultAddress", locatorParams.textAddress.value);
-            this._setHeightAddressResults(locatorParams);
 
             /**
             * call locator service specified in configuration file
@@ -353,7 +349,7 @@ define([
             if (dojo.configData.WebMapId && lang.trim(dojo.configData.WebMapId).length !== 0) {
                 baseMapExtent = this.map.getLayer(this.map.layerIds[0]).fullExtent;
             } else {
-                baseMapExtent = this.map.getLayer("esriCTbasemap").fullExtent;
+                baseMapExtent = this.map.getLayer("defaultBasemap").fullExtent;
             }
             options = {};
             options.address = addressField;
@@ -938,31 +934,6 @@ define([
             this.txtAddress.blur();
             domClass.replace(this.divAddressHolder, "esriCTHideContainerHeight", "esriCTShowContainerHeight");
             domClass.replace(this.divAddressHolder, "esriCTZeroHeight", "esriCTAddressContentHeight");
-        },
-
-        /**
-        * set height of the search panel
-        * @memberOf widgets/locator/locator
-        */
-        _setHeightAddressResults: function (locatorParams) {
-
-            /**
-            * divAddressContent Container for search results
-            * @member {div} divAddressContent
-            * @private
-            * @memberOf widgets/locator/locator
-            */
-            var height = domGeom.getMarginBox(locatorParams.divAddressContent).h;
-            if (height > 0) {
-
-                /**
-                * divAddressScrollContent Scrollbar container for search results
-                * @member {div} divAddressScrollContent
-                * @private
-                * @memberOf widgets/locator/locator
-                */
-                domStyle.set(locatorParams.divAddressScrollContent, "height", (height - 120) + "px");
-            }
         },
 
         /**

@@ -27,7 +27,7 @@
         background-image: url("../images/help@2x.png");
     }
 
-    .esriCTGeolocation
+    .esriCTTdGeolocation
     {
         background-image: url("../images/geolocation@2x.png");
     }
@@ -42,7 +42,7 @@
         background-image: url("../images/reports@2x.png");
     }
 
-    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
+    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTTdGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
     {
         height: 44px !important;
         width: 44px !important;
@@ -94,7 +94,7 @@
         font-size: 14px !important;
     }
 
-    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
+    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTTdGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
     {
         height: 44px !important;
         width: 44px !important;
@@ -135,7 +135,7 @@
         right: 70px;
     }
 
-    .esriCTApplicationHeaderText
+    .esriCTApplicationHeaderTextTD
     {
         font-size: 30px;
     }
@@ -207,7 +207,7 @@
         font-size: 14px !important;
     }
 
-    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
+    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTTdGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
     {
         height: 44px !important;
         width: 44px !important;
@@ -248,7 +248,7 @@
         right: 70px;
     }
 
-    .esriCTApplicationHeaderText
+    .esriCTApplicationHeaderTextTD
     {
         font-size: 30px;
     }
@@ -329,7 +329,7 @@
         font-size: 14px !important;
     }
 
-    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
+    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTTdGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
     {
         height: 44px !important;
         width: 44px !important;
@@ -375,7 +375,7 @@
         right: 70px;
     }
 
-    .esriCTApplicationHeaderText
+    .esriCTApplicationHeaderTextTD
     {
         font-size: 30px;
     }
@@ -437,12 +437,12 @@
 
 @media screen and (max-width: 680px)
 {
-    .esriCTApplicationHeaderText
+    .esriCTApplicationHeaderTextTD
     {
         display: none;
     }
 
-    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
+    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTTdGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
     {
         height: 44px !important;
         width: 44px !important;

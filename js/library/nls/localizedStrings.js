@@ -28,7 +28,8 @@ define({
             go: "Go",
             browse: "Browse",
             upload: "Upload",
-            add: "Add"
+            add: "Add",
+            downLoad: "Download"
         },
         tooltips: {
             search: "Search",
@@ -37,18 +38,36 @@ define({
             share: "Share",
             help: "Help",
             clearEntry: "Clear",
-            selectInitialCoordinates: "select Initial Coordinates"
+            selectInitialCoordinates: "Select Initial Coordinates",
+            loadingText: "Loading...",
+            esriCTsettingIconTitle: "Click to open deatil summary dialog box"
         },
         titles: {
             areaOfInterestTabText: "Area of Interest",
             reportTabText: "Report",
             webpageDisplayText: "Copy/paste HTML into your web page",
             pointToolText: "Point",
+            multipointToolText: "Multipoint",
             lineToolText: "Line",
             rectangleToolText: "Rectangle",
             polygonToolText: "Polygon",
             selectFeatureText: "Select features",
-            areaStandardUnit: "acres"
+            areaStandardUnit: "acres",
+            areaMetricUnit: "sq.Km",
+            lineMetricdUnit: "Km",
+            lineStandardUnit: "miles",
+            standardUnitLabel: "standard unit",
+            metricUnitLabel: "show area in ",
+            unitLabel: "metric unit",
+            uploadShapeFile: "Upload Shapefile to include in analysis",
+            drawAOIBeforeUpload: "(please draw an AOI before Uploading)",
+            downLoadReport: "Download Report",
+            data: "Data",
+            selectFormat: "Select Format",
+            pdfReport: "PDF Report",
+            quickSummary: "Quick Summary",
+            deatiledSummary: "Detailed Summary"
+
         },
         messages: {
             legendLoadingText: "Loading...",
@@ -70,7 +89,7 @@ define({
             longitude: "Longitude",
             bearing: "Bearing",
             bearingValue: "(0-360)",
-            distance: "Distance (Miles)",
+            distance: "Distance",
             reportPanelHeader: "Summary Report for Area of Interest"
         },
         errorMessages: {
@@ -87,8 +106,21 @@ define({
             addLattitudeValue: "Please enter valid Lattitude",
             addLongitudeValue: "Please enter valid Longitude.",
             addBearingValue: "Please add Bearing value.",
-            addDistanceMiles: "Please add Distance in miles."
+            addDistanceMiles: "Please add Distance in miles.",
+            errorPerfomingQuery: "Error performing query operation",
+            esriJobFailMessage: "Failed to generate AOI from shapefile",
+            esriJobFailToAnlayse: "Failed to execute (AnalyseShapefile)"
+        },
+        // End of shared nls
+
+        //App nls
+        appErrorMessage: {
+            layerTitleError: "Title and/or QueryLayerId parameters in SearchSettings do not match with configured operational layers.",
+            titleNotMatching: "Title and/or QueryLayerId parameters in the InfoWindowSettings and SearchSettings do not match.",
+            lengthDoNotMatch: "The number of objects in InfoWindowSettings and SearchSettings do not match.",
+            webmapTitleError: "Title and/or QueryLayerId parameters in SearchSettings do not match with configured webmap"
         }
+        //End of App nls
     },
     es: true,
     fr: true,

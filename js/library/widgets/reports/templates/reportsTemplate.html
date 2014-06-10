@@ -62,18 +62,20 @@
                 </div>
                 <div data-dojo-attach-point="divRadioButtonContainer">
                 </div>
+                <form enctype="multipart/form-data" method="post" id="uploadForm">
                 <div data-dojo-attach-point="divFileUploadContainer" class="esriCTUploadContainer">
-                    <input type="text" id="fileName" class="file_input_textbox" readonly />
+                    <input type="text" id="fileName" class="file_input_textbox" />
                     <div class="esriCTFileInputDiv">
                         <div class="esriCTBrowseButton">
                             <label>
                                 ${sharedNls.buttons.browse}</label>
-                            <input type="file" class="esriCTFileInputHidden" />
+                            <input type="file" name="file" class="esriCTFileInputHidden" />
                         </div>
-                        <div class="esriCTUploadButton">
+                        <div class="esriCTUploadButton" data-dojo-attach-point="esriCTUploadButton">
                             ${sharedNls.buttons.upload}</div>
                     </div>
                 </div>
+                 </form>
                 <div data-dojo-attach-point="divBearingContainer" style="display: none">
                     <div class="esriCTBearingLableConatiner">
                         <div class="esriCTBearingLable">
@@ -132,7 +134,9 @@
                                     ${sharedNls.messages.bearing}<br />
                                     ${sharedNls.messages.bearingValue}</div>
                                 <div class="esriCTBearingFourthColumn">
-                                    ${sharedNls.messages.distance}</div>
+                                   <div class="esriCTBearingFourthColumn">${sharedNls.messages.distance}</div>
+                                   <div data-dojo-attach-point="divBearingDistanceUnits"></div>
+                                   </div>
                                 <div class="esriCTBearingFifthColumn">
                                 </div>
                             </div>
@@ -163,4 +167,42 @@
             </div>
         </div>
     </div>
+     <div class="esriCTuploadShapeContainer" data-dojo-attach-point="esriCTchangeUnit" >
+         <div class="esriCTchangeUnit" data-dojo-attach-point="esriCTchangeStandardUnit" style="display:none;"> <span >${sharedNls.titles.metricUnitLabel}</span><span class="esriCTUnitLabel">${sharedNls.titles.standardUnitLabel}</span> </div>
+          <div class="esriCTchangeUnit" data-dojo-attach-point="esriCTchangeMetricUnit" ><span >${sharedNls.titles.metricUnitLabel}</span><span class="esriCTUnitLabel">${sharedNls.titles.unitLabel}</span> </div>
+          </div>
+    <div class="esriCTuploadShapeContainer" data-dojo-attach-point="uploadAOIContainer"  style="display:none;">
+        <div class="esriCTUploadHeading"> ${sharedNls.titles.uploadShapeFile}</div>
+        <div>${sharedNls.titles.drawAOIBeforeUpload}</div>
+        <form enctype="multipart/form-data" method="post" id="uploadAnalysisForm">
+              <div  class="esriCTUploadInputReportContainer">
+                    <input type="text" id="analysisFileName" class="file_input_textbox">
+                    <div class="esriCTFileInputDiv">
+                        <div class="esriCTBrowseButton"><label> ${sharedNls.buttons.browse}</label>
+                          <input type="file" name="file" class="esriCTFileInputHidden" />
+                        </div>
+                        <div class="esriCTUploadButton" data-dojo-attach-point="esriCTAnalysisUploadButton"><label>${sharedNls.buttons.upload}</label></div>
+                    </div>
+                </div>
+                </form>
+        </div>
+  <div class="esriCTuploadShapeContainer">
+        <div class="esriCTUploadHeading">${sharedNls.titles.downLoadReport}</div>
+                <div class="esriCTDownloadReportRow">
+                    <div class="esriCTcheckkbox"><input type="checkbox"/></div>
+                    <div  class="esriCTlabel">${sharedNls.titles.data}</div>
+                    <div  class="esriCTFormat"><select><option>${sharedNls.titles.selectFormat}</option></select></div>
+                    <div class="esriCTcheckkbox"><input type="checkbox"/></div>
+                    <div  class="esriCTlabel">${sharedNls.titles.pdfReport}</div>
+                </div>
+                 <div class="esriCTDownloadReportRow">
+                    <div  class="esriCTRadio"><input type="radio" /> </div>
+                    <div  class="esriCTlabel">${sharedNls.titles.quickSummary}</div>
+                    <div class="esriCTRadio"><input type="radio" /></div>
+                    <div  class="esriCTlabel">${sharedNls.titles.deatiledSummary}</div>
+                </div>
+                <div class="esriCTDownloadReportRow">
+                    <div class="esriCTUploadButton"><label>${sharedNls.buttons.downLoad}</label></div>
+                </div>
+        </div>
 </div>

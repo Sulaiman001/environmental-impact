@@ -5,7 +5,7 @@
     border-bottom: 1px solid #007ac2;
 }
 
-.esriCTApplicationHeaderText, .esriCTResultColor, .esriCTdivInfoTotalFeatureCount, .esriCTdivInfoFeatureCount, .esriCTAOILink, .esriCTHeaderPanelContent, .BasemapToggle .basemapTitle
+.esriCTApplicationHeaderTextTD, .esriCTResultColor, .esriCTdivInfoTotalFeatureCount, .esriCTdivInfoFeatureCount, .esriCTAOILink, .esriCTHeaderPanelContent, .BasemapToggle .basemapTitle
 {
     color: #007ac2 !important;
 }
@@ -101,6 +101,12 @@
     background: #007ac2;
 }
 
+.customButton
+{
+    color: #fff;
+    background: #007ac2;
+}
+
 /* End of Splash Screen */
 
 /* CSS for shadow effect*/
@@ -131,7 +137,7 @@
 
 /*Start of Infowindow style*/
 
-.esriCTInfoWindow, .esriCTLegendBoxInner
+.esriCTInfoWindow, .legenboxInner
 {
     border: 1px solid #007ac2;
 }
@@ -154,12 +160,12 @@
 
 .esriCTHeaderSearchSelected
 {
-    background-image: url("../images/locateSelected.png");
+    background-image: url("../images/img2X/search-select@2X.png") !important;
 }
 
 .esriCTImgSocialMediaSelected
 {
-    background-image: url("../images/shareSelected.png");
+    background-image: url("../images/img2X/share-select@2X.png") !important;
 }
 
 .esriCTReportsImgSelected
@@ -169,17 +175,17 @@
 
 .esriCTFacebook
 {
-    background-image: url("../images/facebook.png");
+    background-image: url("../images/img2X/img_facebook@2x.png") !important;
 }
 
 .esriCTTwitter
 {
-    background-image: url("../images/twitter.png");
+   background-image: url("../images/img2X/img_twitter@2x.png") !important;
 }
 
 .esriCTEmail
 {
-    background-image: url("../images/email.png");
+   background-image: url("../images/img2X/img-email@2x.png") !important;
 }
 
 .esriCTEmbedding

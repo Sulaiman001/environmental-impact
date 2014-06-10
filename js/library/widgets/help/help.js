@@ -29,6 +29,7 @@ define([
     //========================================================================================================================//
 
     return declare([_WidgetBase], {
+        sharedNls: sharedNls,
 
         /**
         * create help widget
@@ -37,7 +38,7 @@ define([
         * @name widgets/help/help
         */
         postCreate: function () {
-            this.domNode = domConstruct.create("div", { "title": sharedNls.tooltips.help, "class": "esriCTHeaderIcons esriCTHelpImg" }, null);
+            this.domNode = domConstruct.create("div", { "title": sharedNls.tooltips.help, "class": "esriCTHelpImg" }, null);
             this.own(on(this.domNode, "click", lang.hitch(this, function () {
 
                 /**
@@ -54,7 +55,7 @@ define([
         * @memberOf widgets/help/help
         */
         _showHelpPage: function () {
-            window.open();
+            window.open(dojo.configData.HelpURL);
         }
     });
 });

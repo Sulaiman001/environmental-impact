@@ -27,17 +27,15 @@ define([
     "dijit/_TemplatedMixin",
     "dijit/_WidgetsInTemplateMixin",
     "dojo/i18n!application/js/library/nls/localizedStrings",
-    "dojo/i18n!application/nls/localizedStrings",
     "dojo/dom-class",
     "dojo/topic"
-], function (declare, domConstruct, lang, domAttr, dom, template, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, appNls, domClass, topic) {
+], function (declare, domConstruct, lang, domAttr, dom, template, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, domClass, topic) {
 
     //========================================================================================================================//
 
     return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
         templateString: template,
         sharedNls: sharedNls,
-        appNls: appNls,
 
         /**
         * create header panel
@@ -57,11 +55,11 @@ define([
             * @private
             * @memberOf widgets/appHeader/appHeader
             */
-
+            var applicationHeaderDiv;
             topic.subscribe("showProgressIndicator", lang.hitch(this, this.showProgressIndicator));
             topic.subscribe("hideProgressIndicator", lang.hitch(this, this.hideProgressIndicator));
 
-            var applicationHeaderDiv = domConstruct.create("div", {}, dom.byId("esriCTParentDivContainer"));
+            applicationHeaderDiv = domConstruct.create("div", {}, dom.byId("esriCTParentDivContainer"));
             domConstruct.place(this.applicationHeaderParentContainer, applicationHeaderDiv);
             this._loadApplicationHeaderIcon();
             /**
@@ -84,7 +82,6 @@ define([
 
         loadHeaderWidgets: function (widgets) {
             var i;
-
             /**
             * applicationHeaderWidgetsContainer container for header panel widgets
             * @member {div} applicationHeaderWidgetsContainer
@@ -116,7 +113,8 @@ define([
         },
 
         _loadIcons: function (rel, iconPath) {
-            var icon = domConstruct.create("link");
+            var icon;
+            icon = domConstruct.create("link");
             icon.rel = rel;
             icon.type = "image/x-icon";
             icon.href = dojoConfig.baseURL + iconPath;
@@ -125,6 +123,9 @@ define([
 
         showProgressIndicator: function () {
             domClass.replace(this.divLoadingIndicator, "displayBlockAll", "displayNoneAll");
+            this.divLoadingIndicator.onclick = function (evt) {
+                evt.stopPropagation();
+            };
         },
 
         hideProgressIndicator: function () {

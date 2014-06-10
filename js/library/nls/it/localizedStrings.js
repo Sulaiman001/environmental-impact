@@ -46,7 +46,21 @@ define({
         rectangleToolText: "@it@ Rectangle",
         polygonToolText: "@it@ Polygon",
         selectFeatureText: "@it@ Select features",
-        areaStandardUnit: "@it@ acres"
+        areaStandardUnit: "@it@ acres",
+        areaMetricUnit: "@it@ sq.Km",
+        lineMetricdUnit: "@it@ Km",
+        lineStandardUnit: "@it@ miles",
+        standardUnitLabel: "@it@ standard unit",
+        metricUnitLabel: "@it@ show area in ",
+        unitLabel: "@it@ metric unit",
+        uploadShapeFile: "@it@ Upload Shapefile to include in analysis",
+        drawAOIBeforeUpload: "@it@ (please draw an AOI before Uploading)",
+        downLoadReport: "@it@ Download Report",
+        data: "@it@ Data",
+        selectFormat: "@it@ Select Format",
+        pdfReport: "@it@ PDF Report",
+        quickSummary: "@it@ Quick Summary",
+        deatiledSummary: "@it@ Detailed Summary"
     },
     messages: {
         legendLoadingText: "@it@ Loading...",
