@@ -52,6 +52,7 @@ define([
         logoContainer: null,
         _layerCollection: {},
         _rendererArray: [],
+        legendListWidth: [],
         newLeft: 0,
         total: 0,
         /**
@@ -62,8 +63,11 @@ define([
         postCreate: function () {
             this._createLegendContainerUI();
             var currentExtentLegend, legendDefaultExtent;
-            this.logoContainer = (query(".map .logo-sm") && query(".map .logo-sm")[0])
-                || (query(".map .logo-med") && query(".map .logo-med")[0]);
+            this.logoContainer = query(".esriControlsBR")[0];
+            if (!this.logoContainer) {
+                this.logoContainer = (query(".map .logo-sm") && query(".map .logo-sm")[0])
+                    || (query(".map .logo-med") && query(".map .logo-med")[0]);
+            }
             topic.subscribe("setMaxLegendLength", lang.hitch(this, function () {
                 this._setMaxLegendLengthResult();
             }));
@@ -80,8 +84,15 @@ define([
             }
             if (this.isExtentBasedLegend) {
                 this.map.on("extent-change", lang.hitch(this, function (evt) {
-                    var defQueryArray = [], queryResult, layerObject, rendererObject, index, resultListArray = [], legendListWidth = [],
-                        queryDefList, arryList = 0, boxWidth, i, layer;
+                    var defQueryArray = [],
+                        queryResult,
+                        layerObject,
+                        rendererObject,
+                        index,
+                        resultListArray = [],
+                        queryDefList,
+                        i,
+                        layer;
                     this._resetLegendContainer();
                     this._rendererArray.length = 0;
                     for (layer in this._layerCollection) {
@@ -99,7 +110,11 @@ define([
                                     }
                                     if (layerObject.rendererType === "uniqueValue") {
                                         if (rendererObject[index].values) {
-                                            queryResult.where = layerObject.fieldName + " = " + "'" + rendererObject[index].values[0] + "'";
+                                            if (layerObject.fieldType === "esriFieldTypeString ") {
+                                                queryResult.where = layerObject.fieldName + " = " + "'" + rendererObject[index].values[0] + "'";
+                                            } else {
+                                                queryResult.where = layerObject.fieldName + " = " + rendererObject[index].values[0];
+                                            }
                                         } else {
                                             queryResult.where = "1=1";
                                         }
@@ -113,8 +128,8 @@ define([
                             }
                         }
                     }
-
-                    domStyle.set(this.divRightArrow, "display", "block");
+                    resultListArray = [];
+                    this.legendListWidth = [];
                     if (defQueryArray.length > 0) {
                         domConstruct.empty(this.divlegendContainer);
                         domConstruct.create("span", { innerHTML: sharedNls.tooltips.loadingText, "class": "divlegendLoadingContainer" }, this.divlegendContainer);
@@ -124,21 +139,11 @@ define([
                             for (i = 0; i < result.length; i++) {
                                 if (result[i][0] && result[i][1] > 0) {
                                     resultListArray.push(result[i][1]);
-                                    legendListWidth.push(this.divLegendlist.offsetWidth);
+                                    this.legendListWidth.push(this.divLegendlist.offsetWidth);
                                     this._addLegendSymbol(this._rendererArray[i], this._layerCollection[this._rendererArray[i].layerUrl].layerName);
                                 }
                             }
-
-                            for (i = 0; i < resultListArray.length; i++) {
-                                arryList += resultListArray[i];
-                            }
-                            this._addlegendListWidth(legendListWidth);
-                            boxWidth = this.legendbox.offsetWidth - query(".esriCTHeaderRouteContainer")[0].offsetWidth + 200;
-                            if (arryList <= 0 || this.divlegendContainer.offsetWidth < boxWidth) {
-                                domStyle.set(this.divRightArrow, "display", "none");
-                            } else {
-                                domStyle.set(this.divRightArrow, "display", "block");
-                            }
+                            this._addlegendListWidth(this.legendListWidth);
                         }));
                     }
                 }));
@@ -156,31 +161,27 @@ define([
         },
 
         _setMaxLegendLengthResult: function () {
+            this._resetLegendContainer();
             domClass.add(this.logoContainer, "mapLogoUrl");
             if (this.legendrightbox) {
-                domClass.replace(this.legendrightbox, "legendrightboxTest", "legendrightbox");
-            } else if (query(".legendrightbox")[0]) {
-                domClass.replace(this.legendrightbox, "legendrightbox", "legendrightboxTest");
+                domClass.add(this.legendrightbox, "legendrightboxTest");
             }
             if (this.divRightArrow) {
-                domClass.replace(this.divRightArrow, "divRightArrowRightMargin", query(".esriCTRightArrow")[0]);
-            } else if (query(".esriCTRightArrow")[0]) {
-                domClass.replace(this.divRightArrow, query(".esriCTRightArrow")[0], "divRightArrowRightMargin");
+                domClass.add(this.divRightArrow, "divRightArrowRightMargin");
             }
+            this._addlegendListWidth(this.legendListWidth);
         },
 
         _setMinLegendLengthResult: function () {
+            this._resetLegendContainer();
             domClass.remove(this.logoContainer, "mapLogoUrl");
             if (this.legendrightbox) {
-                domClass.replace(this.legendrightbox, query(".legendrightbox")[0], "legendrightboxTest");
-            } else if (query(".legendrightbox")[0]) {
-                domClass.replace(this.legendrightbox, query(".legendrightbox")[0], "legendrightboxTest");
+                domClass.replace(this.legendrightbox, "legendrightbox", "legendrightboxTest");
             }
-            if (this.esriCTRightArrow) {
-                domClass.replace(this.divRightArrow, query(".esriCTRightArrow")[0], "divRightArrowRightMargin");
-            } else if (query(".esriCTRightArrow")[0]) {
-                domClass.replace(this.divRightArrow, query(".esriCTRightArrow")[0], "divRightArrowRightMargin");
+            if (this.divRightArrow) {
+                domClass.replace(this.divRightArrow, "esriCTRightArrow", "divRightArrowRightMargin");
             }
+            this._addlegendListWidth(this.legendListWidth);
         },
 
         _resetLegendContainer: function () {
@@ -201,7 +202,6 @@ define([
                 this._slideLeft();
             }));
             this.divRightArrow = domConstruct.create("div", { "class": "esriCTRightArrow" }, this.legendbox);
-            domStyle.set(this.divRightArrow, "display", "block");
             on(this.divRightArrow, "click", lang.hitch(this, function () {
                 this._slideRight();
             }));
@@ -344,14 +344,25 @@ define([
                         if (layerObject.drawingInfo && layerObject.drawingInfo.renderer && layerObject.drawingInfo.renderer.type === "uniqueValue") {
                             this._layerCollection[layerTempArray[i]].rendererType = "uniqueValue";
                             this._layerCollection[layerTempArray[i]].fieldName = layerObject.drawingInfo.renderer.field1 || layerObject.drawingInfo.renderer.field2 || layerObject.drawingInfo.renderer.field3;
-
+                            this._appendFieldType(this._layerCollection[layerTempArray[i]], layerObject);
                         } else if (layerObject.drawingInfo && layerObject.drawingInfo.renderer && layerObject.drawingInfo.renderer.type === "classBreaks") {
                             this._layerCollection[layerTempArray[i]].rendererType = "classBreaks";
                             this._layerCollection[layerTempArray[i]].fieldName = layerObject.drawingInfo.renderer.field;
+                            this._appendFieldType(this._layerCollection[layerTempArray[i]], layerObject);
                         }
                     }
                 }
             }));
+        },
+
+        _appendFieldType: function (layerCollection, layerObject) {
+            var i;
+            for (i = 0; i < layerObject.fields.length; i++) {
+                if (layerObject.fields[i].name === layerCollection.fieldName) {
+                    layerCollection.fieldType = layerObject.fields[i].type;
+                    break;
+                }
+            }
         },
 
         _removeDuplicate: function (mapServerArray) {
@@ -365,26 +376,36 @@ define([
         },
 
         _createLegendList: function (layerList, mapServerUrl) {
-            var legendListWidth = [], i, j;
-
+            var i, j;
+            this.legendListWidth = [];
             for (i = 0; i < layerList.layers.length; i++) {
                 this._layerCollection[mapServerUrl + '/' + layerList.layers[i].layerId] = layerList.layers[i];
 
                 for (j = 0; j < layerList.layers[i].legend.length; j++) {
                     this._addLegendSymbol(layerList.layers[i].legend[j], layerList.layers[i].layerName);
-                    legendListWidth.push(this.divLegendlist.offsetWidth);
+                    this.legendListWidth.push(this.divLegendlist.offsetWidth);
                 }
             }
-            this._addlegendListWidth(legendListWidth);
+            this._addlegendListWidth(this.legendListWidth);
             this._addFieldValue();
         },
 
         _addlegendListWidth: function (legendListWidth) {
-            var listWidth = legendListWidth, total = 0, j;
+            var listWidth = legendListWidth, total = 0, j, boxWidth;
             for (j = 0; j < listWidth.length - 1; j++) {
                 total += listWidth[j];
             }
-            domStyle.set(query(".divlegendContent")[0], "width", total + 520 + "px");
+            domStyle.set(query(".divlegendContent")[0], "width", (total + 5) + "px");
+            if (query(".esriCTHeaderReportContainer")[0]) {
+                boxWidth = this.legendbox.offsetWidth - query(".esriCTHeaderReportContainer")[0].offsetWidth + 200;
+            } else {
+                boxWidth = this.legendbox.offsetWidth;
+            }
+            if (total <= 0 || this.divlegendContainer.offsetWidth < boxWidth) {
+                domStyle.set(this.divRightArrow, "display", "none");
+            } else {
+                domStyle.set(this.divRightArrow, "display", "block");
+            }
         },
 
         _addLegendSymbol: function (legend, layerName) {

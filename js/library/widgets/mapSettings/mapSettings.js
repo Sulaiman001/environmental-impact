@@ -44,10 +44,9 @@ define([
     "dojo/text!../infoWindow/templates/infoWindow.html",
     "esri/layers/ArcGISDynamicMapServiceLayer",
     "esri/geometry/webMercatorUtils",
-    "dojo/query",
     "dojo/_base/array",
     "dojo/domReady!"
-], function (declare, domConstruct, domStyle, lang, esriUtils, dom, domAttr, query, domClass, _WidgetBase, sharedNls, esriMap, ImageParameters, FeatureLayer, GraphicsLayer, BaseMapGallery, Legends, GeometryExtent, HomeButton, Deferred, DeferredList, topic, on, InfoWindow, template, ArcGISDynamicMapServiceLayer, webMercatorUtils, dojoQuery, array) {
+], function (declare, domConstruct, domStyle, lang, esriUtils, dom, domAttr, query, domClass, _WidgetBase, sharedNls, esriMap, ImageParameters, FeatureLayer, GraphicsLayer, BaseMapGallery, Legends, GeometryExtent, HomeButton, Deferred, DeferredList, topic, on, InfoWindow, template, ArcGISDynamicMapServiceLayer, webMercatorUtils, array) {
 
     //========================================================================================================================//
 
@@ -57,10 +56,10 @@ define([
         templateString: template,
         tempGraphicsLayerId: "esriGraphicsLayerMapSettings",
         tempBufferLayer: "tempBufferLayer",
-        tempShapeFileGraphicsLayer: "addShapeFileGraphicsLayer",
+        //tempShapeFileGraphicsLayer: "addShapeFileGraphicsLayer",
         sharedNls: sharedNls,
         infoWindowPanel: null,
-
+        prevOrientation : window.orientation,
         /**
         * initialize map object
         *
@@ -131,10 +130,26 @@ define([
                 this._mapEvents();
             }
 
-            on(window, "resize", lang.hitch(this, function () {
-                topic.publish("resizeAOIPanel");
-                topic.publish("resizeReportsPanel");
-            }));
+            if (window.orientation !== undefined && window.orientation !== null) {
+                on(window, "orientationchange", lang.hitch(this, function () {
+                    if (this.prevOrientation !== window.orientation) {
+                        this.prevOrientation = window.orientation;
+                        topic.publish("resizeAOIPanel");
+                        topic.publish("resizeReportsPanel");
+                        topic.publish("resizeDialogBox");
+                    }
+                }));
+            } else {
+                on(window, "resize", lang.hitch(this, function () {
+                    if (this.prevOrientation !== window.orientation || window.orientation === undefined || window.orientation === null) {
+                        this.prevOrientation = window.orientation;
+                        topic.publish("resizeAOIPanel");
+                        topic.publish("resizeReportsPanel");
+                        topic.publish("resizeDialogBox");
+
+                    }
+                }));
+            }
 
         },
 
@@ -239,20 +254,12 @@ define([
         },
 
         _mapEvents: function () {
-            var intialLat, initiallong;
             this.map.on("extent-change", lang.hitch(this, function () {
                 this._onSetMapTipPosition(dojo.selectedMapPoint, this.map, this.infoWindowPanel);
             }));
             this.map.on("click", lang.hitch(this, function (evt) {
                 if (!dojo.activatedDrawTool && !dojo.initialCoordinates) {
                     this._showInfoWindowOnMap(evt.mapPoint);
-                }
-                if (dojo.initialCoordinates) {
-                    var normalizedVal = webMercatorUtils.xyToLngLat(evt.mapPoint.x, evt.mapPoint.y);
-                    intialLat = dojoQuery(".esriCTaddLatitudeValue");
-                    intialLat[0].value = normalizedVal[0];
-                    initiallong = dojoQuery(".esriCTaddLongitudeValue");
-                    initiallong[0].value = normalizedVal[1];
                 }
             }));
         },
@@ -366,10 +373,6 @@ define([
             graphicsLayer.id = this.tempBufferLayer;
             this.map.addLayer(graphicsLayer);
 
-            graphicsLayer = new GraphicsLayer();
-            graphicsLayer.id = this.tempShapeFileGraphicsLayer;
-            graphicsLayer.spatialReference = this.map.extent.spatialReference;
-            this.map.addLayer(graphicsLayer);
         },
 
         _onSetMapTipPosition: function (selectedPoint, map, infoWindow) {

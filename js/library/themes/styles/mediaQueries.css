@@ -19,27 +19,27 @@
 {
     .esriCTHeaderSearch
     {
-        background-image: url("../images/locate@2x.png");
+        background-image: url('../images/img2x/locate.png') !important;
     }
 
     .esriCTHelpImg
     {
-        background-image: url("../images/help@2x.png");
+        background-image: url("../images/img2x/help.png") !important;
     }
 
     .esriCTTdGeolocation
     {
-        background-image: url("../images/geolocation@2x.png");
+        background-image: url("../images/img2x/geolocation.png") !important;
     }
 
     .esriCTImgSocialMedia
     {
-        background-image: url("../images/share@2x.png");
+        background-image: url("../images/img2x/share.png") !important;
     }
 
     .esriCTReportsImg
     {
-        background-image: url("../images/reports@2x.png");
+        background-image: url("../images/img2x/reports.png") !important;
     }
 
     .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTTdGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
@@ -60,15 +60,27 @@
 
     .esriCTSelectionIcon
     {
-        margin: 12px 20px 0 0;
+        margin: 12px 18px 0 0;
         background-repeat: no-repeat;
         background-position: center;
         float: left;
-        height: 42px;
-        width: 42px;
+        height: 44px;
+        width: 44px;
         float: left;
         cursor: pointer;
-        background-size: 42px auto;
+        background-size: 44px auto;
+    }
+
+    .esriCTSelectionIconMapClick
+    {
+        background-repeat: no-repeat;
+        background-position: center;
+        float: left;
+        height: 44px;
+        width: 44px;
+        float: left;
+        cursor: pointer;
+        background-size: 44px auto;
     }
 
     .select-on-map
@@ -168,20 +180,60 @@
 
     .esriCTSelectionIcon
     {
-        margin: 12px 20px 0 0;
+        margin: 12px 18px 0 0;
         background-repeat: no-repeat;
         background-position: center;
         float: left;
-        height: 42px;
-        width: 42px;
+        height: 44px;
+        width: 44px;
         float: left;
         cursor: pointer;
-        background-size: 42px auto;
+        background-size: 44px auto;
     }
 
+
+    .esriCTSelectionIconMapClick
+    {
+        background-repeat: no-repeat;
+        background-position: center;
+        float: left;
+        height: 44px;
+        width: 44px;
+        float: left;
+        cursor: pointer;
+        background-size: 44px auto;
+    }
     .select-on-map
     {
         margin: 12px 16px 0 !important;
+    }
+}
+
+@media screen and (max-width: 1024px)
+{
+    .esriCTHeaderSearch
+    {
+        background-image: url('../images/img44x44/locate.png') !important;
+    }
+
+    .esriCTHelpImg
+    {
+        background-image: url("../images/img44x44/help.png") !important;
+    }
+
+    .esriCTTdGeolocation
+    {
+        background-image: url("../images/img44x44/geolocation.png") !important;
+    }
+
+    .esriCTImgSocialMedia
+    {
+        background-image: url("../images/img44x44/share.png") !important;
+    }
+
+    .esriCTReportsImg
+    {
+        background-image: url("../images/img44x44/reports.png") !important;
     }
 }
 
@@ -290,20 +342,37 @@
 
     .esriCTSelectionIcon
     {
-        margin: 12px 20px 0 0;
+        margin: 12px 18px 0 0;
         background-repeat: no-repeat;
         background-position: center;
         float: left;
-        height: 42px;
-        width: 42px;
+        height: 44px;
+        width: 44px;
         float: left;
         cursor: pointer;
-        background-size: 42px auto;
+        background-size: 44px auto;
     }
 
+
+    .esriCTSelectionIconMapClick
+    {
+        background-repeat: no-repeat;
+        background-position: center;
+        float: left;
+        height: 44px;
+        width: 44px;
+        float: left;
+        cursor: pointer;
+        background-size: 44px auto;
+    }
     .select-on-map
     {
         margin: 12px 16px 0 !important;
+    }
+
+    .esriCTchangeUnit
+    {
+        width: 65%;
     }
 }
 
@@ -418,20 +487,25 @@
 
     .esriCTSelectionIcon
     {
-        margin: 12px 20px 0 0;
+        margin: 12px 18px 0 0;
         background-repeat: no-repeat;
         background-position: center;
         float: left;
-        height: 42px;
-        width: 42px;
+        height: 44px;
+        width: 44px;
         float: left;
         cursor: pointer;
-        background-size: 42px auto;
+        background-size: 44px auto;
     }
 
     .select-on-map
     {
         margin: 12px 16px 0 !important;
+    }
+
+    .esriCTchangeUnit
+    {
+        width: 65%;
     }
 }
 
@@ -464,6 +538,11 @@
     .esriCTAreaOfInterestContainer
     {
         top: 100px;
+    }
+
+    .esriCTchangeUnit
+    {
+        width: 65%;
     }
 }
 

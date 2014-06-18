@@ -1,33 +1,121 @@
-﻿/* Application header Styles */
-
-.esriCTApplicationHeader
+﻿@media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (-webkit-min-device-pixel-ratio: 2)
 {
-    border-bottom: 1px solid #028D6A;
+    .esriCTHeaderSearchSelected
+    {
+        background-image: url('../images/img2x/locateSelectedGreen.png') !important;
+    }
+
+    .esriCTImgSocialMediaSelected
+    {
+        background-image: url('../images/img2x/shareGreen.png') !important;
+    }
+
+    .esriCTReportsImgSelected
+    {
+        background-image: url('../images/img2x/reportsSelectedGreen.png') !important;
+    }
+
+    .esriCTFacebook
+    {
+        background-image: url('../images/img2x/facebookGreen.png') !important;
+    }
+
+    .esriCTTwitter
+    {
+        background-image: url('../images/img2x/twitterGreen.png') !important;
+    }
+
+    .esriCTEmail
+    {
+        background-image: url('../images/img2x/emailGreen.png') !important;
+    }
+
+    .esriCTEmbedding
+    {
+        background-image: url('../images/img2x/embeddingGreen.png') !important;
+    }
 }
 
-.esriCTApplicationHeaderTextTD, .esriCTResultColor, .esriCTdivInfoTotalFeatureCount, .esriCTdivInfoFeatureCount, .esriCTAOILink, .esriCTHeaderPanelContent, .BasemapToggle .basemapTitle
+@media screen and (max-width: 1024px)
+{
+    .esriCTHeaderSearchSelected
+    {
+        background-image: url('../images/img44x44/locateGreen.png') !important;
+    }
+
+    .esriCTImgSocialMediaSelected
+    {
+        background-image: url('../images/img44x44/shareGreen.png') !important;
+    }
+
+    .esriCTReportsImgSelected
+    {
+        background-image: url('../images/img44x44/reportsGreen.png') !important;
+    }
+
+    .esriCTFacebook
+    {
+        background-image: url('../images/img44x44/facebookGreen.png') !important;
+    }
+
+    .esriCTTwitter
+    {
+        background-image: url('../images/img44x44/twitterGreen.png') !important;
+    }
+
+    .esriCTEmail
+    {
+        background-image: url('../images/img44x44/emailGreen.png') !important;
+    }
+
+    .esriCTEmbedding
+    {
+        background-image: url('../images/img44x44/embeddingGreen.png') !important;
+    }
+
+    .drawPoint
+    {
+        background-image: url("../images/img44x44/drawPointGreen.png") !important;
+    }
+
+    .drawDrawing
+    {
+        background-image: url("../images/img44x44/drawLineGreen.png") !important;
+    }
+
+    .drawRectangle
+    {
+        background-image: url("../images/img44x44/drawRectangleGreen.png") !important;
+    }
+
+    .drawPolygon
+    {
+        background-image: url("../images/img44x44/drawPolygonGreen.png") !important;
+    }
+
+    .select-on-map
+    {
+        background-image: url("../images/img44x44/selectMultiplePointsGreen.png") !important;
+    }
+
+    .esriCTMapClickPoint
+    {
+        background-image: url("../images/img44x44/pointMapClickGreen.png") !important;
+    }
+}
+
+/* Application header Styles */
+
+
+.esriCTApplicationHeader, .esriCTLinkContainer, .esriCTuploadShapeContainer,.esriCTAddressContent, .esriCTDivAppHolder, .esriCTDivShareContainer,.esriCTTxtShare, .BasemapToggle .basemapImage,.BasemapToggle .toggleButton, .esriCTBufferDistance
+{
+    border-color: #028D6A;
+}
+
+.esriCTApplicationHeaderTextTD, .esriCTResultColor, .esriCTdivInfoTotalFeatureCount, .esriCTdivInfoFeatureCount, .esriCTAOILinkSelect, .esriCTHeaderPanelContent, .BasemapToggle .basemapTitle
 {
     color: #028D6A !important;
 }
-
-/* Address container Styles */
-
-.esriCTAddressContent, .esriCTDivAppHolder, .esriCTDivShareContainer
-{
-    border-right: 1px solid #028D6A;
-    border-left: 1px solid #028D6A;
-    border-bottom: 1px solid #028D6A;
-}
-
-/* Share Container Styles */
-
-.esriCTTxtShare, .BasemapToggle .basemapImage
-{
-    border: 1px solid #028D6A;
-}
-
-/* Slider */
-
 .esriSimpleSliderDecrementButton, .esriSimpleSliderIncrementButton
 {
     background-color: #028D6A !important;
@@ -40,13 +128,6 @@
 
 /* End of Slider */
 
-/* Basemap */
-
-.BasemapToggle .toggleButton
-{
-    border: 2px solid #028D6A !important;
-}
-
 .esriCTHeaderReportContainer
 {
     border-left: 1px solid #028D6A;
@@ -57,6 +138,7 @@
 {
     color: #028D6A;
 }
+
 .esriCTAreaOfInterestTabSelected
 {
     color: #028D6A;
@@ -71,6 +153,7 @@
     border-left: 1px solid #FAFAFA;
     border-right: 1px solid #028D6A;
 }
+
 .esriCTReportTabSelected
 {
     border-bottom: 1px solid #028D6A;
@@ -92,14 +175,8 @@
     color: #fff;
 }
 
-.dijitReset {
-    color:  #fff !important;
-}
-
-esriCTspanDialogBox
-{
-    color: #fff !important;
-
+.esriCTFormat span.dijitReset {
+    color: #028D6A;
 }
 
 .claro .dijitSelect, .dijitArrowButtonInner, .claro .dijitComboBox, .dijitArrowButtonInner {
@@ -110,7 +187,6 @@ esriCTspanDialogBox
     width: 16px !important;
     padding: 0px!important;
 }
-
 .claro .dijitSelectFocused .dijitArrowButton{ background-color: #fff !important; background-image: url("../images/green-arrow.png" )!important;  background-position: right center !important;  background-repeat: no-repeat !important;margin: 0px !important;    width: 16px !important;  padding: 0px!important;}
 
 .claro .dijitMenu .digitMenuItemSelected td, .claro .dijitComboBoxMenu .dijitMenuItemSelected {
@@ -128,7 +204,7 @@ esriCTspanDialogBox
 
 /* Splash Screen*/
 
-.esriCTCustomButton, .esriCTBrowseButton, .esriCTUploadButton
+.esriCTCustomButton, .esriCTBrowseButton, .esriCTUploadButton, .esriCTDownloadButton
 {
     background: #028D6A;
 }
@@ -155,7 +231,7 @@ esriCTspanDialogBox
     border: 1px solid #028D6A;
 }
 
-.esriCTLinkContainer, .esriCTInfoPanel
+.esriCTInfoPanel
 {
     border-top: 1px solid #028D6A;
 }
@@ -191,38 +267,39 @@ esriCTspanDialogBox
 
 .esriCTHeaderSearchSelected
 {
-    background-image: url("../images/img24x24/search-select-green-24.png");
+    background-image: url('../images/img24x24/locateGreen.png');
 }
 
 .esriCTImgSocialMediaSelected
 {
-     background-image: url("../images/img24x24/imgSocialMedia_green-24.png");
+    background-image: url('../images/img24x24/shareGreen.png');
 }
 
 .esriCTReportsImgSelected
 {
-    background-image: url("../images/img24x24/AOI-24-green.png") !important;
+    background-image: url('../images/img24x24/reportsGreen.png');
 }
 
 .esriCTFacebook
 {
-    background-image: url("../images/img2X/img_twitter@2x-green.png") !important;
+    background-image: url('../images/img24x24/facebookGreen.png');
 }
 
 .esriCTTwitter
 {
-   background-image: url("../images/img2X/img_twitter@2x-green.png") !important;
+    background-image: url("../images/img24x24/twitterGreen.png") !important;
 }
 
 .esriCTEmail
 {
-   background-image: url("../images/img2X/img-email@2x-green.png") !important;
+    background-image: url('../images/img24x24/emailGreen.png');
 }
 
 .esriCTEmbedding
 {
-    background-image: url('../images/embeddingGreen.png');
+    background-image: url('../images/img24x24/embeddingGreen.png');
 }
+
 .esriCTLeftArrow
 {
     background-image: url('../images/leftGreen.png');
@@ -251,112 +328,79 @@ esriCTspanDialogBox
     background-image: url("../images/bottomArrowGreen.png");
 }
 
-
 .drawPoint
 {
-    background-image: url("../images/point-green.png");
+    background-image: url("../images/img24x24/drawPointGreen.png");
 }
 
 .drawDrawing
 {
-    background-image: url("../images/draw-green.png");
+    background-image: url("../images/img24x24/drawLineGreen.png");
 }
 
 .drawRectangle
 {
-    background-image: url("../images/rectangle-green.png");
+    background-image: url("../images/img24x24/drawRectangleGreen.png");
 }
 
 .drawPolygon
 {
-    background-image: url("../images/draw-polygon-green.png");
+    background-image: url("../images/img24x24/drawPolygonGreen.png");
 }
 
 .select-on-map
 {
-    background-image: url("../images/select-on-map-green.png");
+    background-image: url("../images/img24x24/selectMultiplePointsGreen.png");
 }
 
 .esriCTMapClickPoint
 {
-    background-image: url("../images/pointMapClickGreen.png");
+    background-image: url("../images/img24x24/pointMapClickGreen.png");
 }
 
 .dijitSliderImageHandleH
 {
-    background-image: url('../images/thumb-green.png') !important;
+    background-image: url('../images/thumbGreen.png') !important;
 }
 
 .claro .dijitSliderProgressBarH .dijitSliderThumbHover
 {
-    background-image: url('../images/thumb-green.png') !important;
+    background-image: url('../images/thumbGreen.png') !important;
 }
 
 .claro .dijitDialogTitleBar
 {
     background-color: #028D6A !important;
 }
+
 .claro .dijitDialog
 {
     border: 1px solid #028D6A !important;
     box-shadow: none !important;
 }
+
 .claro .dijitButton .dijitButtonNode, .claro .dijitDropDownButton .dijitButtonNode, .claro .dijitComboButton .dijitButtonNode, .claro .dijitToggleButton .dijitButtonNode
 {
     background-color: #028D6A !important;
     color: #fff !important;
 }
+
 .claro .dijitDialogCloseIcon
 {
     background: url("../images/close.png") no-repeat scroll 0 0 rgba(0, 0, 0, 0) !important;
 }
-    .dijitDialogTitle
+
+.dijitDialogTitle
 {
-    color:#fff !important;
- }
- .esriCTDiv
+    color: #fff !important;
+}
+
+.esriCTDiv
 {
     color: #028D6A;
 }
-@media only screen and (min-device-width : 768px) and (max-device-width : 1024px) and (-webkit-min-device-pixel-ratio: 2)
+
+.esriCTsettingIcon
 {
-    .esriCTHeaderSearchSelected
-    {
-        background-image: url("../images/locateSelectedGreen@2x.png");
-    }
-
-    .esriCTImgSocialMediaSelected
-    {
-        background-image: url("../images/shareSelectedGreen@2x.png");
-    }
-
-    .esriCTReportsImgSelected
-    {
-        background-image: url("../images/reportsSelectedGreen@2x.png");
-    }
-
-    .esriCTFacebook
-    {
-        background-image: url("../images/facebookGreen@2x.png") !important;
-    }
-
-    .esriCTTwitter
-    {
-        background-image: url("../images/twitterGreen@2x.png") !important;
-    }
-
-    .esriCTEmail
-    {
-        background-image: url("../images/emailGreen@2x.png") !important;
-    }
-
-    .esriCTEmbedding
-    {
-        background-image: url('../images/embeddingGreen@2x.png') !important;
-    }
-
-     .esriCTHelpImg
-    {
-        background-image: url("../images/img2X/help@2X.png") !important;
-    }
+    background: #fff url("../images/settingsIconGreen.png");
 }

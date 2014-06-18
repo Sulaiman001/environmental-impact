@@ -152,7 +152,8 @@ define([], function () {
             SearchExpression: "UPPER(FEATURE_NA) LIKE UPPER('%${0}%')",
             QuickSummaryReportFields: "COUNTY_NAM",
             GroupByField: "COUNTY_NAM",
-            DetailSummaryReportFields: ["COUNTY_NUM"]
+            DetailSummaryReportFields: ["COUNTY_NUM"],
+            UnifiedSearch: "true"
         }, {
             Title: "EIAPoly",
             QueryLayerId: "10",
@@ -161,7 +162,8 @@ define([], function () {
             SearchExpression: "UPPER(MANAME) LIKE UPPER('%${0}%')",
             QuickSummaryReportFields: "Shape_Area",
             GroupByField: "MANAME",
-            DetailSummaryReportFields: ["COUNTY"]
+            DetailSummaryReportFields: ["COUNTY"],
+            UnifiedSearch: "true"
         }],
 
         // Following zoom level will be set for the map upon searching an address
@@ -305,6 +307,7 @@ define([], function () {
             },
             DisplayText: "Address",
             LocatorDefaultAddress: "Grandview Ln N, Bismarck, ND, 58503",
+            LocatorDefaultPlaceNameSearchAddress: "Mulberry, Florida",
             LocatorDefaultAOIAddress: "Mulberry, Florida",
             LocatorDefaultAOIBearingAddress: "Mulberry, Florida",
             LocatorParameters: {
@@ -329,11 +332,13 @@ define([], function () {
             PointSymbolBorderWidth: "2",
             LineSymbolColor: "#0000FF"
         },
+        // Supported units for Bearing Distances are feet, meters, miles and kilometers.
+        BearingDistanceUnit: "Feet",
+        BearingDistanceMaxLimit: 10000,
 
-        BearingDistanceUnits: {
-            Units: "Miles, Meters, Kilometers, Feet"
+        DownloadReportFormat: {
+            Format: "Select, FileGDB, Shapefile, CSV"
         },
-
         // ------------------------------------------------------------------------------------------------------------------------
         // GEOMETRY SERVICE SETTINGS
         // ------------------------------------------------------------------------------------------------------------------------
@@ -359,6 +364,11 @@ define([], function () {
             FacebookShareURL: "http://www.facebook.com/sharer.php?u=${0}&t=Environmental%20Impact",
             TwitterShareURL: "http://mobile.twitter.com/compose/tweet?status=Environmental%20Impact ${0}",
             ShareByMailLink: "mailto:%20?subject=Check%20out%20this%20map!&body=${0}"
-        }
+        },
+
+        //Set Area Of Interest Tab Text
+        AOITabText: "Area of Interest",
+        //Set Report Tab Text
+        ReportTabText: "Report"
     };
 });

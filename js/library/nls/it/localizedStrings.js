@@ -27,7 +27,8 @@ define({
         go: "@it@ Go",
         browse: "@it@ Browse",
         upload: "@it@ Upload",
-        add: "@it@ Add"
+        add: "@it@ Add",
+        downLoad: "@it@ Download"
     },
     tooltips: {
         search: "Cerca",
@@ -35,12 +36,15 @@ define({
         locate: "Posizione corrente",
         share: "Condividi",
         help: "Guida",
-        clearEntry: "@it@ Clear"
+        clearEntry: "@it@ Clear",
+        selectInitialCoordinates: "@it@ Select Initial Coordinates",
+        loadingText: "@it@ Loading...",
+        settingsIconTitle: "@it@ Choose fields to view in summary report"
     },
     titles: {
         areaOfInterestTabText: "@it@ Area of Interest",
         reportTabText: "Report",
-        webpageDisplayText: "@it@ Copy/paste HTML into your web page",
+        webpageDisplayText: "@it@ Copy/Paste HTML into your web page",
         pointToolText: "@it@ Point",
         lineToolText: "@it@ Line",
         rectangleToolText: "@it@ Rectangle",
@@ -50,17 +54,22 @@ define({
         areaMetricUnit: "@it@ sq.Km",
         lineMetricdUnit: "@it@ Km",
         lineStandardUnit: "@it@ miles",
-        standardUnitLabel: "@it@ standard unit",
-        metricUnitLabel: "@it@ show area in ",
-        unitLabel: "@it@ metric unit",
+        standardUnitLabel: "@it@ Standard Units",
+        metricUnitLabel: "@it@ Show areas in ",
+        unitLabel: "@it@ Metric Units",
         uploadShapeFile: "@it@ Upload Shapefile to include in analysis",
-        drawAOIBeforeUpload: "@it@ (please draw an AOI before Uploading)",
+        drawAOIBeforeUpload: "@it@ (Please draw an AOI before uploading)",
         downLoadReport: "@it@ Download Report",
         data: "@it@ Data",
         selectFormat: "@it@ Select Format",
         pdfReport: "@it@ PDF Report",
         quickSummary: "@it@ Quick Summary",
-        deatiledSummary: "@it@ Detailed Summary"
+        deatiledSummary: "@it@ Detailed Summary",
+        drawingToolUnifiedSearchTitle: "@it@ Navigate to geography",
+        placeNameTtile: "@it@ PlaceName Search",
+        drawingTitle: "@it@ Drawing tools",
+        uploadShapefileTitle: "@it@ Upload a zipped shapefile",
+        coordinatesTitle: "@it@ Enter coordinates, bearing and distance "
     },
     messages: {
         legendLoadingText: "@it@ Loading...",
@@ -70,13 +79,14 @@ define({
         coordinatesText: "@it@ Enter coordinates, bearing and distance",
         drawToolsText: "@it@ Use the Drawing tools to define your AOI",
         bufferSliderText: "@it@ Buffer distance (Optional for polygon AOIs)",
+        placeNameSearchText: "@it@ Use an address to define your AOI",
         radioBtnMiles: "@it@ Miles",
         radioBtnFeet: "@it@ Feet",
         radioBtnMeters: "@it@ Meters",
         radioBtnKilometers: "@it@ Kilometers",
         bearingContainerTitle: "@it@ Bearing and Distance",
-        bearingContainerText: "@it@ Enter coordinates for start point, bearing and distance from start point",
-        startPoint: "@it@ Define start point",
+        bearingContainerText: "@it@ Define Start point using address search",
+        startPoint: "@it@ Click on map to select start point",
         orText: "@it@ OR",
         latitude: "@it@ Latitude",
         longitude: "@it@ Longitude",
@@ -95,6 +105,13 @@ define({
         shareFailed: "@it@ Unable to share.",
         emptyInfoWindowTitle: "@it@ No feature details",
         emptyInfoWindowContent: "@it@ InfoWindow is disabled for the selected layer in webmap.",
-        bufferSliderValue: "@it@ Buffer slider should not be set to zero distance"
+        bufferSliderValue: "@it@ Buffer slider should not be set to zero distance",
+        addLattitudeValue: "@it@ Please enter valid Latitude",
+        addLongitudeValue: "@it@ Please enter valid Longitude.",
+        addBearingValue: "@it@ Please add Bearing value.",
+        addDistanceMiles: "@it@ Please add Valid distance in feet.",
+        errorPerfomingQuery: "@it@ Error performing query operation",
+        esriJobFailMessage: "@it@ Failed to generate AOI from shapefile",
+        esriJobFailToAnlayse: "@it@ Failed to execute (AnalyseShapefile)"
     }
 });
