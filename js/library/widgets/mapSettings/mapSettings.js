@@ -28,7 +28,6 @@ define([
     "dojo/dom-class",
     "dijit/_WidgetBase",
     "dojo/i18n!application/js/library/nls/localizedStrings",
-    "dojo/i18n!application/nls/localizedStrings",
     "esri/map",
     "esri/layers/ImageParameters",
     "esri/layers/FeatureLayer",
@@ -45,9 +44,9 @@ define([
     "dojo/text!../infoWindow/templates/infoWindow.html",
     "esri/layers/ArcGISDynamicMapServiceLayer",
     "esri/geometry/webMercatorUtils",
-    "dojo/query",
+    "dojo/_base/array",
     "dojo/domReady!"
-], function (declare, domConstruct, domStyle, lang, esriUtils, dom, domAttr, query, domClass, _WidgetBase, sharedNls, appNls, esriMap, ImageParameters, FeatureLayer, GraphicsLayer, BaseMapGallery, Legends, GeometryExtent, HomeButton, Deferred, DeferredList, topic, on, InfoWindow, template, ArcGISDynamicMapServiceLayer, webMercatorUtils, dojoQuery) {
+], function (declare, domConstruct, domStyle, lang, esriUtils, dom, domAttr, query, domClass, _WidgetBase, sharedNls, esriMap, ImageParameters, FeatureLayer, GraphicsLayer, BaseMapGallery, Legends, GeometryExtent, HomeButton, Deferred, DeferredList, topic, on, InfoWindow, template, ArcGISDynamicMapServiceLayer, webMercatorUtils, array) {
 
     //========================================================================================================================//
 
@@ -57,10 +56,10 @@ define([
         templateString: template,
         tempGraphicsLayerId: "esriGraphicsLayerMapSettings",
         tempBufferLayer: "tempBufferLayer",
+        //tempShapeFileGraphicsLayer: "addShapeFileGraphicsLayer",
         sharedNls: sharedNls,
-        appNls: appNls,
         infoWindowPanel: null,
-
+        prevOrientation : window.orientation,
         /**
         * initialize map object
         *
@@ -73,6 +72,8 @@ define([
             topic.subscribe("setInfoWindowOnMap", lang.hitch(this, function (infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count) {
                 this._onSetInfoWindowPosition(infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count);
             }));
+
+
             /**
             * load map
             * @param {string} dojo.configData.BaseMapLayers Basemap settings specified in configuration file
@@ -89,6 +90,15 @@ define([
                 mapDeferred.then(lang.hitch(this, function (response) {
                     clearTimeout(this.stagedSearch);
                     this.map = response.map;
+                    dojo.selectedBasemapIndex = 0;
+                    if (response.itemInfo.itemData.baseMap.baseMapLayers && response.itemInfo.itemData.baseMap.baseMapLayers[0].id) {
+                        if (response.itemInfo.itemData.baseMap.baseMapLayers[0].id !== "defaultBasemap") {
+                            this.map.getLayer(response.itemInfo.itemData.baseMap.baseMapLayers[0].id).id = "defaultBasemap";
+                            this.map._layers.defaultBasemap = this.map.getLayer(response.itemInfo.itemData.baseMap.baseMapLayers[0].id);
+                            delete this.map._layers[response.itemInfo.itemData.baseMap.baseMapLayers[0].id];
+                            this.map.layerIds[0] = "defaultBasemap";
+                        }
+                    }
                     this._fetchWebMapData(response);
                     topic.publish("setMap", this.map);
                     topic.publish("hideProgressIndicator");
@@ -105,13 +115,42 @@ define([
                 this.map = esriMap("esriCTParentDivContainer", {
                     showAttribution: dojo.configData.ShowMapAttribution
                 });
-                layer = new esri.layers.ArcGISTiledMapServiceLayer(dojo.configData.BaseMapLayers[0].MapURL, { id: "esriCTbasemap", visible: true });
-                this.map.addLayer(layer, 0);
+                if (dojo.configData.BaseMapLayers[0].length > 1) {
+                    array.forEach(dojo.configData.BaseMapLayers[0], lang.hitch(this, function (basemapLayer, index) {
+                        layer = new esri.layers.ArcGISTiledMapServiceLayer(basemapLayer.MapURL, { id: "defaultBasemap" + index, visible: true });
+                        this.map.addLayer(layer);
+                    }));
+                } else {
+                    layer = new esri.layers.ArcGISTiledMapServiceLayer(dojo.configData.BaseMapLayers[0].MapURL, { id: "defaultBasemap", visible: true });
+                    this.map.addLayer(layer);
+                }
                 this.map.on("load", lang.hitch(this, function () {
                     this._mapOnLoad();
                 }));
                 this._mapEvents();
             }
+
+            if (window.orientation !== undefined && window.orientation !== null) {
+                on(window, "orientationchange", lang.hitch(this, function () {
+                    if (this.prevOrientation !== window.orientation) {
+                        this.prevOrientation = window.orientation;
+                        topic.publish("resizeAOIPanel");
+                        topic.publish("resizeReportsPanel");
+                        topic.publish("resizeDialogBox");
+                    }
+                }));
+            } else {
+                on(window, "resize", lang.hitch(this, function () {
+                    if (this.prevOrientation !== window.orientation || window.orientation === undefined || window.orientation === null) {
+                        this.prevOrientation = window.orientation;
+                        topic.publish("resizeAOIPanel");
+                        topic.publish("resizeReportsPanel");
+                        topic.publish("resizeDialogBox");
+
+                    }
+                }));
+            }
+
         },
 
         _fetchWebMapData: function (response) {
@@ -209,26 +248,18 @@ define([
                         }
                     }
                 } else {
-                    alert(appNls.errorMessages.webmapTitleError);
+                    alert(sharedNls.appErrorMessage.webmapTitleError);
                 }
             }
         },
 
         _mapEvents: function () {
-            var intialLat, initiallong;
             this.map.on("extent-change", lang.hitch(this, function () {
                 this._onSetMapTipPosition(dojo.selectedMapPoint, this.map, this.infoWindowPanel);
             }));
             this.map.on("click", lang.hitch(this, function (evt) {
                 if (!dojo.activatedDrawTool && !dojo.initialCoordinates) {
                     this._showInfoWindowOnMap(evt.mapPoint);
-                }
-                if (dojo.initialCoordinates) {
-                    var normalizedVal = webMercatorUtils.xyToLngLat(evt.mapPoint.x, evt.mapPoint.y);
-                    intialLat = dojoQuery(".esriCTaddLatitudeValue");
-                    intialLat[0].value = normalizedVal[0];
-                    initiallong = dojoQuery(".esriCTaddLongitudeValue");
-                    initiallong[0].value = normalizedVal[1];
                 }
             }));
         },
@@ -309,7 +340,7 @@ define([
                                 }
                             }
                         } else {
-                            alert(appNls.errorMessages.layerTitleError);
+                            alert(sharedNls.appErrorMessage.layerTitleError);
                         }
                     }
                     for (x = 0; x < searchSettings.length; x++) {
@@ -319,10 +350,10 @@ define([
                         }
                     }
                     if (count !== dojo.configData.InfoWindowSettings.length) {
-                        alert(appNls.errorMessages.titleNotMatching);
+                        alert(sharedNls.appErrorMessage.titleNotMatching);
                     }
                 } else {
-                    alert(appNls.errorMessages.lengthDoNotMatch);
+                    alert(sharedNls.appErrorMessage.lengthDoNotMatch);
                 }
 
                 if (dojo.configData.BaseMapLayers.length > 1) {
@@ -341,6 +372,7 @@ define([
             graphicsLayer = new GraphicsLayer();
             graphicsLayer.id = this.tempBufferLayer;
             this.map.addLayer(graphicsLayer);
+
         },
 
         _onSetMapTipPosition: function (selectedPoint, map, infoWindow) {
@@ -443,7 +475,6 @@ define([
                     };
                 }
             } else {
-                alert(sharedNls.errorMessages.invalidSearch);
                 topic.publish("hideProgressIndicator");
             }
         },

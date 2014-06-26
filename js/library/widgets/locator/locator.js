@@ -42,7 +42,6 @@ define([
     "dijit/_TemplatedMixin",
     "dijit/_WidgetsInTemplateMixin",
     "dojo/i18n!application/js/library/nls/localizedStrings",
-    "dojo/i18n!application/nls/localizedStrings",
     "dojo/topic",
     "esri/symbols/SimpleLineSymbol",
     "esri/symbols/SimpleFillSymbol",
@@ -51,20 +50,19 @@ define([
     "esri/graphic",
     "esri/geometry/webMercatorUtils",
     "dojo/query"
-], function (declare, domConstruct, domStyle, domAttr, lang, on, domGeom, dom, domClass, query, string, Locator, Query, ScrollBar, Deferred, DeferredList, QueryTask, Geometry, cookie, Point, template, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, appNls, topic, SimpleLineSymbol, SimpleFillSymbol, SimpleMarkerSymbol, Color, Graphic, webMercatorUtils, dojoQuery) {
+], function (declare, domConstruct, domStyle, domAttr, lang, on, domGeom, dom, domClass, query, string, Locator, Query, ScrollBar, Deferred, DeferredList, QueryTask, Geometry, cookie, Point, template, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, topic, SimpleLineSymbol, SimpleFillSymbol, SimpleMarkerSymbol, Color, Graphic, webMercatorUtils, dojoQuery) {
     //========================================================================================================================//
 
     return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
         templateString: template,
         sharedNls: sharedNls,
-        appNls: appNls,
         lastSearchString: null,
         stagedSearch: null,
         locatorScrollbar: null,
         locatorAOIScrollbar: null,
         locatorAOIBearingScrollbar: null,
         screenPoint: null,
-
+        locatorAOIPlacenameScrollbar: null,
         /**
         * display locator widget
         *
@@ -86,6 +84,7 @@ define([
                         this.txtAddress.blur();
                     }
                 }
+                topic.publish("closeDialogBox");
             }));
 
             topic.subscribe("createInfoWindowContent", lang.hitch(this, function (mapPoint, attributes, fields, infoIndex, featureArray, count, zoomToFeature) {
@@ -124,8 +123,10 @@ define([
                 divResults: this.divAddressResults,
                 divAddressContent: this.divAddressContent,
                 divAddressScrollContent: this.divAddressScrollContent,
+                divNoResultFound: this.divNoResultFound,
                 isAOISearch: false,
-                isAOIBearingSearch: false
+                isAOIBearingSearch: false,
+                isPlacenameSearch: false
             };
             this._attachLocatorEvents(locatorParams);
         },
@@ -176,11 +177,17 @@ define([
                 this._replaceDefaultText(evt, locatorParams);
             })));
             this.own(on(locatorParams.textAddress, "focus", lang.hitch(this, function () {
-                domStyle.set(locatorParams.close, "display", "block");
+                if (domStyle.get(locatorParams.imgSearchLoader, "display") === "none") {
+                    domStyle.set(locatorParams.close, "display", "block");
+                }
                 domClass.add(locatorParams.textAddress, "esriCTColorChange");
             })));
             this.own(on(locatorParams.close, "click", lang.hitch(this, function () {
                 this._hideText(locatorParams);
+                domStyle.set(locatorParams.divNoResultFound, "display", "none");
+                domStyle.set(locatorParams.divAddressScrollContent, "display", "none");
+                //reset aoi container scrollbar on bearing or draw tool address click
+                topic.publish("resizeAOIPanel");
             })));
         },
 
@@ -191,15 +198,25 @@ define([
             domAttr.set(locatorParams.textAddress, "defaultAddress", locatorParams.textAddress.value);
             domClass.remove(locatorParams.divAddressContent, "esriCTAddressContainerHeight");
             domClass.remove(locatorParams.divAddressContent, "esriCTAddressResultHeight");
-            if (!locatorParams.isAOISearch) {
+            if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                 if (this.locatorScrollbar) {
                     domClass.add(this.locatorScrollbar._scrollBarContent, "esriCTZeroHeight");
                     this.locatorScrollbar.removeScrollBar();
                 }
-            } else {
+            } else if (locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                 if (this.locatorAOIScrollbar) {
                     domClass.add(this.locatorAOIScrollbar._scrollBarContent, "esriCTZeroHeight");
                     this.locatorAOIScrollbar.removeScrollBar();
+                }
+            } else if (!locatorParams.isAOISearch && locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
+                if (this.locatorAOIBearingScrollbar) {
+                    domClass.add(this.locatorAOIBearingScrollbar._scrollBarContent, "esriCTZeroHeight");
+                    this.locatorAOIBearingScrollbar.removeScrollBar();
+                }
+            } else if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && locatorParams.isPlacenameSearch) {
+                if (this.locatorAOIPlacenameScrollbar) {
+                    domClass.add(this.locatorAOIPlacenameScrollbar._scrollBarContent, "esriCTZeroHeight");
+                    this.locatorAOIPlacenameScrollbar.removeScrollBar();
                 }
             }
         },
@@ -232,7 +249,6 @@ define([
                 this.txtAddress.value = domAttr.get(this.txtAddress, "defaultAddress");
                 this.lastSearchString = lang.trim(this.txtAddress.value);
             }
-            this._setHeightAddressResults(locatorParams);
         },
 
         /**
@@ -318,11 +334,27 @@ define([
         _locateAddress: function (locatorParams) {
             domConstruct.empty(locatorParams.divResults);
             if (lang.trim(locatorParams.textAddress.value) === '') {
-                domStyle.set(locatorParams.imgSearchLoader, "display", "none");
-                domStyle.set(locatorParams.close, "display", "block");
-                domConstruct.empty(locatorParams.divResults);
+                if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
+                    if (this.locatorScrollbar) {
+                        domClass.remove(this.locatorScrollbar._scrollBarContent, "esriCTZeroHeight");
+                    }
+                } else if (locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
+                    if (this.locatorAOIScrollbar) {
+                        domClass.remove(this.locatorAOIScrollbar._scrollBarContent, "esriCTZeroHeight");
+                    }
+                } else if (!locatorParams.isAOISearch && locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
+                    if (this.locatorAOIBearingScrollbar) {
+                        domClass.remove(this.locatorAOIBearingScrollbar._scrollBarContent, "esriCTZeroHeight");
+                    }
+                } else if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && locatorParams.isPlacenameSearch) {
+                    if (this.locatorAOIPlacenameScrollbar) {
+                        domClass.remove(this.locatorAOIPlacenameScrollbar._scrollBarContent, "esriCTZeroHeight");
+                    }
+                }
+                domStyle.set(locatorParams.divNoResultFound, "display", "none");
                 this._locatorErrBack(locatorParams);
             } else {
+                domStyle.set(locatorParams.divNoResultFound, "display", "none");
                 this._searchLocation(locatorParams);
             }
         },
@@ -340,7 +372,6 @@ define([
             domStyle.set(locatorParams.imgSearchLoader, "display", "block");
             domStyle.set(locatorParams.close, "display", "none");
             domAttr.set(locatorParams.textAddress, "defaultAddress", locatorParams.textAddress.value);
-            this._setHeightAddressResults(locatorParams);
 
             /**
             * call locator service specified in configuration file
@@ -353,7 +384,7 @@ define([
             if (dojo.configData.WebMapId && lang.trim(dojo.configData.WebMapId).length !== 0) {
                 baseMapExtent = this.map.getLayer(this.map.layerIds[0]).fullExtent;
             } else {
-                baseMapExtent = this.map.getLayer("esriCTbasemap").fullExtent;
+                baseMapExtent = this.map.getLayer("defaultBasemap").fullExtent;
             }
             options = {};
             options.address = addressField;
@@ -384,8 +415,6 @@ define([
                 deferred.resolve(candidates);
                 return deferred.promise;
             }), function () {
-                domStyle.set(locatorParams.imgSearchLoader, "display", "none");
-                domStyle.set(locatorParams.close, "display", "block");
                 this._locatorErrBack(locatorParams);
             });
             deferredArray.push(locatorDef);
@@ -397,7 +426,7 @@ define([
                     if (result.length > 0) {
                         for (num = 0; num < result.length; num++) {
                             if (result[num][0] === true) {
-                                if (dojo.configData.SearchSettings[num]) {
+                                if (dojo.configData.SearchSettings[num] && dojo.configData.SearchSettings[num].UnifiedSearch.toLowerCase() === "true") {
                                     key = dojo.configData.SearchSettings[num].SearchDisplayTitle;
                                     nameArray[key] = [];
                                     if (result[num][1].features) {
@@ -431,8 +460,6 @@ define([
                         this._showLocatedAddress(nameArray, resultLength, locatorParams);
                     }
                 } else {
-                    domStyle.set(locatorParams.imgSearchLoader, "display", "none");
-                    domStyle.set(locatorParams.close, "display", "block");
                     this.mapPoint = null;
                     this._locatorErrBack(locatorParams);
                 }
@@ -495,7 +522,7 @@ define([
                 candidateArray, divAddressCounty, candidate, listContainer, i, divAddressSearchCell;
 
             domConstruct.empty(locatorParams.divResults);
-            if (locatorParams.isAOISearch || locatorParams.isAOIBearingSearch) {
+            if (locatorParams.isAOISearch || locatorParams.isAOIBearingSearch || locatorParams.isPlacenameSearch) {
                 domStyle.set(locatorParams.divAddressScrollContent, "display", "block");
             }
             if (lang.trim(locatorParams.textAddress.value) === "") {
@@ -519,7 +546,8 @@ define([
             * display all the located address in the address container
             * 'this.divAddressResults' div dom element contains located addresses, created in widget template
             */
-            if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch) {
+            //main address search
+            if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                 if (this.locatorScrollbar) {
                     domClass.add(this.locatorScrollbar._scrollBarContent, "esriCTZeroHeight");
                     this.locatorScrollbar.removeScrollBar();
@@ -527,7 +555,8 @@ define([
                 this.locatorScrollbar = new ScrollBar({ domNode: locatorParams.divAddressScrollContent });
                 this.locatorScrollbar.setContent(locatorParams.divResults);
                 this.locatorScrollbar.createScrollBar();
-            } else if (!locatorParams.isAOISearch && locatorParams.isAOIBearingSearch) {
+                //Bearing Search
+            } else if (!locatorParams.isAOISearch && !locatorParams.isPlacenameSearch && locatorParams.isAOIBearingSearch) {
                 if (this.locatorAOIBearingScrollbar) {
                     domClass.add(this.locatorAOIBearingScrollbar._scrollBarContent, "esriCTZeroHeight");
                     this.locatorAOIBearingScrollbar.removeScrollBar();
@@ -535,7 +564,18 @@ define([
                 this.locatorAOIBearingScrollbar = new ScrollBar({ domNode: locatorParams.divAddressScrollContent });
                 this.locatorAOIBearingScrollbar.setContent(locatorParams.divResults);
                 this.locatorAOIBearingScrollbar.createScrollBar();
-
+                topic.publish("resizeAOIPanel");
+                //Placename Search
+            } else if (!locatorParams.isAOISearch && locatorParams.isPlacenameSearch && !locatorParams.isAOIBearingSearch) {
+                if (this.locatorAOIPlacenameScrollbar) {
+                    domClass.add(this.locatorAOIPlacenameScrollbar._scrollBarContent, "esriCTZeroHeight");
+                    this.locatorAOIPlacenameScrollbar.removeScrollBar();
+                }
+                this.locatorAOIPlacenameScrollbar = new ScrollBar({ domNode: locatorParams.divAddressScrollContent });
+                this.locatorAOIPlacenameScrollbar.setContent(locatorParams.divResults);
+                this.locatorAOIPlacenameScrollbar.createScrollBar();
+                topic.publish("resizeAOIPanel");
+                // Drawtool search
             } else {
                 if (this.locatorAOIScrollbar) {
                     domClass.add(this.locatorAOIScrollbar._scrollBarContent, "esriCTZeroHeight");
@@ -544,7 +584,9 @@ define([
                 this.locatorAOIScrollbar = new ScrollBar({ domNode: locatorParams.divAddressScrollContent });
                 this.locatorAOIScrollbar.setContent(locatorParams.divResults);
                 this.locatorAOIScrollbar.createScrollBar();
+                topic.publish("resizeAOIPanel");
             }
+
             if (resultLength > 0) {
                 for (candidateArray in candidates) {
                     if (candidates.hasOwnProperty(candidateArray)) {
@@ -578,8 +620,6 @@ define([
                 }
 
             } else {
-                domStyle.set(locatorParams.imgSearchLoader, "display", "none");
-                domStyle.set(locatorParams.close, "display", "block");
                 this.mapPoint = null;
                 this._locatorErrBack(locatorParams);
             }
@@ -599,10 +639,12 @@ define([
                     domClass.toggle(listContainer, "esriCTShowAddressList");
                     listStatusSymbol = (domAttr.get(query(".esriCTPlusMinus")[idx], "innerHTML") === "+") ? "-" : "+";
                     domAttr.set(query(".esriCTPlusMinus")[idx], "innerHTML", listStatusSymbol);
-                    if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch) {
+                    if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                         this.locatorScrollbar.resetScrollBar();
-                    } else if (!locatorParams.isAOISearch && locatorParams.isAOIBearingSearch) {
+                    } else if (!locatorParams.isAOISearch && !locatorParams.isPlacenameSearch && locatorParams.isAOIBearingSearch) {
                         this.locatorAOIBearingScrollbar.resetScrollBar();
+                    } else if (!locatorParams.isAOISearch && locatorParams.isPlacenameSearch && !locatorParams.isAOIBearingSearch) {
+                        this.locatorAOIPlacenameScrollbar.resetScrollBar();
                     } else {
                         this.locatorAOIScrollbar.resetScrollBar();
                     }
@@ -610,16 +652,17 @@ define([
                 }
                 domClass.add(listContainer, "esriCTShowAddressList");
                 domAttr.set(query(".esriCTPlusMinus")[idx], "innerHTML", "-");
-                if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch) {
+                if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                     this.locatorScrollbar.resetScrollBar();
-                } else if (!locatorParams.isAOISearch && locatorParams.isAOIBearingSearch) {
+                } else if (!locatorParams.isAOISearch && !locatorParams.isPlacenameSearch && locatorParams.isAOIBearingSearch) {
                     this.locatorAOIBearingScrollbar.resetScrollBar();
+                } else if (!locatorParams.isAOISearch && locatorParams.isPlacenameSearch && !locatorParams.isAOIBearingSearch) {
+                    this.locatorAOIPlacenameScrollbar.resetScrollBar();
                 } else {
                     this.locatorAOIScrollbar.resetScrollBar();
                 }
             }));
         },
-
         /**
         * display valid result in search panel
         * @param {object} candidate Contains valid result to be displayed in search panel
@@ -627,7 +670,7 @@ define([
         * @memberOf widgets/locator/locator
         */
         _displayValidLocations: function (candidate, index, candidateArray, listContainer, locatorParams) {
-            var _this = this, candidateAddress, divAddressRow, normalizedVal, layer, infoIndex, intialLat, initiallong, highlightSymbol, highlightGraphic;
+            var _this = this, candidateAddress, divAddressRow, normalizedVal, layer, infoIndex, highlightSymbol, highlightGraphic;
             domClass.remove(locatorParams.divAddressContent, "esriCTAddressResultHeight");
             domClass.add(locatorParams.divAddressContent, "esriCTAddressContainerHeight");
             divAddressRow = domConstruct.create("div", { "class": "esriCTrowTable" }, listContainer);
@@ -648,17 +691,18 @@ define([
                 alert(sharedNls.errorMessages.falseConfigParams);
             }
             candidateAddress.onclick = function () {
-
                 topic.publish("showProgressIndicator");
                 if (_this.map.infoWindow) {
                     _this.map.infoWindow.hide();
                 }
                 locatorParams.textAddress.value = this.innerHTML;
                 domAttr.set(locatorParams.textAddress, "defaultAddress", locatorParams.textAddress.value);
-                if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch) {
+                if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                     _this._hideAddressContainer();
                 } else {
                     domStyle.set(locatorParams.divAddressScrollContent, "display", "none");
+                    //reset aoi container scrollbar on bearing or draw tool address click
+                    topic.publish("resizeAOIPanel");
                 }
 
                 if (candidate.attributes.location) {
@@ -666,12 +710,7 @@ define([
                     _this._locateAddressOnMap(_this.mapPoint, locatorParams);
                     normalizedVal = webMercatorUtils.xyToLngLat(_this.mapPoint.x, _this.mapPoint.y);
                     if (locatorParams.isAOIBearingSearch) {
-                        intialLat = dojoQuery(".esriCTaddLatitudeValue");
-                        intialLat[0].value = normalizedVal[0];
-                        intialLat[0].innerHTML = normalizedVal[0];
-                        initiallong = dojoQuery(".esriCTaddLongitudeValue");
-                        initiallong[0].value = normalizedVal[1];
-                        initiallong[0].innerHTML = normalizedVal[1];
+                        topic.publish("setStartPoint", normalizedVal);
                     }
 
                 } else {
@@ -688,12 +727,7 @@ define([
                         if (candidate.geometry.type === "point") {
                             if (locatorParams.isAOIBearingSearch) {
                                 normalizedVal = webMercatorUtils.xyToLngLat(candidate.geometry.x, candidate.geometry.y);
-                                intialLat = dojoQuery(".esriCTaddLatitudeValue");
-                                intialLat[0].value = normalizedVal[0];
-                                intialLat[0].innerHTML = normalizedVal[0];
-                                initiallong = dojoQuery(".esriCTaddLongitudeValue");
-                                initiallong[0].value = normalizedVal[1];
-                                initiallong[0].innerHTML = normalizedVal[1];
+                                topic.publish("setStartPoint", normalizedVal);
                                 topic.publish("hideProgressIndicator");
                             } else {
                                 _this.map.centerAt(candidate.geometry);
@@ -712,13 +746,13 @@ define([
                                         parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)
                                     ]));
                                 highlightGraphic = new Graphic(candidate.geometry, highlightSymbol);
-                                _this.map.graphics.add(highlightGraphic);
+                                _this.map.getLayer("esriGraphicsLayerMapSettings").add(highlightGraphic);
                                 topic.publish("hideProgressIndicator");
                                 topic.publish("createBuffer", candidate.geometry, null);
                             }
                         } else {
                             _this.map.setExtent(candidate.geometry.getExtent());
-                            _this.map.graphics.clear();
+                            _this.map.getLayer("esriGraphicsLayerMapSettings").clear();
                             highlightSymbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
                                 new SimpleLineSymbol(
                                     SimpleLineSymbol.STYLE_SOLID,
@@ -736,7 +770,7 @@ define([
                                     parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)])
                                 );
                             highlightGraphic = new Graphic(candidate.geometry, highlightSymbol);
-                            _this.map.graphics.add(highlightGraphic);
+                            _this.map.getLayer("esriGraphicsLayerMapSettings").add(highlightGraphic);
                             topic.publish("hideProgressIndicator");
                             topic.publish("createBuffer", candidate.geometry, null);
                         }
@@ -919,13 +953,13 @@ define([
             geoLocationPushpin = dojoConfig.baseURL + dojo.configData.LocatorSettings.DefaultLocatorSymbol;
             locatorMarkupSymbol = new esri.symbol.PictureMarkerSymbol(geoLocationPushpin, dojo.configData.LocatorSettings.MarkupSymbolSize.width, dojo.configData.LocatorSettings.MarkupSymbolSize.height);
             graphic = new esri.Graphic(mapPoint, locatorMarkupSymbol, {}, null);
-            if (!locatorParams.isAOIBearingSearch) {
-                this.map.getLayer("esriGraphicsLayerMapSettings").clear();
-                this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
-            }
             if (locatorParams.isAOISearch) {
+                graphic.attributes.sourcename = "aoiSearch";
+            } else {
                 topic.publish("createBuffer", mapPoint, null);
             }
+            this.map.getLayer("esriGraphicsLayerMapSettings").clear();
+            this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
             topic.publish("hideProgressIndicator");
         },
 
@@ -941,44 +975,18 @@ define([
         },
 
         /**
-        * set height of the search panel
-        * @memberOf widgets/locator/locator
-        */
-        _setHeightAddressResults: function (locatorParams) {
-
-            /**
-            * divAddressContent Container for search results
-            * @member {div} divAddressContent
-            * @private
-            * @memberOf widgets/locator/locator
-            */
-            var height = domGeom.getMarginBox(locatorParams.divAddressContent).h;
-            if (height > 0) {
-
-                /**
-                * divAddressScrollContent Scrollbar container for search results
-                * @member {div} divAddressScrollContent
-                * @private
-                * @memberOf widgets/locator/locator
-                */
-                domStyle.set(locatorParams.divAddressScrollContent, "height", (height - 120) + "px");
-            }
-        },
-
-        /**
         * display error message if locator service fails or does not return any results
         * @memberOf widgets/locator/locator
         */
         _locatorErrBack: function (locatorParams) {
-            var errorAddressCounty;
-
             domConstruct.empty(locatorParams.divResults);
+            domStyle.set(locatorParams.divAddressScrollContent, "display", "none");
             domStyle.set(locatorParams.imgSearchLoader, "display", "none");
             domStyle.set(locatorParams.close, "display", "block");
             domClass.remove(locatorParams.divAddressContent, "esriCTAddressContainerHeight");
             domClass.add(locatorParams.divAddressContent, "esriCTAddressResultHeight");
-            errorAddressCounty = domConstruct.create("div", { "class": "esriCTBottomBorder esriCTCursorPointer esriCTAddressCounty" }, locatorParams.divResults);
-            domAttr.set(errorAddressCounty, "innerHTML", sharedNls.errorMessages.invalidSearch);
+            domStyle.set(locatorParams.divNoResultFound, "display", "block");
+
         },
 
         /**

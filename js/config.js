@@ -58,7 +58,7 @@ define([], function () {
 
         // Set splash window content - Message that appears when the application starts
         SplashScreen: {
-            // splash screen Message is set in locale file in nls directory
+            SplashScreenContent: "Lorem ipsum dolor sit er elit lamet, consectetaur cillium adipisicing pecu, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Nam liber te conscient to factor tum poen legum odioque civiuda. Lorem ipsum dolor sit er elit lamet, consectetaur cillium adipisicing pecu, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Nam liber te conscient to factor tum poen legum odioque civiuda.",
             IsVisible: true
         },
 
@@ -94,23 +94,17 @@ define([], function () {
         // ------------------------------------------------------------------------------------------------------------------------
         // Set baseMap layers
         // Please note: All base-maps need to use the same spatial reference. By default, on application start the first base-map will be loaded
+        // Specify URL to ArcGIS Portal REST API
+        PortalAPIURL: "http://www.arcgis.com/sharing/rest/",
+        // Specify URL to Search
+        SearchURL: "http://www.arcgis.com/sharing/rest/search?q=group:",
+        // Specify the title of group that contains basemaps
+        BasemapGroupTitle: "Basemaps", //CyberTech Systems and Software Limited
+        // Specify the user name of owner of the group that contains basemaps
+        BasemapGroupOwner: "GISITAdmin", //cybertechagol
+        // Specify path to image used to display the thumbnail for a basemap when portal does not provide it
+        NoThumbnail: "js/library/themes/images/not-available.png",
 
-        BaseMapLayers: [{
-            Key: "topo",
-            ThumbnailSource: "js/library/themes/images/Topographic.jpg",
-            Name: "Topographic Map",
-            MapURL: "http://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer"
-        }, {
-            Key: "streets",
-            ThumbnailSource: "js/library/themes/images/streets.png",
-            Name: "Street Map",
-            MapURL: "http://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer"
-        }, {
-            Key: "imagery",
-            ThumbnailSource: "js/library/themes/images/imagery.png",
-            Name: "Imagery Map",
-            MapURL: "http://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer"
-        }],
 
 
         // Initial map extent. Use comma (,) to separate values and dont delete the last comma
@@ -158,7 +152,8 @@ define([], function () {
             SearchExpression: "UPPER(FEATURE_NA) LIKE UPPER('%${0}%')",
             QuickSummaryReportFields: "COUNTY_NAM",
             GroupByField: "COUNTY_NAM",
-            DetailSummaryReportFields: ["COUNTY_NUM"]
+            DetailSummaryReportFields: ["COUNTY_NUM"],
+            UnifiedSearch: "true"
         }, {
             Title: "EIAPoly",
             QueryLayerId: "10",
@@ -167,7 +162,8 @@ define([], function () {
             SearchExpression: "UPPER(MANAME) LIKE UPPER('%${0}%')",
             QuickSummaryReportFields: "Shape_Area",
             GroupByField: "MANAME",
-            DetailSummaryReportFields: ["COUNTY"]
+            DetailSummaryReportFields: ["COUNTY"],
+            UnifiedSearch: "true"
         }],
 
         // Following zoom level will be set for the map upon searching an address
@@ -311,6 +307,7 @@ define([], function () {
             },
             DisplayText: "Address",
             LocatorDefaultAddress: "Grandview Ln N, Bismarck, ND, 58503",
+            LocatorDefaultPlaceNameSearchAddress: "Mulberry, Florida",
             LocatorDefaultAOIAddress: "Mulberry, Florida",
             LocatorDefaultAOIBearingAddress: "Mulberry, Florida",
             LocatorParameters: {
@@ -335,16 +332,28 @@ define([], function () {
             PointSymbolBorderWidth: "2",
             LineSymbolColor: "#0000FF"
         },
+        // Supported units for Bearing Distances are feet, meters, miles and kilometers.
+        BearingDistanceUnit: "Feet",
+        BearingDistanceMaxLimit: 10000,
 
+        DownloadReportFormat: {
+            Format: "Select, FileGDB, Shapefile, CSV"
+        },
         // ------------------------------------------------------------------------------------------------------------------------
         // GEOMETRY SERVICE SETTINGS
         // ------------------------------------------------------------------------------------------------------------------------
 
         // Set geometry service URL
         GeometryService: "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer",
+
+        UploadFileUrl: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/EnvironmentalImpact/GPServer/uploads/upload",
         // ------------------------------------------------------------------------------------------------------------------------
 
+        ShapefileTOAOI: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/EnvironmentalImpact/GPServer/ShapefileToAOI",
         // ------------------------------------------------------------------------------------------------------------------------
+
+        AnalyseShapefile: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/EnvironmentalImpact/GPServer/AnalyseShapefile",
+
         // SETTINGS FOR MAP SHARING
         // ------------------------------------------------------------------------------------------------------------------------
 
@@ -355,6 +364,11 @@ define([], function () {
             FacebookShareURL: "http://www.facebook.com/sharer.php?u=${0}&t=Environmental%20Impact",
             TwitterShareURL: "http://mobile.twitter.com/compose/tweet?status=Environmental%20Impact ${0}",
             ShareByMailLink: "mailto:%20?subject=Check%20out%20this%20map!&body=${0}"
-        }
+        },
+
+        //Set Area Of Interest Tab Text
+        AOITabText: "Area of Interest",
+        //Set Report Tab Text
+        ReportTabText: "Report"
     };
 });

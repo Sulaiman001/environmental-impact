@@ -19,30 +19,30 @@
 {
     .esriCTHeaderSearch
     {
-        background-image: url("../images/locate@2x.png");
+        background-image: url('../images/img2x/locate.png') !important;
     }
 
     .esriCTHelpImg
     {
-        background-image: url("../images/help@2x.png");
+        background-image: url("../images/img2x/help.png") !important;
     }
 
-    .esriCTGeolocation
+    .esriCTTdGeolocation
     {
-        background-image: url("../images/geolocation@2x.png");
+        background-image: url("../images/img2x/geolocation.png") !important;
     }
 
     .esriCTImgSocialMedia
     {
-        background-image: url("../images/share@2x.png");
+        background-image: url("../images/img2x/share.png") !important;
     }
 
     .esriCTReportsImg
     {
-        background-image: url("../images/reports@2x.png");
+        background-image: url("../images/img2x/reports.png") !important;
     }
 
-    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
+    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTTdGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
     {
         height: 44px !important;
         width: 44px !important;
@@ -60,15 +60,27 @@
 
     .esriCTSelectionIcon
     {
-        margin: 12px 20px 0 0;
+        margin: 12px 18px 0 0;
         background-repeat: no-repeat;
         background-position: center;
         float: left;
-        height: 42px;
-        width: 42px;
+        height: 44px;
+        width: 44px;
         float: left;
         cursor: pointer;
-        background-size: 42px auto;
+        background-size: 44px auto;
+    }
+
+    .esriCTSelectionIconMapClick
+    {
+        background-repeat: no-repeat;
+        background-position: center;
+        float: left;
+        height: 44px;
+        width: 44px;
+        float: left;
+        cursor: pointer;
+        background-size: 44px auto;
     }
 
     .select-on-map
@@ -94,7 +106,7 @@
         font-size: 14px !important;
     }
 
-    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
+    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTTdGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
     {
         height: 44px !important;
         width: 44px !important;
@@ -135,7 +147,7 @@
         right: 70px;
     }
 
-    .esriCTApplicationHeaderText
+    .esriCTApplicationHeaderTextTD
     {
         font-size: 30px;
     }
@@ -168,20 +180,60 @@
 
     .esriCTSelectionIcon
     {
-        margin: 12px 20px 0 0;
+        margin: 12px 18px 0 0;
         background-repeat: no-repeat;
         background-position: center;
         float: left;
-        height: 42px;
-        width: 42px;
+        height: 44px;
+        width: 44px;
         float: left;
         cursor: pointer;
-        background-size: 42px auto;
+        background-size: 44px auto;
     }
 
+
+    .esriCTSelectionIconMapClick
+    {
+        background-repeat: no-repeat;
+        background-position: center;
+        float: left;
+        height: 44px;
+        width: 44px;
+        float: left;
+        cursor: pointer;
+        background-size: 44px auto;
+    }
     .select-on-map
     {
         margin: 12px 16px 0 !important;
+    }
+}
+
+@media screen and (max-width: 1024px)
+{
+    .esriCTHeaderSearch
+    {
+        background-image: url('../images/img44x44/locate.png') !important;
+    }
+
+    .esriCTHelpImg
+    {
+        background-image: url("../images/img44x44/help.png") !important;
+    }
+
+    .esriCTTdGeolocation
+    {
+        background-image: url("../images/img44x44/geolocation.png") !important;
+    }
+
+    .esriCTImgSocialMedia
+    {
+        background-image: url("../images/img44x44/share.png") !important;
+    }
+
+    .esriCTReportsImg
+    {
+        background-image: url("../images/img44x44/reports.png") !important;
     }
 }
 
@@ -207,7 +259,7 @@
         font-size: 14px !important;
     }
 
-    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
+    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTTdGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
     {
         height: 44px !important;
         width: 44px !important;
@@ -248,7 +300,7 @@
         right: 70px;
     }
 
-    .esriCTApplicationHeaderText
+    .esriCTApplicationHeaderTextTD
     {
         font-size: 30px;
     }
@@ -290,20 +342,37 @@
 
     .esriCTSelectionIcon
     {
-        margin: 12px 20px 0 0;
+        margin: 12px 18px 0 0;
         background-repeat: no-repeat;
         background-position: center;
         float: left;
-        height: 42px;
-        width: 42px;
+        height: 44px;
+        width: 44px;
         float: left;
         cursor: pointer;
-        background-size: 42px auto;
+        background-size: 44px auto;
     }
 
+
+    .esriCTSelectionIconMapClick
+    {
+        background-repeat: no-repeat;
+        background-position: center;
+        float: left;
+        height: 44px;
+        width: 44px;
+        float: left;
+        cursor: pointer;
+        background-size: 44px auto;
+    }
     .select-on-map
     {
         margin: 12px 16px 0 !important;
+    }
+
+    .esriCTchangeUnit
+    {
+        width: 65%;
     }
 }
 
@@ -329,7 +398,7 @@
         font-size: 14px !important;
     }
 
-    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
+    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTTdGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
     {
         height: 44px !important;
         width: 44px !important;
@@ -375,7 +444,7 @@
         right: 70px;
     }
 
-    .esriCTApplicationHeaderText
+    .esriCTApplicationHeaderTextTD
     {
         font-size: 30px;
     }
@@ -418,31 +487,36 @@
 
     .esriCTSelectionIcon
     {
-        margin: 12px 20px 0 0;
+        margin: 12px 18px 0 0;
         background-repeat: no-repeat;
         background-position: center;
         float: left;
-        height: 42px;
-        width: 42px;
+        height: 44px;
+        width: 44px;
         float: left;
         cursor: pointer;
-        background-size: 42px auto;
+        background-size: 44px auto;
     }
 
     .select-on-map
     {
         margin: 12px 16px 0 !important;
     }
+
+    .esriCTchangeUnit
+    {
+        width: 65%;
+    }
 }
 
 @media screen and (max-width: 680px)
 {
-    .esriCTApplicationHeaderText
+    .esriCTApplicationHeaderTextTD
     {
         display: none;
     }
 
-    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
+    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTTdGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
     {
         height: 44px !important;
         width: 44px !important;
@@ -464,6 +538,11 @@
     .esriCTAreaOfInterestContainer
     {
         top: 100px;
+    }
+
+    .esriCTchangeUnit
+    {
+        width: 65%;
     }
 }
 

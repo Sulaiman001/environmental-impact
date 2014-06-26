@@ -27,7 +27,8 @@ define({
         go: "@es@ Go",
         browse: "@es@ Browse",
         upload: "@es@ Upload",
-        add: "@es@ Add"
+        add: "@es@ Add",
+        downLoad: "@es@ Download"
     },
     tooltips: {
         search: "Buscar",
@@ -35,18 +36,40 @@ define({
         locate: "Ubicación actual",
         share: "Compartir",
         help: "Ayuda",
-        clearEntry: "@es@ Clear"
+        clearEntry: "@es@ Clear",
+        selectInitialCoordinates: "@es@ Select Initial Coordinates",
+        loadingText: "@es@ Loading...",
+        settingsIconTitle: "@es@ Choose fields to view in summary report"
     },
     titles: {
         areaOfInterestTabText: "@es@ Area of Interest",
         reportTabText: "Report",
-        webpageDisplayText: "@es@ Copy/paste HTML into your web page",
+        webpageDisplayText: "@es@ Copy/Paste HTML into your web page",
         pointToolText: "@es@ Point",
         lineToolText: "@es@ Line",
         rectangleToolText: "@es@ Rectangle",
         polygonToolText: "@es@ Polygon",
         selectFeatureText: "@es@ Select features",
-        areaStandardUnit: "@es@ acres"
+        areaStandardUnit: "@es@ acres",
+        areaMetricUnit: "@es@ sq.Km",
+        lineMetricdUnit: "@es@ Km",
+        lineStandardUnit: "@es@ miles",
+        standardUnitLabel: "@es@ Standard Units",
+        metricUnitLabel: "@es@ Show areas in ",
+        unitLabel: "@es@ Metric Units",
+        uploadShapeFile: "@es@ Upload Shapefile to include in analysis",
+        drawAOIBeforeUpload: "@es@ (Please draw an AOI before uploading)",
+        downLoadReport: "@es@ Download Report",
+        data: "@es@ Data",
+        selectFormat: "@es@ Select Format",
+        pdfReport: "@es@ PDF Report",
+        quickSummary: "@es@ Quick Summary",
+        deatiledSummary: "@es@ Detailed Summary",
+        drawingToolUnifiedSearchTitle: "@es@ Navigate to geography",
+        placeNameTtile: "@es@ PlaceName Search",
+        drawingTitle: "@es@ Drawing tools",
+        uploadShapefileTitle: "@es@ Upload a zipped shapefile",
+        coordinatesTitle: "@es@ Enter coordinates, bearing and distance "
     },
     messages: {
         legendLoadingText: "@es@ Loading...",
@@ -56,13 +79,13 @@ define({
         coordinatesText: "@es@ Enter coordinates, bearing and distance",
         drawToolsText: "@es@ Use the Drawing tools to define your AOI",
         bufferSliderText: "@es@ Buffer distance (Optional for polygon AOIs)",
+        placeNameSearchText: "@es@ Use an address to define your AOI",
         radioBtnMiles: "@es@ Miles",
         radioBtnFeet: "@es@ Feet",
         radioBtnMeters: "@es@ Meters",
         radioBtnKilometers: "@es@ Kilometers",
-        bearingContainerTitle: "@es@ Bearing and Distance",
-        bearingContainerText: "@es@ Enter coordinates for start point, bearing and distance from start point",
-        startPoint: "@es@ Define start point",
+        bearingContainerText: "@es@ Define Start point using address search",
+        startPoint: "@es@ Click on map to select start point",
         orText: "@es@ OR",
         latitude: "@es@ Latitude",
         longitude: "@es@ Longitude",
@@ -81,6 +104,13 @@ define({
         shareFailed: "@es@ Unable to share.",
         emptyInfoWindowTitle: "@es@ No feature details",
         emptyInfoWindowContent: "@es@ InfoWindow is disabled for the selected layer in webmap.",
-        bufferSliderValue: "Buffer slider should not be set to zero distance"
+        bufferSliderValue: "@es@ Buffer slider should not be set to zero distance",
+        addLattitudeValue: "@es@ Please enter valid Latitude",
+        addLongitudeValue: "@es@ Please enter valid Longitude.",
+        addBearingValue: "@es@ Please add Bearing value.",
+        addDistanceMiles: "@es@ Please add Valid distance in feet.",
+        errorPerfomingQuery: "@es@ Error performing query operation",
+        esriJobFailMessage: "@es@ Failed to generate AOI from shapefile",
+        esriJobFailToAnlayse: "@es@ Failed to execute (AnalyseShapefile)"
     }
 });

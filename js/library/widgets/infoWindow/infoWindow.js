@@ -32,13 +32,11 @@ define([
     "dijit/_TemplatedMixin",
     "dojo/query",
     "dojo/i18n!application/js/library/nls/localizedStrings",
-    "dojo/i18n!application/nls/localizedStrings",
     "dijit/_WidgetsInTemplateMixin"
-], function (declare, domConstruct, domStyle, lang, on, ScrollBar, dom, domClass, domUtils, InfoWindowBase, template, _WidgetBase, _TemplatedMixin, query, sharedNls, appNls, _WidgetsInTemplateMixin) {
+], function (declare, domConstruct, domStyle, lang, on, ScrollBar, dom, domClass, domUtils, InfoWindowBase, template, _WidgetBase, _TemplatedMixin, query, sharedNls, _WidgetsInTemplateMixin) {
     return declare([InfoWindowBase, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
         templateString: template,
         sharedNls: sharedNls,
-        appNls: appNls,
         InfoShow: null,
 
         postCreate: function () {
