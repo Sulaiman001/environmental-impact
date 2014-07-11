@@ -73,27 +73,27 @@
         background-image: url('../images/img44x44/embeddingGreen.png') !important;
     }
 
-    .drawPoint
+    .esriCTDrawPoint
     {
         background-image: url("../images/img44x44/drawPointGreen.png") !important;
     }
 
-    .drawDrawing
+    .esriCTDrawLine
     {
         background-image: url("../images/img44x44/drawLineGreen.png") !important;
     }
 
-    .drawRectangle
+    .esriCTDrawRectangle
     {
         background-image: url("../images/img44x44/drawRectangleGreen.png") !important;
     }
 
-    .drawPolygon
+    .esriCTDrawPolygon
     {
         background-image: url("../images/img44x44/drawPolygonGreen.png") !important;
     }
 
-    .select-on-map
+    .esriCTDrawMultiPoint
     {
         background-image: url("../images/img44x44/selectMultiplePointsGreen.png") !important;
     }
@@ -106,17 +106,17 @@
 
 /* Application header Styles */
 
-
-.esriCTApplicationHeader, .esriCTLinkContainer, .esriCTuploadShapeContainer,.esriCTAddressContent, .esriCTDivAppHolder, .esriCTDivShareContainer,.esriCTTxtShare, .BasemapToggle .basemapImage,.BasemapToggle .toggleButton, .esriCTBufferDistance
+.esriCTApplicationHeader, .esriCTLinkContainer, .esriCTuploadShapeContainer, .esriCTAddressContent, .esriCTDivAppHolder, .esriCTDivShareContainer, .esriCTTxtShare, .BasemapToggle .basemapImage, .BasemapToggle .toggleButton, .esriCTBufferDistance, .esriCTAOILink
 {
     border-color: #028D6A;
 }
 
-.esriCTApplicationHeaderTextTD, .esriCTResultColor, .esriCTdivInfoTotalFeatureCount, .esriCTdivInfoFeatureCount, .esriCTAOILinkSelect, .esriCTHeaderPanelContent, .BasemapToggle .basemapTitle
+.esriCTApplicationHeaderTextTD, .esriCTResultColor, .esriCTdivInfoTotalFeatureCount, .esriCTdivInfoFeatureCount, .esriCTHeaderPanelContent, .BasemapToggle .basemapTitle
 {
     color: #028D6A !important;
 }
-.esriSimpleSliderDecrementButton, .esriSimpleSliderIncrementButton
+
+.esriSimpleSliderDecrementButton, .esriSimpleSliderIncrementButton, .esriCTAOILinkSelect
 {
     background-color: #028D6A !important;
 }
@@ -175,31 +175,49 @@
     color: #fff;
 }
 
-.esriCTFormat span.dijitReset {
+.esriCTFormat span.dijitReset
+{
     color: #028D6A;
 }
 
-.claro .dijitSelect, .dijitArrowButtonInner, .claro .dijitComboBox, .dijitArrowButtonInner {
-    background-image: url("../images/green-arrow.png")!important;
+.claro .dijitSelect, .dijitArrowButtonInner, .claro .dijitComboBox, .dijitArrowButtonInner
+{
+    background-image: url("../images/green-arrow.png") !important;
     background-position: right center !important;
     background-repeat: no-repeat !important;
     margin: 0px !important;
     width: 16px !important;
-    padding: 0px!important;
+    padding: 0px !important;
 }
-.claro .dijitSelectFocused .dijitArrowButton{ background-color: #fff !important; background-image: url("../images/green-arrow.png" )!important;  background-position: right center !important;  background-repeat: no-repeat !important;margin: 0px !important;    width: 16px !important;  padding: 0px!important;}
 
-.claro .dijitMenu .digitMenuItemSelected td, .claro .dijitComboBoxMenu .dijitMenuItemSelected {
+.claro .dijitSelectFocused .dijitArrowButton
+{
+    background-color: #fff !important;
+    background-image: url("../images/green-arrow.png" ) !important;
+    background-position: right center !important;
+    background-repeat: no-repeat !important;
+    margin: 0px !important;
+    width: 16px !important;
+    padding: 0px !important;
+}
+
+.claro .dijitMenu .digitMenuItemSelected td, .claro .dijitComboBoxMenu .dijitMenuItemSelected
+{
     background-color: #028D6A !important;
 }
-.claro .dijitMenu .dijitMenuItemHover td, .claro .dijitMenu .dijitMenuItemSelected td, .claro .dijitMenuItemHover, .claro .dijitComboBoxMenu .dijitMenuItemHover, .claro .digitMenuItemSelected {
+
+.claro .dijitMenu .dijitMenuItemHover td, .claro .dijitMenu .dijitMenuItemSelected td, .claro .dijitMenuItemHover, .claro .dijitComboBoxMenu .dijitMenuItemHover, .claro .digitMenuItemSelected
+{
     background-image: none !important;
-    background-color:  #028D6A !important;
+    background-color: #028D6A !important;
     color: white !important;
 }
-.esriCTselectbox {
-    border-color: #028D6A !important;
+
+.esriCTAddTextboxButton
+{
+    color: #028D6A;
 }
+
 /* End of AOI Panel */
 
 /* Splash Screen*/
@@ -287,7 +305,7 @@
 
 .esriCTTwitter
 {
-    background-image: url("../images/img24x24/twitterGreen.png") !important;
+    background-image: url("../images/img24x24/twitterGreen.png");
 }
 
 .esriCTEmail
@@ -313,6 +331,7 @@
     background-repeat: no-repeat;
     background-position: center center;
 }
+
 .esriCTInfoWindowRightArrow
 {
     background: url("../images/rightArrowGreen.png");
@@ -328,27 +347,27 @@
     background-image: url("../images/bottomArrowGreen.png");
 }
 
-.drawPoint
+.esriCTDrawPoint
 {
     background-image: url("../images/img24x24/drawPointGreen.png");
 }
 
-.drawDrawing
+.esriCTDrawLine
 {
     background-image: url("../images/img24x24/drawLineGreen.png");
 }
 
-.drawRectangle
+.esriCTDrawRectangle
 {
     background-image: url("../images/img24x24/drawRectangleGreen.png");
 }
 
-.drawPolygon
+.esriCTDrawPolygon
 {
     background-image: url("../images/img24x24/drawPolygonGreen.png");
 }
 
-.select-on-map
+.esriCTDrawMultiPoint
 {
     background-image: url("../images/img24x24/selectMultiplePointsGreen.png");
 }
@@ -400,7 +419,12 @@
     color: #028D6A;
 }
 
-.esriCTsettingIcon
+.esriCTSelectedDistanceUnit, .esriCTSliderValueText
+{
+    color: #028D6A;
+}
+
+.esriCTSettingsIcon
 {
     background: #fff url("../images/settingsIconGreen.png");
 }

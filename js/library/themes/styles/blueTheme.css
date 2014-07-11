@@ -74,27 +74,27 @@
         background-image: url('../images/img44x44/embeddingBlue.png') !important;
     }
 
-    .drawPoint
+    .esriCTDrawPoint
     {
         background-image: url('../images/img44x44/drawPointBlue.png') !important;
     }
 
-    .drawDrawing
+    .esriCTDrawLine
     {
         background-image: url("../images/img44x44/drawLineBlue.png") !important;
     }
 
-    .drawRectangle
+    .esriCTDrawRectangle
     {
         background-image: url("../images/img44x44/drawRectangleBlue.png") !important;
     }
 
-    .drawPolygon
+    .esriCTDrawPolygon
     {
         background-image: url("../images/img44x44/drawPolygonBlue.png") !important;
     }
 
-    .select-on-map
+    .esriCTDrawMultiPoint
     {
         background-image: url("../images/img44x44/selectMultiplePointsBlue.png") !important;
     }
@@ -107,16 +107,16 @@
 
 /* Application Header Styles */
 
-.esriCTApplicationHeader, .esriCTLinkContainer, .esriCTuploadShapeContainer,.esriCTAddressContent, .esriCTDivAppHolder, .esriCTDivShareContainer,.esriCTTxtShare, .BasemapToggle .basemapImage,.BasemapToggle .toggleButton, .esriCTBufferDistance
+.esriCTApplicationHeader, .esriCTLinkContainer, .esriCTuploadShapeContainer, .esriCTAddressContent, .esriCTDivAppHolder, .esriCTDivShareContainer, .esriCTTxtShare, .BasemapToggle .basemapImage, .BasemapToggle .toggleButton, .esriCTBufferDistance, .esriCTAOILink
 {
     border-color: #007ac2;
 }
 
-.esriCTApplicationHeaderTextTD, .esriCTResultColor, .esriCTdivInfoTotalFeatureCount, .esriCTdivInfoFeatureCount, .esriCTAOILinkSelect, .esriCTHeaderPanelContent, .BasemapToggle .basemapTitle
+.esriCTApplicationHeaderTextTD, .esriCTResultColor, .esriCTdivInfoTotalFeatureCount, .esriCTdivInfoFeatureCount, .esriCTHeaderPanelContent, .BasemapToggle .basemapTitle
 {
     color: #007ac2 !important;
 }
-.esriSimpleSliderDecrementButton, .esriSimpleSliderIncrementButton
+.esriSimpleSliderDecrementButton, .esriSimpleSliderIncrementButton, .esriCTAOILinkSelect
 {
     background-color: #007ac2 !important;
 }
@@ -132,6 +132,11 @@
 {
     border-left: 1px solid #007ac2;
     border-right: 1px solid #007ac2;
+}
+
+.esriCTUnitLabel
+{
+    color: #007ac2;
 }
 
 .esriCTAreaOfInterestTabSelected
@@ -299,27 +304,27 @@
     background-image: url("../images/bottomArrow.png");
 }
 
-.drawPoint
+.esriCTDrawPoint
 {
     background-image: url('../images/img24x24/drawPointBlue.png');
 }
 
-.drawDrawing
+.esriCTDrawLine
 {
     background-image: url("../images/img24x24/drawLineBlue.png");
 }
 
-.drawRectangle
+.esriCTDrawRectangle
 {
     background-image: url("../images/img24x24/drawRectangleBlue.png");
 }
 
-.drawPolygon
+.esriCTDrawPolygon
 {
     background-image: url("../images/img24x24/drawPolygonBlue.png");
 }
 
-.select-on-map
+.esriCTDrawMultiPoint
 {
     background-image: url("../images/img24x24/selectMultiplePointsBlue.png");
 }
@@ -371,43 +376,55 @@
     color: #007ac2;
 }
 
-.esriCTFormat span.dijitReset {
+.esriCTSelectedDistanceUnit, .esriCTSliderValueText
+{
     color: #007ac2;
 }
 
-.claro .dijitSelect, .dijitArrowButtonInner, .claro .dijitComboBox, .dijitArrowButtonInner {
-    background-image: url("../images/blue-arrow.png")!important;
+.esriCTFormat span.dijitReset
+{
+    color: #007ac2;
+}
+
+.claro .dijitSelect, .dijitArrowButtonInner, .claro .dijitComboBox, .dijitArrowButtonInner
+{
+    background-image: url("../images/blue-arrow.png") !important;
     background-position: right center !important;
     background-repeat: no-repeat !important;
     margin: 0px !important;
     width: 16px !important;
-    padding: 0px!important;
+    padding: 0px !important;
 }
 
-.claro .dijitSelectFocused .dijitArrowButton {
+.claro .dijitSelectFocused .dijitArrowButton
+{
     background-color: #fff !important;
-    background-image: url("../images/blue-arrow.png" )!important;
+    background-image: url("../images/blue-arrow.png" ) !important;
     background-position: right center !important;
     background-repeat: no-repeat !important;
     margin: 0px !important;
     width: 16px !important;
-    padding: 0px!important;
+    padding: 0px !important;
 }
 
-.claro .dijitMenu .digitMenuItemSelected td, .claro .dijitComboBoxMenu .dijitMenuItemSelected {
+.claro .dijitMenu .digitMenuItemSelected td, .claro .dijitComboBoxMenu .dijitMenuItemSelected
+{
     background-color: #007AC2 !important;
 }
 
-.claro .dijitMenu .dijitMenuItemHover td, .claro .dijitMenu .dijitMenuItemSelected td, .claro .dijitMenuItemHover, .claro .dijitComboBoxMenu .dijitMenuItemHover, .claro .digitMenuItemSelected {
+.claro .dijitMenu .dijitMenuItemHover td, .claro .dijitMenu .dijitMenuItemSelected td, .claro .dijitMenuItemHover, .claro .dijitComboBoxMenu .dijitMenuItemHover, .claro .digitMenuItemSelected
+{
     background-image: none !important;
     background-color: #007AC2 !important;
     color: white !important;
 }
 
-.esriCTselectbox {
-    border-color: #007AC2 !important;
+.esriCTAddTextboxButton
+{
+    color: #007AC2;
 }
 
-.esriCTsettingIcon {
-    background: #fff url("../images/settingsIconBlue.png") ;
+.esriCTSettingsIcon
+{
+    background: #fff url("../images/settingsIconBlue.png");
 }

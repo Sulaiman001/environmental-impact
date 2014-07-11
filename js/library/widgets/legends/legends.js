@@ -139,8 +139,8 @@ define([
                             for (i = 0; i < result.length; i++) {
                                 if (result[i][0] && result[i][1] > 0) {
                                     resultListArray.push(result[i][1]);
-                                    this.legendListWidth.push(this.divLegendlist.offsetWidth);
                                     this._addLegendSymbol(this._rendererArray[i], this._layerCollection[this._rendererArray[i].layerUrl].layerName);
+                                    this.legendListWidth.push(this.divLegendlist.offsetWidth);
                                 }
                             }
                             this._addlegendListWidth(this.legendListWidth);
@@ -392,7 +392,7 @@ define([
 
         _addlegendListWidth: function (legendListWidth) {
             var listWidth = legendListWidth, total = 0, j, boxWidth;
-            for (j = 0; j < listWidth.length - 1; j++) {
+            for (j = 0; j < listWidth.length; j++) {
                 total += listWidth[j];
             }
             domStyle.set(query(".divlegendContent")[0], "width", (total + 5) + "px");

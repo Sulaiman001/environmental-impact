@@ -59,7 +59,7 @@ define([
         //tempShapeFileGraphicsLayer: "addShapeFileGraphicsLayer",
         sharedNls: sharedNls,
         infoWindowPanel: null,
-        prevOrientation : window.orientation,
+        prevOrientation: window.orientation,
         /**
         * initialize map object
         *
@@ -104,9 +104,11 @@ define([
                     topic.publish("hideProgressIndicator");
                     this._mapOnLoad();
                     this._mapEvents();
-                    this.stagedSearch = setTimeout(lang.hitch(this, function () {
-                        this._addLayerLegendWebmap(response);
-                    }), 3000);
+                    if (dojo.configData.ShowLegend) {
+                        this.stagedSearch = setTimeout(lang.hitch(this, function () {
+                            this._addLayerLegendWebmap(response);
+                        }), 3000);
+                    }
                 }), lang.hitch(this, function (error) {
                     alert(error.message);
                 }));
@@ -150,7 +152,6 @@ define([
                     }
                 }));
             }
-
         },
 
         _fetchWebMapData: function (response) {
@@ -265,7 +266,7 @@ define([
         },
 
         _mapOnLoad: function () {
-            var home, extentPoints, mapDefaultExtent, i, j, x, index, graphicsLayer, extent, serviceTitle, operationalLayers, count, layerTitle, str, lastIndex, searchSettings;
+            var home, extentPoints, mapDefaultExtent, i, j, x, imgCustomLogo, imgSource, index, graphicsLayer, extent, serviceTitle, operationalLayers, count, layerTitle, str, lastIndex, searchSettings;
             searchSettings = dojo.configData.SearchSettings;
 
             /**
@@ -296,7 +297,17 @@ define([
             home.startup();
 
             if (dojo.configData.CustomLogoUrl && lang.trim(dojo.configData.CustomLogoUrl).length !== 0) {
-                domConstruct.create("img", { "src": dojoConfig.baseURL + dojo.configData.CustomLogoUrl, "class": "esriCTMapLogo" }, dom.byId("esriCTParentDivContainer"));
+                if (dojo.configData.CustomLogoUrl.match("http:") || dojo.configData.CustomLogoUrl.match("https:")) {
+                    imgSource = dojo.configData.CustomLogoUrl;
+                } else {
+                    imgSource = dojoConfig.baseURL + dojo.configData.CustomLogoUrl;
+                }
+                imgCustomLogo = domConstruct.create("img", { "src": imgSource, "class": "esriCTCustomMapLogo" }, dom.byId("esriCTParentDivContainer"));
+                if (dojo.configData.ShowLegend) {
+                    domClass.add(imgCustomLogo, "esriCTCustomMapLogoBottom");
+                } else {
+                    domClass.add(imgCustomLogo, "esriCTCustomMapLogoNoLegend");
+                }
             }
             if (!dojo.configData.WebMapId) {
                 for (i in dojo.configData.OperationalLayers) {
@@ -355,15 +366,16 @@ define([
                 } else {
                     alert(sharedNls.appErrorMessage.lengthDoNotMatch);
                 }
-
-                if (dojo.configData.BaseMapLayers.length > 1) {
-                    this._showBasMapGallery();
+                if (dojo.configData.ShowLegend) {
+                    setTimeout(lang.hitch(this, function () {
+                        this._addLayerLegend();
+                    }), 2000);
                 }
-                setTimeout(lang.hitch(this, function () {
-                    this._addLayerLegend();
-                }), 2000);
             }
 
+            if (dojo.configData.BaseMapLayers.length > 1) {
+                this._showBasMapGallery();
+            }
             graphicsLayer = new GraphicsLayer();
             graphicsLayer.id = this.tempGraphicsLayerId;
             graphicsLayer.spatialReference = this.map.extent.spatialReference;
@@ -372,7 +384,6 @@ define([
             graphicsLayer = new GraphicsLayer();
             graphicsLayer.id = this.tempBufferLayer;
             this.map.addLayer(graphicsLayer);
-
         },
 
         _onSetMapTipPosition: function (selectedPoint, map, infoWindow) {
