@@ -123,7 +123,6 @@ define([
                 divResults: this.divAddressResults,
                 divAddressContent: this.divAddressContent,
                 divAddressScrollContent: this.divAddressScrollContent,
-                divNoResultFound: this.divNoResultFound,
                 isAOISearch: false,
                 isAOIBearingSearch: false,
                 isPlacenameSearch: false
@@ -184,8 +183,6 @@ define([
             })));
             this.own(on(locatorParams.close, "click", lang.hitch(this, function () {
                 this._hideText(locatorParams);
-                domStyle.set(locatorParams.divNoResultFound, "display", "none");
-                domStyle.set(locatorParams.divAddressScrollContent, "display", "none");
                 //reset aoi container scrollbar on bearing or draw tool address click
                 topic.publish("resizeAOIPanel");
             })));
@@ -334,6 +331,7 @@ define([
         _locateAddress: function (locatorParams) {
             domConstruct.empty(locatorParams.divResults);
             if (lang.trim(locatorParams.textAddress.value) === '') {
+                topic.publish("deactivateToolbar");
                 if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                     if (this.locatorScrollbar) {
                         domClass.remove(this.locatorScrollbar._scrollBarContent, "esriCTZeroHeight");
@@ -351,10 +349,8 @@ define([
                         domClass.remove(this.locatorAOIPlacenameScrollbar._scrollBarContent, "esriCTZeroHeight");
                     }
                 }
-                domStyle.set(locatorParams.divNoResultFound, "display", "none");
                 this._locatorErrBack(locatorParams);
             } else {
-                domStyle.set(locatorParams.divNoResultFound, "display", "none");
                 this._searchLocation(locatorParams);
             }
         },
@@ -469,8 +465,8 @@ define([
         _layerSearchResults: function (deferredArray, layerobject, locatorParams) {
             var queryTask, queryLayer, queryTaskResult, deferred, currentTime;
 
-            domStyle.set(this.imgSearchLoader, "display", "block");
-            domStyle.set(this.close, "display", "none");
+            domStyle.set(locatorParams.imgSearchLoader, "display", "block");
+            domStyle.set(locatorParams.close, "display", "none");
             if (layerobject.QueryURL) {
                 currentTime = new Date();
                 queryTask = new QueryTask(layerobject.QueryURL);
@@ -537,7 +533,7 @@ define([
                     this.locatorAOIScrollbar.setContent(locatorParams.divResults);
                     this.locatorAOIScrollbar.createScrollBar();
                 }
-                domStyle.set(this.imgSearchLoader, "display", "none");
+                domStyle.set(locatorParams.imgSearchLoader, "display", "none");
                 domStyle.set(locatorParams.close, "display", "block");
                 return;
             }
@@ -546,7 +542,7 @@ define([
             * display all the located address in the address container
             * 'this.divAddressResults' div dom element contains located addresses, created in widget template
             */
-            //main address search
+            // Reset scrollbar for main address search
             if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                 if (this.locatorScrollbar) {
                     domClass.add(this.locatorScrollbar._scrollBarContent, "esriCTZeroHeight");
@@ -555,7 +551,7 @@ define([
                 this.locatorScrollbar = new ScrollBar({ domNode: locatorParams.divAddressScrollContent });
                 this.locatorScrollbar.setContent(locatorParams.divResults);
                 this.locatorScrollbar.createScrollBar();
-                //Bearing Search
+                // Reset scrollbar for Bearing Search
             } else if (!locatorParams.isAOISearch && !locatorParams.isPlacenameSearch && locatorParams.isAOIBearingSearch) {
                 if (this.locatorAOIBearingScrollbar) {
                     domClass.add(this.locatorAOIBearingScrollbar._scrollBarContent, "esriCTZeroHeight");
@@ -565,7 +561,7 @@ define([
                 this.locatorAOIBearingScrollbar.setContent(locatorParams.divResults);
                 this.locatorAOIBearingScrollbar.createScrollBar();
                 topic.publish("resizeAOIPanel");
-                //Placename Search
+                // Reset scrollbar for Place name Search
             } else if (!locatorParams.isAOISearch && locatorParams.isPlacenameSearch && !locatorParams.isAOIBearingSearch) {
                 if (this.locatorAOIPlacenameScrollbar) {
                     domClass.add(this.locatorAOIPlacenameScrollbar._scrollBarContent, "esriCTZeroHeight");
@@ -575,8 +571,9 @@ define([
                 this.locatorAOIPlacenameScrollbar.setContent(locatorParams.divResults);
                 this.locatorAOIPlacenameScrollbar.createScrollBar();
                 topic.publish("resizeAOIPanel");
-                // Drawtool search
+                // Reset scrollbar for Draw tool search
             } else {
+                topic.publish("deactivateToolbar");
                 if (this.locatorAOIScrollbar) {
                     domClass.add(this.locatorAOIScrollbar._scrollBarContent, "esriCTZeroHeight");
                     this.locatorAOIScrollbar.removeScrollBar();
@@ -599,14 +596,18 @@ define([
                             domStyle.set(locatorParams.imgSearchLoader, "display", "none");
                             domStyle.set(locatorParams.close, "display", "block");
                             addrList.push(divAddressSearchCell);
-                            if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch) {
+                            if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                                 this._toggleAddressList(addrList, addrListCount, locatorParams);
                                 addrListCount++;
                                 listContainer = domConstruct.create("div", { "class": "listContainer esriCTHideAddressList" }, locatorParams.divResults);
-                            } else if (!locatorParams.isAOISearch && locatorParams.isAOIBearingSearch) {
+                            } else if (!locatorParams.isAOISearch && !locatorParams.isPlacenameSearch && locatorParams.isAOIBearingSearch) {
                                 this._toggleAddressList(addrList, addrListCount, locatorParams);
                                 addrListCount++;
                                 listContainer = domConstruct.create("div", { "class": "listContainerBearingAOI esriCTHideAddressList" }, locatorParams.divResults);
+                            } else if (!locatorParams.isAOISearch && locatorParams.isPlacenameSearch && !locatorParams.isAOIBearingSearch) {
+                                this._toggleAddressList(addrList, addrListCount, locatorParams);
+                                addrListCount++;
+                                listContainer = domConstruct.create("div", { "class": "listContainerPlaceNameAOI esriCTHideAddressList" }, locatorParams.divResults);
                             } else {
                                 this._toggleAddressList(addrList, addrListCount, locatorParams);
                                 addrListCount++;
@@ -628,10 +629,12 @@ define([
         _toggleAddressList: function (addressList, idx, locatorParams) {
             on(addressList[idx], "click", lang.hitch(this, function () {
                 var listContainer, listStatusSymbol;
-                if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch) {
+                if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                     listContainer = query(".listContainer")[idx];
-                } else if (!locatorParams.isAOISearch && locatorParams.isAOIBearingSearch) {
+                } else if (!locatorParams.isAOISearch && !locatorParams.isPlacenameSearch && locatorParams.isAOIBearingSearch) {
                     listContainer = query(".listContainerBearingAOI")[idx];
+                } else if (!locatorParams.isAOISearch && locatorParams.isPlacenameSearch && !locatorParams.isAOIBearingSearch) {
+                    listContainer = query(".listContainerPlaceNameAOI")[idx];
                 } else {
                     listContainer = query(".listContainerAOI")[idx];
                 }
@@ -663,6 +666,7 @@ define([
                 }
             }));
         },
+
         /**
         * display valid result in search panel
         * @param {object} candidate Contains valid result to be displayed in search panel
@@ -712,9 +716,8 @@ define([
                     if (locatorParams.isAOIBearingSearch) {
                         topic.publish("setStartPoint", normalizedVal);
                     }
-
                 } else {
-                    if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch) {
+                    if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                         if (candidateArray[domAttr.get(candidateAddress, "index", index)]) {
                             layer = candidateArray[domAttr.get(candidateAddress, "index", index)].layer.QueryURL;
                             for (infoIndex = 0; infoIndex < dojo.configData.SearchSettings.length; infoIndex++) {
@@ -955,8 +958,11 @@ define([
             graphic = new esri.Graphic(mapPoint, locatorMarkupSymbol, {}, null);
             if (locatorParams.isAOISearch) {
                 graphic.attributes.sourcename = "aoiSearch";
-            } else {
+                topic.publish("clearAllGraphics");
+            } else if (locatorParams.isAOIBearingSearch || locatorParams.isPlacenameSearch) {
                 topic.publish("createBuffer", mapPoint, null);
+            } else {
+                graphic.attributes.sourcename = "aoiSearch";
             }
             this.map.getLayer("esriGraphicsLayerMapSettings").clear();
             this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
@@ -980,13 +986,12 @@ define([
         */
         _locatorErrBack: function (locatorParams) {
             domConstruct.empty(locatorParams.divResults);
-            domStyle.set(locatorParams.divAddressScrollContent, "display", "none");
+            domStyle.set(locatorParams.divAddressScrollContent, "display", "block");
             domStyle.set(locatorParams.imgSearchLoader, "display", "none");
             domStyle.set(locatorParams.close, "display", "block");
             domClass.remove(locatorParams.divAddressContent, "esriCTAddressContainerHeight");
             domClass.add(locatorParams.divAddressContent, "esriCTAddressResultHeight");
-            domStyle.set(locatorParams.divNoResultFound, "display", "block");
-
+            domConstruct.create("div", { "class": "esriNoResultFound", "innerHTML": sharedNls.errorMessages.invalidSearch }, locatorParams.divResults);
         },
 
         /**

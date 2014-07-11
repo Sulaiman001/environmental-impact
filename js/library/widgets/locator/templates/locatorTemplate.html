@@ -9,7 +9,8 @@
                             <div style="float: left; width: 196px;">
                                 <input type="text" data-dojo-attach-point="txtAddress" class="esriCTTxtAddress" onfocus="if(this.setSelectionRange)this.setSelectionRange(this.value.length, this.value.length);" /></div>
                             <div class="esriCTSearchClose" data-dojo-attach-point="clearhide">
-                                <span class="esriCTClearInput" title="${sharedNls.tooltips.clearEntry}" data-dojo-attach-point="close"></span><span>
+                                <span class="esriCTClearInput" title="${sharedNls.tooltips.clearEntry}" data-dojo-attach-point="close">
+                                </span><span>
                                     <img data-dojo-attach-point="imgSearchLoader" class="esriCTSearchLoader" /></span>
                             </div>
                         </div>
@@ -18,8 +19,6 @@
                             </span>
                         </div>
                         <div data-dojo-attach-point="divAddressList" class="esriCTAddressList">
-                          <div class="esriNoResultFound" data-dojo-attach-point="divNoResultFound">${sharedNls.errorMessages.invalidSearch}
-                            </div>
                             <div data-dojo-attach-point="divAddressScrollContainer" class="esriCTAddressScrollContainer"
                                 align="left">
                                 <div data-dojo-attach-point="divAddressScrollContent" class="esriCTAddressScrollContent">

@@ -37,7 +37,7 @@ define([
         splashScreenScrollbar: null,
 
         /**
-        * create share widget
+        * create splashScreen widget
         *
         * @class
         * @name widgets/splashScreen/splashScreen

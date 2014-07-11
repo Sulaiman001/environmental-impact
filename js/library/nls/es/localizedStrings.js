@@ -28,6 +28,7 @@ define({
         browse: "@es@ Browse",
         upload: "@es@ Upload",
         add: "@es@ Add",
+        locate: "@es@ Locate",
         downLoad: "@es@ Download"
     },
     tooltips: {
@@ -46,6 +47,7 @@ define({
         reportTabText: "Report",
         webpageDisplayText: "@es@ Copy/Paste HTML into your web page",
         pointToolText: "@es@ Point",
+        multipointToolText: "@es@ Multipoint",
         lineToolText: "@es@ Line",
         rectangleToolText: "@es@ Rectangle",
         polygonToolText: "@es@ Polygon",
@@ -54,6 +56,7 @@ define({
         areaMetricUnit: "@es@ sq.Km",
         lineMetricdUnit: "@es@ Km",
         lineStandardUnit: "@es@ miles",
+        lineMetricUnit: "@es@ Kilometer",
         standardUnitLabel: "@es@ Standard Units",
         metricUnitLabel: "@es@ Show areas in ",
         unitLabel: "@es@ Metric Units",
@@ -66,15 +69,17 @@ define({
         quickSummary: "@es@ Quick Summary",
         deatiledSummary: "@es@ Detailed Summary",
         drawingToolUnifiedSearchTitle: "@es@ Navigate to geography",
-        placeNameTtile: "@es@ PlaceName Search",
-        drawingTitle: "@es@ Drawing tools",
-        uploadShapefileTitle: "@es@ Upload a zipped shapefile",
-        coordinatesTitle: "@es@ Enter coordinates, bearing and distance "
+        placeNameTtile: "@es@ Placename",
+        drawingTitle: "@es@ Draw",
+        uploadShapefileTitle: "@es@ Shapefile",
+        coordinatesTitle: "@es@ Coordinates",
+        distanceLabel: "Distance",
+        bearingLabel: "Bearing"
     },
     messages: {
         legendLoadingText: "@es@ Loading...",
-        sliderDisplayText: "@es@ Show results within ${defaultDistance}",
-        aoiOptionsText: "@es@ Alternatively you can",
+        sliderDisplayText: "@es@ Show results within",
+        aoiOptionsText: "@es@ Define AOI by using",
         uploadShapefileText: "@es@ Upload a zipped shapefile to define your AOI",
         coordinatesText: "@es@ Enter coordinates, bearing and distance",
         drawToolsText: "@es@ Use the Drawing tools to define your AOI",
@@ -84,6 +89,7 @@ define({
         radioBtnFeet: "@es@ Feet",
         radioBtnMeters: "@es@ Meters",
         radioBtnKilometers: "@es@ Kilometers",
+        bearingContainerTitle: "Bearing and Distance",
         bearingContainerText: "@es@ Define Start point using address search",
         startPoint: "@es@ Click on map to select start point",
         orText: "@es@ OR",
@@ -92,7 +98,8 @@ define({
         bearing: "@es@ Bearing",
         bearingValue: "@es@ (0-360)",
         distance: "@es@ Distance (Miles)",
-        reportPanelHeader: "@es@ Summary Report for Area of Interest"
+        reportPanelHeader: "@es@ Summary Report for Area of Interest",
+        selectReportFields: "Select report fields"
     },
     errorMessages: {
         invalidSearch: "No hay resultados",
@@ -100,17 +107,33 @@ define({
         invalidLocation: "@es@ Current location not found.",
         invalidProjection: "@es@ Unable to plot current location on the map.",
         widgetNotLoaded: "@es@ Unable to load widgets.",
-        shareLoadingFailed: "@es@ Unable to load share options.",
         shareFailed: "@es@ Unable to share.",
         emptyInfoWindowTitle: "@es@ No feature details",
         emptyInfoWindowContent: "@es@ InfoWindow is disabled for the selected layer in webmap.",
         bufferSliderValue: "@es@ Buffer slider should not be set to zero distance",
-        addLattitudeValue: "@es@ Please enter valid Latitude",
+        addLatitudeValue: "@es@ Please enter valid Latitude",
         addLongitudeValue: "@es@ Please enter valid Longitude.",
-        addBearingValue: "@es@ Please add Bearing value.",
-        addDistanceMiles: "@es@ Please add Valid distance in feet.",
+        addBearingValue: "@es@ Please specify bearing values between 0 to 360 degrees",
+        addDistanceMiles: "@es@ Please add valid distance in ${0}.",
+        distanceMaxLimit: "@es@ Please specify distance between 0 to ${0}.",
         errorPerfomingQuery: "@es@ Error performing query operation",
         esriJobFailMessage: "@es@ Failed to generate AOI from shapefile",
-        esriJobFailToAnlayse: "@es@ Failed to execute (AnalyseShapefile)"
+        esriJobFailToAnlayse: "@es@ Failed to execute (AnalyseShapefile)",
+        defineAOI: "@es@ Please define AOI to generate the report.",
+        invalidGeometry: "@es@ Invalid geometry.",
+        noFeaturesFound: "@es@ Features not found.",
+        browseFile: "@es@ Please browse a file.",
+        noFeaturesInAOI: "@es@ No features found in AOI.",
+        noFieldsSelected: "@es@ No fields selected."
+    },
+    // End of shared nls
+
+    //App nls
+    appErrorMessage: {
+        layerTitleError: "@es@ Title and/or QueryLayerId parameters in SearchSettings do not match with configured operational layers.",
+        titleNotMatching: " @es@ Title and/or QueryLayerId parameters in the InfoWindowSettings and SearchSettings do not match.",
+        lengthDoNotMatch: "@es@ The number of objects in InfoWindowSettings and SearchSettings do not match.",
+        webmapTitleError: "@es@ Title and/or QueryLayerId parameters in SearchSettings do not match with configured webmap"
     }
+    //End of App nls
 });

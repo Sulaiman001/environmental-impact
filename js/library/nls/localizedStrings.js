@@ -29,6 +29,7 @@ define({
             browse: "Browse",
             upload: "Upload",
             add: "Add",
+            locate: "Locate ",
             downLoad: "Download"
         },
         tooltips: {
@@ -52,10 +53,11 @@ define({
             rectangleToolText: "Rectangle",
             polygonToolText: "Polygon",
             selectFeatureText: "Select features",
-            areaStandardUnit: "acres",
-            areaMetricUnit: "sq.km.",
+            areaStandardUnit: "Acres",
+            areaMetricUnit: "Sq.Km.",
             lineMetricdUnit: "Km",
-            lineStandardUnit: "miles",
+            lineStandardUnit: "Miles",
+            lineMetricUnit: "Kilometer",
             standardUnitLabel: "Standard Units",
             metricUnitLabel: "Show areas in ",
             unitLabel: "Metric Units",
@@ -68,14 +70,16 @@ define({
             quickSummary: "Quick Summary",
             deatiledSummary: "Detailed Summary",
             drawingToolUnifiedSearchTitle: "Navigate to geography",
-            placeNameTtile: "Placename search",
-            drawingTitle: "Drawing tools",
-            uploadShapefileTitle: "Upload a zipped shapefile",
-            coordinatesTitle: "Enter coordinates, bearing and distance "
+            placeNameTtile: "Placename",
+            drawingTitle: "Draw",
+            uploadShapefileTitle: "Shapefile",
+            coordinatesTitle: "Coordinates",
+            distanceLabel: "Distance",
+            bearingLabel: "Bearing"
         },
         messages: {
             legendLoadingText: "Loading...",
-            sliderDisplayText: "Show results within ${defaultDistance}",
+            sliderDisplayText: "Show results within ",
             aoiOptionsText: "Define AOI by using",
             uploadShapefileText: "Upload a zipped shapefile to define your AOI",
             coordinatesText: "Enter coordinates, bearing and distance",
@@ -95,7 +99,8 @@ define({
             bearing: "Bearing",
             bearingValue: "(0-360)",
             distance: "Distance",
-            reportPanelHeader: "Summary Report for Area of Interest"
+            reportPanelHeader: "Summary Report for Area of Interest",
+            selectReportFields: "Select report fields"
         },
         errorMessages: {
             invalidSearch: "No results found",
@@ -103,19 +108,24 @@ define({
             invalidLocation: "Current location not found.",
             invalidProjection: "Unable to plot current location on the map.",
             widgetNotLoaded: "Unable to load widgets.",
-            shareLoadingFailed: "Unable to load share options.",
             shareFailed: "Unable to share.",
             emptyInfoWindowTitle: "No feature details",
             emptyInfoWindowContent: "InfoWindow is disabled for the selected layer in webmap.",
             bufferSliderValue: "Buffer slider should not be set to zero distance",
-            addLattitudeValue: "Please enter valid Latitude",
+            addLatitudeValue: "Please enter valid Latitude",
             addLongitudeValue: "Please enter valid Longitude.",
             addBearingValue: "Please specify bearing values between 0 to 360 degrees",
             addDistanceMiles: "Please add valid distance in ${0}.",
             distanceMaxLimit: "Please specify distance between 0 to ${0}.",
             errorPerfomingQuery: "Error performing query operation",
             esriJobFailMessage: "Failed to generate AOI from shapefile",
-            esriJobFailToAnlayse: "Failed to execute (AnalyseShapefile)"
+            esriJobFailToAnlayse: "Failed to execute (AnalyseShapefile)",
+            defineAOI: "Please define AOI to generate the report.",
+            invalidGeometry: "Invalid geometry.",
+            noFeaturesFound: "Features not found.",
+            browseFile: "Please browse a file.",
+            noFeaturesInAOI: "No features found in AOI.",
+            noFieldsSelected: "No fields selected."
         },
         // End of shared nls
 

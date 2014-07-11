@@ -83,7 +83,7 @@
         background-size: 44px auto;
     }
 
-    .select-on-map
+    .esriCTDrawMultiPoint
     {
         margin: 12px 16px 0 !important;
     }
@@ -203,7 +203,8 @@
         cursor: pointer;
         background-size: 44px auto;
     }
-    .select-on-map
+
+    .esriCTDrawMultiPoint
     {
         margin: 12px 16px 0 !important;
     }
@@ -365,7 +366,8 @@
         cursor: pointer;
         background-size: 44px auto;
     }
-    .select-on-map
+
+    .esriCTDrawMultiPoint
     {
         margin: 12px 16px 0 !important;
     }
@@ -376,7 +378,15 @@
     }
 }
 
-@media screen and (min-width: 641px) and (max-width: 767px)
+@media (min-width: 768px) and (max-width: 991px)
+{
+    .esriCTApplicationHeaderTextTD
+    {
+        display: none;
+    }
+}
+
+@media screen and (min-width: 0px) and (max-width: 767px)
 {
     html, body
     {
@@ -401,9 +411,9 @@
     .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTTdGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
     {
         height: 44px !important;
-        width: 44px !important;
+        width: 20% !important;
         background-size: 44px !important;
-        margin: 8px 15px !important;
+        margin: 8px 0px !important;
     }
 
     .esriCTApplicationHeader
@@ -412,6 +422,11 @@
     }
 
     .esriCTApplicationHeaderIcon
+    {
+        display: none;
+    }
+
+    .esriCTApplicationHeaderTextTD
     {
         display: none;
     }
@@ -492,13 +507,13 @@
         background-position: center;
         float: left;
         height: 44px;
-        width: 44px;
+        width: 44px !important;
         float: left;
         cursor: pointer;
         background-size: 44px auto;
     }
 
-    .select-on-map
+    .esriCTDrawMultiPoint
     {
         margin: 12px 16px 0 !important;
     }
@@ -506,23 +521,6 @@
     .esriCTchangeUnit
     {
         width: 65%;
-    }
-}
-
-@media screen and (max-width: 680px)
-{
-    .esriCTApplicationHeaderTextTD
-    {
-        display: none;
-    }
-
-    .esriCTHeaderSearch, .esriCTHeaderSearchSelected, .esriCTTdGeolocation, .esriCTImgSocialMediaSelected, .esriCTImgSocialMedia, .esriCTReportsImg, .esriCTReportsImgSelected, .esriCTHelpImg
-    {
-        height: 44px !important;
-        width: 44px !important;
-        background-size: 44px !important;
-        width: 20% !important;
-        margin: 8px 0 !important;
     }
 
     .esriCTRightTab
@@ -538,11 +536,6 @@
     .esriCTAreaOfInterestContainer
     {
         top: 100px;
-    }
-
-    .esriCTchangeUnit
-    {
-        width: 65%;
     }
 }
 

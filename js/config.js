@@ -62,6 +62,7 @@ define([], function () {
             IsVisible: true
         },
 
+        // Set the application theme. Supported theme keys are blueTheme and greenTheme.
         ThemeColor: "js/library/themes/styles/greenTheme.css",
 
         //------------------------------------------------------------------------------------------------------------------------
@@ -96,16 +97,18 @@ define([], function () {
         // Please note: All base-maps need to use the same spatial reference. By default, on application start the first base-map will be loaded
         // Specify URL to ArcGIS Portal REST API
         PortalAPIURL: "http://www.arcgis.com/sharing/rest/",
+
         // Specify URL to Search
         SearchURL: "http://www.arcgis.com/sharing/rest/search?q=group:",
+
         // Specify the title of group that contains basemaps
-        BasemapGroupTitle: "Basemaps", //CyberTech Systems and Software Limited
+        BasemapGroupTitle: "Basemaps",
+
         // Specify the user name of owner of the group that contains basemaps
-        BasemapGroupOwner: "GISITAdmin", //cybertechagol
+        BasemapGroupOwner: "GISITAdmin",
+
         // Specify path to image used to display the thumbnail for a basemap when portal does not provide it
-        NoThumbnail: "js/library/themes/images/not-available.png",
-
-
+        NoThumbnail: "js/library/themes/images/notAvailable.png",
 
         // Initial map extent. Use comma (,) to separate values and dont delete the last comma
         // The coordinates must be specified in the basemap's coordinate system, usually WKID:102100, unless a custom basemap is used
@@ -132,17 +135,20 @@ define([], function () {
         }],
 
         // ------------------------------------------------------------------------------------------------------------------------
-        // SEARCH AND 511 SETTINGS
+        // SEARCH SETTINGS
         // ------------------------------------------------------------------------------------------------------------------------
-        // Configure search, barrier and info settings to be displayed in search and 511 Info panels:
+        // Configure search, barrier and info settings to be displayed in search Info panels:
 
-        // Configure search and 511 settings below.
+        // Configure search settings below.
         // Title: In case of webmap implementations, it must match layer name specified in webmap and in case of operational layers
         //        it should be the name of Map/Feature Service.
         // QueryLayerId: This is the layer index in the webmap or ArcGIS Map/Feature Service and is used for performing queries.
         // SearchDisplayTitle: This text is displayed in search results as the title to group results.
         // SearchDisplayFields: Attribute that will be displayed in the search box when user performs a search.
         // SearchExpression: Configure the query expression to be used for search.
+        // QuickSummaryReportFields: Specify fields to summarize on in the quick summary report.
+        // SummaryStatisticField: Specify field name containing area for polygon layer, length for polyline layer and empty string for point layer. Ignored for point layers.
+        // DetailSummaryReportFields:  Specify fields to summarize on in the detailed summary report.
 
         SearchSettings: [{
             Title: "EIAPoly",
@@ -150,8 +156,8 @@ define([], function () {
             SearchDisplayTitle: "Placenames in Florida",
             SearchDisplayFields: "${FEATURE_NA}",
             SearchExpression: "UPPER(FEATURE_NA) LIKE UPPER('%${0}%')",
-            QuickSummaryReportFields: "COUNTY_NAM",
-            GroupByField: "COUNTY_NAM",
+            QuickSummaryReportFields: ["COUNTY_NAM"],
+            SummaryStatisticField: "",
             DetailSummaryReportFields: ["COUNTY_NUM"],
             UnifiedSearch: "true"
         }, {
@@ -160,31 +166,25 @@ define([], function () {
             SearchDisplayTitle: "Florida Managed Areas",
             SearchDisplayFields: "${MANAME}",
             SearchExpression: "UPPER(MANAME) LIKE UPPER('%${0}%')",
-            QuickSummaryReportFields: "Shape_Area",
-            GroupByField: "MANAME",
-            DetailSummaryReportFields: ["COUNTY"],
+            QuickSummaryReportFields: ["MANAME", "MAJORMA"],
+            SummaryStatisticField: "Shape_Area",
+            DetailSummaryReportFields: ["COUNTY", "MGRCITY"],
             UnifiedSearch: "true"
         }],
 
         // Following zoom level will be set for the map upon searching an address
         ZoomLevel: 12,
 
-        //minimum height should be 310 for the info-popup in pixels
+        // Minimum height should be 250 for the info-popup in pixels
         InfoPopupHeight: 250,
 
-        // Minimum width should be 330 for the info-popup in pixels
+        // Minimum width should be 300 for the info-popup in pixels
         InfoPopupWidth: 300,
 
-        rendererColor: "#1C86EE",
+        // Configure graphic color to be set for uploaded shapefile
+        RendererColor: "#1C86EE",
 
-        BufferSliderSettings: {
-            defaultValue: 0,
-            minValue: 0,
-            maxValue: 100,
-            intermediateChanges: true,
-            showButtons: false
-        },
-
+        // Configure graphic color to be set for buffer around AOI
         BufferSymbology: {
             FillSymbolColor: "255,0,0",
             FillSymbolTransparency: "0.10",
@@ -192,6 +192,7 @@ define([], function () {
             LineSymbolTransparency: "0.30"
         },
 
+        // Configure graphic color to be set for searched features
         HighlightFeaturesSymbology: {
             FillSymbolColor: "125,125,125",
             FillSymbolTransparency: "0.30",
@@ -201,29 +202,43 @@ define([], function () {
             MarkerSymbolTransparency: "1"
         },
 
+        // Set symbology for creating point and line while defining AOI using bearing and distance
+        AOISymbology: {
+            PointFillSymbolColor: "255,255,255",
+            PointSymbolBorder: "0,0,255",
+            PointSymbolBorderWidth: "2",
+            LineSymbolColor: "0,0,255",
+            LineSymbolWidth: "3"
+        },
+
+        // Set the various units to be used for buffer distance
         DistanceUnitSettings: [{
             DistanceUnitName: "Miles",
             MinimumValue: 0,
             MaximumValue: 100,
-            Checked: true
+            Selected: true
         }, {
             DistanceUnitName: "Feet",
             MinimumValue: 0,
             MaximumValue: 1000,
-            Checked: false
+            Selected: false
         }, {
             DistanceUnitName: "Meters",
             MinimumValue: 0,
             MaximumValue: 1000,
-            Checked: false
+            Selected: false
         }, {
             DistanceUnitName: "Kilometers",
             MinimumValue: 0,
             MaximumValue: 100,
-            Checked: false
+            Selected: false
         }],
 
+        // Configure this flag to show or hide map attribution data
         ShowMapAttribution: true,
+
+        // Configure this flag to show or hide legend panel
+        ShowLegend: true,
 
         // ------------------------------------------------------------------------------------------------------------------------
         // INFO-WINDOW SETTINGS
@@ -295,10 +310,26 @@ define([], function () {
         // ADDRESS SEARCH SETTINGS
         // ------------------------------------------------------------------------------------------------------------------------
         // Set locator settings such as locator symbol, size, display fields, match score
-        // LocatorParameters: Parameters(text, outFields, maxLocations, bbox, outSR) used for address and location search.
-        // AddressSearch: Candidates based on which the address search will be performed.
-        // AddressMatchScore: Setting the minimum score for filtering the candidate results.
+        // DefaultLocatorSymbol: Set the image path for locator symbol. e.g. pushpin.
+        // MarkupSymbolSize: Set the image dimensions in pixels for locator symbol.
+        // DisplayText: Set the title for type of search e.g. 'Address'.
+        // LocatorDefaultAddress: Set the default address to search.
+        // LocatorDefaultPlaceNameSearchAddress: Set the default address to search for place name.
+        // LocatorDefaultAOIAddress: Set the default address to search for draw tools.
+        // LocatorDefaultAOIBearingAddress: Set the default address to search for bearing and distance.
+        // LocatorParameters: Required parameters to search the address candidates.
+        //   SearchField: The name of geocode service input field that accepts the search address. e.g. 'SingleLine' or 'Address'.
+        //   SearchBoundaryField: The name of geocode service input field that accepts an extent to search an input address within. e.g."searchExtent".
+        // LocatorURL: Specify URL for geocode service.
+        // LocatorOutFields: The list of outfields to be included in the result set provided by geocode service.
+        // DisplayField: Specify the outfield of geocode service. The value in this field will be displayed for search results in the application.
+        // AddressMatchScore: Required parameters to specify the accuracy of address match.
+        //   Field: Set the outfield of geocode service that contains the Address Match Score.
+        //   Value: Set the minimum score value for filtering the candidate results. The value should a number between 0-100.
+        // FilterFieldName: Set the feature type for results returned by the geocode request. e.g. For World GeoCode, the field that contains the feature type is 'Type'.
+        // FilterFieldValues: Specify the feature types to filter search results. e.g. 'county', 'city' etc.
         // MaxResults: Maximum number of locations to display in the results menu.
+
         LocatorSettings: {
             DefaultLocatorSymbol: "/js/library/themes/images/redpushpin.png",
             MarkupSymbolSize: {
@@ -326,18 +357,15 @@ define([], function () {
             MaxResults: 200
         },
 
-        AOISymbology: {
-            PointFillSymbolColor: "#FFFFFF",
-            PointSymbolBorder: "#0000FF",
-            PointSymbolBorderWidth: "2",
-            LineSymbolColor: "#0000FF"
-        },
         // Supported units for Bearing Distances are feet, meters, miles and kilometers.
         BearingDistanceUnit: "Feet",
+
+        // Max limit for setting the bearing distance
         BearingDistanceMaxLimit: 10000,
 
+        // Supported formats for downloading the report
         DownloadReportFormat: {
-            Format: "Select, FileGDB, Shapefile, CSV"
+            Format: "FileGDB, Shapefile, CSV"
         },
         // ------------------------------------------------------------------------------------------------------------------------
         // GEOMETRY SERVICE SETTINGS
@@ -346,13 +374,17 @@ define([], function () {
         // Set geometry service URL
         GeometryService: "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer",
 
+        // Set GP service for uploading shapefile
         UploadFileUrl: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/EnvironmentalImpact/GPServer/uploads/upload",
-        // ------------------------------------------------------------------------------------------------------------------------
 
+        // Set GP service for generating report after uploading shapefile
         ShapefileTOAOI: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/EnvironmentalImpact/GPServer/ShapefileToAOI",
-        // ------------------------------------------------------------------------------------------------------------------------
 
+        // Set GP service for uploading shapefile for analysis
         AnalyseShapefile: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/EnvironmentalImpact/GPServer/AnalyseShapefile",
+
+        // Set GP service for generating report
+        GenerateReport: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/Generate_Report/GPServer/GenerateReport",
 
         // SETTINGS FOR MAP SHARING
         // ------------------------------------------------------------------------------------------------------------------------
@@ -366,9 +398,10 @@ define([], function () {
             ShareByMailLink: "mailto:%20?subject=Check%20out%20this%20map!&body=${0}"
         },
 
-        //Set Area Of Interest Tab Text
+        // Set Area Of Interest Tab Text
         AOITabText: "Area of Interest",
-        //Set Report Tab Text
+
+        // Set Report Tab Text
         ReportTabText: "Report"
     };
 });
