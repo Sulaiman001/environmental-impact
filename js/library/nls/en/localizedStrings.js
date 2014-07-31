@@ -113,6 +113,7 @@ define({
         bufferSliderValue: "Buffer slider should not be set to zero distance",
         addLatitudeValue: "Please enter valid Latitude",
         addLongitudeValue: "Please enter valid Longitude.",
+        addLatitudeandLongitudeValue: "Please enter valid Latitude and Longitude",
         addBearingValue: "Please specify bearing values between 0 to 360 degrees",
         addDistanceMiles: "Please add valid distance in ${0}.",
         distanceMaxLimit: "Please specify distance between 0 to ${0}.",

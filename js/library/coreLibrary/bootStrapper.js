@@ -27,7 +27,10 @@ require([
 
     try {
         dojo.configData = config;
-        esriConfig.defaults.io.proxyUrl = dojoConfig.baseURL + dojo.configData.ProxyUrl;
+        if (dojo.configData.ProxyUrl && (!dojo.configData.ProxyUrl.match("http://") && (!dojo.configData.ProxyUrl.match("https://")))) {
+            dojo.configData.ProxyUrl = dojoConfig.baseURL + dojo.configData.ProxyUrl;
+        }
+        esriConfig.defaults.io.proxyUrl = dojo.configData.ProxyUrl;
         esriConfig.defaults.io.timeout = 180000;
         /**
         * load application configuration settings from configuration file

@@ -1,4 +1,4 @@
-﻿/*global define */
+/*global define */
 /** @license
 | Version 10.2
 | Copyright 2013 Esri
@@ -173,6 +173,11 @@ html, body
 .esriCTAddressContainerHeight
 {
     height: 99%;
+}
+.esriCTAddressResultCo
+{
+    padding-left: 15px;
+    margin-bottom: 40px;
 }
 
 .esriCTAddressScrollContent
@@ -670,9 +675,29 @@ input::-ms-clear
     float: left;
     width: 49% !important;
     left: 50%;
+}
+.esriCTAreaOfInterestTabLabel
+{
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
+    max-width: 100%;
+    padding: 0 5px;
+}
+
+/* clear AOI button*/
+.esriCTClearAOIButton
+{
+    background-image: url("../images/clear-aoi-green.png") !important;
+    background-repeat: no-repeat;
+    background-position: center;
+    text-align: center;
+    cursor: pointer;
+    float: right;
+    height: 30px;
+    width: 30px;
+    display: none;
+    padding: 0 5px;
 }
 
 .esriCTAreaOfInterestTab
@@ -1071,6 +1096,12 @@ input::-ms-clear
     bottom: 0px;
 }
 
+.divNoLegendContainer
+{
+    margin-top: 7px;
+    float: left;
+    width: 150px;
+}
 .divlegendLoadingContainer
 {
     margin-top: 5px;
@@ -1412,7 +1443,7 @@ input::-ms-clear
 .esriCTDrawingTools
 {
     float: left;
-    width: 100%;
+    width: 90%;
 }
 
 .esriCTSelectionIcon
@@ -1431,7 +1462,7 @@ input::-ms-clear
 .esriCTDrawMultiPoint
 {
     float: right !important;
-    margin: 12px 35px 0 !important;
+    margin: 12px 0 !important;
 }
 
 .horizontalSlider
@@ -1797,7 +1828,7 @@ input::-ms-clear
 {
     display: table;
     height: 30px;
-    width: 100%;
+    width: 90%;
     margin-bottom: 5px;
 }
 
@@ -1806,13 +1837,21 @@ input::-ms-clear
     padding: 10px 0;
 }
 
-.esriCTBearingFirstColumn, .esriCTBearingSecondColumn, .esriCTBearingThirdColumn, .esriCTBearingFourthColumn, .esriCTBearingFifthColumn
-{
-    width: 70px;
+.esriCTBearingFirstColumn, .esriCTBearingSecondColumn, .esriCTBearingThirdColumn, .esriCTBearingFourthColumn, .esriCTBearingFifthColumn {
     display: table-cell;
     vertical-align: middle;
     margin-right: 5px;
-    text-align: center;
+    text-align: LEFT;
+}
+
+.esriCTBearingFirstColumn,.esriCTBearingThirdColumn,.esriCTBearingFifthColumn
+{
+    width: 55px;
+}
+
+.esriCTBearingSecondColumn, .esriCTBearingFourthColumn
+{
+    width: 60px;
 }
 
 .esriCTLabelAlignment
@@ -1823,21 +1862,18 @@ input::-ms-clear
 .esriCTCloseButtonAlignment
 {
     float: right !important;
-    margin-right: 30px !important;
 }
 
 .esriCTBearingFifthColumn
 {
-    padding-top: 5px;
-    padding-left: 5px;
-    text-align: left !important;
+    text-align: RIGHT;
 }
 
 .esriCTBearingTextbox
 {
     display: table;
     height: 30px;
-    width: 100%;
+    width: 90%;
     margin-bottom: 5px;
 }
 
@@ -1846,9 +1882,10 @@ input::-ms-clear
     border: 1px solid #DFDFDF;
     outline: medium none;
     padding: 5px 0px !important;
-    width: 65px;
+    width: 55px;
     height: 18px;
 }
+
 
 .esriCTCloseIcon
 {
@@ -2244,4 +2281,9 @@ span .dijitReset .dijitInline .dijitButtonText
 .esriCTAddTextboxButton
 {
     text-decoration: none;
+}
+
+.dijitCheckBoxInput
+{
+    opacity: 0.00;
 }
