@@ -59,6 +59,7 @@ define({
             lineStandardUnit: "Miles",
             lineMetricUnit: "Kilometer",
             standardUnitLabel: "Standard Units",
+            standardReportUnit: "Standard",
             metricUnitLabel: "Show areas in ",
             unitLabel: "Metric Units",
             uploadShapeFile: "Upload Shapefile to include in analysis",
@@ -75,10 +76,13 @@ define({
             uploadShapefileTitle: "Shapefile",
             coordinatesTitle: "Coordinates",
             distanceLabel: "Distance",
-            bearingLabel: "Bearing"
+            bearingLabel: "Bearing",
+            quickReport: "Quick Report",
+            detailedReport: "Detailed Report"
         },
         messages: {
             legendLoadingText: "Loading...",
+            noLegend: "No Legend Available",
             sliderDisplayText: "Show results within ",
             aoiOptionsText: "Define AOI by using",
             uploadShapefileText: "Upload a zipped shapefile to define your AOI",
@@ -114,18 +118,21 @@ define({
             bufferSliderValue: "Buffer slider should not be set to zero distance",
             addLatitudeValue: "Please enter valid Latitude",
             addLongitudeValue: "Please enter valid Longitude.",
+            addLatitudeandLongitudeValue: "Please enter valid Latitude and Longitude",
             addBearingValue: "Please specify bearing values between 0 to 360 degrees",
             addDistanceMiles: "Please add valid distance in ${0}.",
             distanceMaxLimit: "Please specify distance between 0 to ${0}.",
             errorPerfomingQuery: "Error performing query operation",
             esriJobFailMessage: "Failed to generate AOI from shapefile",
             esriJobFailToAnlayse: "Failed to execute (AnalyseShapefile)",
+            esriJobFailToGenerateReport: "Failed to generate Report",
             defineAOI: "Please define AOI to generate the report.",
             invalidGeometry: "Invalid geometry.",
             noFeaturesFound: "Features not found.",
             browseFile: "Please browse a file.",
             noFeaturesInAOI: "No features found in AOI.",
-            noFieldsSelected: "No fields selected."
+            noFieldsSelected: "No fields selected.",
+            reportFormat: "Please Select the Report Format"
         },
         // End of shared nls
 

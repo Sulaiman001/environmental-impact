@@ -1,4 +1,4 @@
-﻿/*global define */
+/*global define */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4  */
 /*
  | Copyright 2013 Esri
@@ -93,20 +93,17 @@ define([], function () {
         // ------------------------------------------------------------------------------------------------------------------------
         // BASEMAP SETTINGS
         // ------------------------------------------------------------------------------------------------------------------------
-        // Set baseMap layers
-        // Please note: All base-maps need to use the same spatial reference. By default, on application start the first base-map will be loaded
+        // Set options for basemap
+        // Please note: All base-maps need to use the same spatial reference.
+
         // Specify URL to ArcGIS Portal REST API
         PortalAPIURL: "http://www.arcgis.com/sharing/rest/",
-
-        // Specify URL to Search
-        SearchURL: "http://www.arcgis.com/sharing/rest/search?q=group:",
-
         // Specify the title of group that contains basemaps
         BasemapGroupTitle: "Basemaps",
-
         // Specify the user name of owner of the group that contains basemaps
         BasemapGroupOwner: "GISITAdmin",
-
+        // Specify spatial reference for basemaps, since all basemaps need to use the same spatial reference
+        BasemapSpatialReferenceWKID: 102100,
         // Specify path to image used to display the thumbnail for a basemap when portal does not provide it
         NoThumbnail: "js/library/themes/images/notAvailable.png",
 
@@ -365,7 +362,7 @@ define([], function () {
 
         // Supported formats for downloading the report
         DownloadReportFormat: {
-            Format: "FileGDB, Shapefile, CSV"
+            Format: "File GDB, Esri Shapefile, CSV Format"
         },
         // ------------------------------------------------------------------------------------------------------------------------
         // GEOMETRY SERVICE SETTINGS
@@ -375,16 +372,62 @@ define([], function () {
         GeometryService: "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer",
 
         // Set GP service for uploading shapefile
-        UploadFileUrl: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/EnvironmentalImpact/GPServer/uploads/upload",
+        UploadFileUrl: "http://203.199.47.114/arcgis/rest/services/EnvironmentImpactV2/EnvironmentImpactServices/GPServer/uploads/upload",
 
         // Set GP service for generating report after uploading shapefile
-        ShapefileTOAOI: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/EnvironmentalImpact/GPServer/ShapefileToAOI",
+        ShapefileTOAOI: "http://203.199.47.114/arcgis/rest/services/EnvironmentImpactV2/EnvironmentImpactServices/GPServer/ShapefileToAOI",
 
         // Set GP service for uploading shapefile for analysis
-        AnalyseShapefile: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/EnvironmentalImpact/GPServer/AnalyseShapefile",
+        AnalyseShapefile: "http://203.199.47.114/arcgis/rest/services/EnvironmentImpactV2/EnvironmentImpactServices/GPServer/AnalyseShapefile",
 
         // Set GP service for generating report
-        GenerateReport: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/Generate_Report/GPServer/GenerateReport",
+        GenerateReport: "http://203.199.47.114/arcgis/rest/services/EnvironmentImpactV2/EnvironmentImpactServices/GPServer/GenerateReport",
+
+        //LayerJson for Detailed Report
+        LayerJson: [{ "mxd_path": "C:\\GISData\\Environmental Impact\\Data For Tesing\\EnvImpact.mxd",
+            "layerID": 0,
+            "fields": [{
+                "name": "ACCESS"
+            }, {
+                "name": "COUNTY"
+            }, {
+                "name": "AGNCY_NAME"
+            }
+                ]
+            }, {
+            "mxd_path": "C:\\GISData\\Environmental Impact\\Data For Tesing\\EnvImpact.mxd",
+            "layerID": 1,
+            "fields": [{
+                "name": "StreamName"
+            }, {
+                "name": "SiteName"
+            }, {
+                "name": "SiteType"
+            }, {
+                "name": "Protocol"
+            }, {
+                "name": "AssessedBy"
+            }, {
+                "name": "StructOwne"
+            }, {
+                "name": "Watershed"
+            }, {
+                "name": "County"
+            }, {
+                "name": "WebLegend"
+            }
+                ]
+        }, {
+            "mxd_path": "C:\\GISData\\Environmental Impact\\Data For Tesing\\EnvImpact.mxd",
+            "layerID": 2,
+            "fields": [{
+                "name": "NAME"
+            }, {
+                "name": "FTYPE"
+            }
+                      ]
+        }
+                   ],
 
         // SETTINGS FOR MAP SHARING
         // ------------------------------------------------------------------------------------------------------------------------

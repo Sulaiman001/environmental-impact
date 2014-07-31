@@ -696,6 +696,7 @@ define([
             }
             candidateAddress.onclick = function () {
                 topic.publish("showProgressIndicator");
+                domStyle.set(dojo.query('.esriCTClearAOIButton')[0], "display", "block");
                 if (_this.map.infoWindow) {
                     _this.map.infoWindow.hide();
                 }
@@ -708,7 +709,6 @@ define([
                     //reset aoi container scrollbar on bearing or draw tool address click
                     topic.publish("resizeAOIPanel");
                 }
-
                 if (candidate.attributes.location) {
                     _this.mapPoint = new Point(domAttr.get(this, "x"), domAttr.get(this, "y"), _this.map.spatialReference);
                     _this._locateAddressOnMap(_this.mapPoint, locatorParams);

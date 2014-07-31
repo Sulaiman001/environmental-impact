@@ -56,7 +56,6 @@ define([
         templateString: template,
         tempGraphicsLayerId: "esriGraphicsLayerMapSettings",
         tempBufferLayer: "tempBufferLayer",
-        //tempShapeFileGraphicsLayer: "addShapeFileGraphicsLayer",
         sharedNls: sharedNls,
         infoWindowPanel: null,
         prevOrientation: window.orientation,
@@ -90,26 +89,23 @@ define([
                 mapDeferred.then(lang.hitch(this, function (response) {
                     clearTimeout(this.stagedSearch);
                     this.map = response.map;
-                    dojo.selectedBasemapIndex = 0;
-                    if (response.itemInfo.itemData.baseMap.baseMapLayers && response.itemInfo.itemData.baseMap.baseMapLayers[0].id) {
-                        if (response.itemInfo.itemData.baseMap.baseMapLayers[0].id !== "defaultBasemap") {
-                            this.map.getLayer(response.itemInfo.itemData.baseMap.baseMapLayers[0].id).id = "defaultBasemap";
-                            this.map._layers.defaultBasemap = this.map.getLayer(response.itemInfo.itemData.baseMap.baseMapLayers[0].id);
-                            delete this.map._layers[response.itemInfo.itemData.baseMap.baseMapLayers[0].id];
-                            this.map.layerIds[0] = "defaultBasemap";
-                        }
+                    dojo.selectedBasemapIndex = null;
+                    if (response.itemInfo.itemData.baseMap.baseMapLayers) {
+                        this._setBasemapLayerId(response.itemInfo.itemData.baseMap.baseMapLayers);
                     }
+                    topic.publish("filterRedundantBasemap", response.itemInfo);
                     this._fetchWebMapData(response);
                     topic.publish("setMap", this.map);
                     topic.publish("hideProgressIndicator");
                     this._mapOnLoad();
                     this._mapEvents();
                     if (dojo.configData.ShowLegend) {
-                        this.stagedSearch = setTimeout(lang.hitch(this, function () {
-                            this._addLayerLegendWebmap(response);
-                        }), 3000);
+                        setTimeout(lang.hitch(this, function () {
+                            this._createWebmapLegendLayerList(response.itemInfo.itemData.operationalLayers);
+                        }), 5000);
                     }
                 }), lang.hitch(this, function (error) {
+                    domStyle.set(dom.byId("esriCTParentDivContainer"), "display", "none");
                     alert(error.message);
                 }));
             } else {
@@ -117,6 +113,7 @@ define([
                 this.map = esriMap("esriCTParentDivContainer", {
                     showAttribution: dojo.configData.ShowMapAttribution
                 });
+                dojo.selectedBasemapIndex = 0;
                 if (dojo.configData.BaseMapLayers[0].length > 1) {
                     array.forEach(dojo.configData.BaseMapLayers[0], lang.hitch(this, function (basemapLayer, index) {
                         layer = new esri.layers.ArcGISTiledMapServiceLayer(basemapLayer.MapURL, { id: "defaultBasemap" + index, visible: true });
@@ -128,6 +125,11 @@ define([
                 }
                 this.map.on("load", lang.hitch(this, function () {
                     this._mapOnLoad();
+                    if (dojo.configData.ShowLegend) {
+                        setTimeout(lang.hitch(this, function () {
+                            this._addLayerLegend();
+                        }), 2000);
+                    }
                 }));
                 this._mapEvents();
             }
@@ -154,6 +156,48 @@ define([
             }
         },
 
+        _createWebmapLegendLayerList: function (layers) {
+            var i, webMapLayers = [], webmapLayerList = [];
+            for (i = 0; i < layers.length; i++) {
+                if (layers[i].layerDefinition && layers[i].layerDefinition.drawingInfo) {
+                    webmapLayerList[layers[i].url] = layers[i];
+                } else {
+                    webMapLayers.push(layers[i]);
+                }
+
+            }
+            this._addLayerLegendWebmap(webMapLayers, webmapLayerList);
+        },
+        /**
+        * set default id for basemaps
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _setBasemapLayerId: function (baseMapLayers) {
+            var i = 0, defaultId = "defaultBasemap";
+            if (baseMapLayers.length === 1) {
+                this._setBasemapId(baseMapLayers[0], defaultId);
+            } else {
+                for (i = 0; i < baseMapLayers.length; i++) {
+                    this._setBasemapId(baseMapLayers[i], defaultId + i);
+                }
+            }
+
+        },
+
+        /**
+        * set default id for each basemap of webmap
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _setBasemapId: function (basmap, defaultId) {
+            var layerIndex;
+            if (basmap.id !== defaultId) {
+                this.map.getLayer(basmap.id).id = defaultId;
+                this.map._layers[defaultId] = this.map.getLayer(basmap.id);
+                layerIndex = array.indexOf(this.map.layerIds, basmap.id);
+                delete this.map._layers[basmap.id];
+                this.map.layerIds[layerIndex] = defaultId;
+            }
+        },
         _fetchWebMapData: function (response) {
             var searchSettings, i, j, k, l, p, str, field, index, webMapDetails, operationalLayers, serviceTitle, operationalLayerId, lastIndex, layerInfo;
             searchSettings = dojo.configData.SearchSettings;
@@ -366,11 +410,6 @@ define([
                 } else {
                     alert(sharedNls.appErrorMessage.lengthDoNotMatch);
                 }
-                if (dojo.configData.ShowLegend) {
-                    setTimeout(lang.hitch(this, function () {
-                        this._addLayerLegend();
-                    }), 2000);
-                }
             }
 
             if (dojo.configData.BaseMapLayers.length > 1) {
@@ -384,6 +423,8 @@ define([
             graphicsLayer = new GraphicsLayer();
             graphicsLayer.id = this.tempBufferLayer;
             this.map.addLayer(graphicsLayer);
+
+
         },
 
         _onSetMapTipPosition: function (selectedPoint, map, infoWindow) {
@@ -711,21 +752,24 @@ define([
             return this.legendObject;
         },
 
-        _addLayerLegendWebmap: function (response) {
-            var mapServerArray = [], i, j, legendObject, webMapDetails, layer;
-            webMapDetails = response.itemInfo.itemData;
-            for (j = 0; j < webMapDetails.operationalLayers.length; j++) {
-                if (webMapDetails.operationalLayers[j].layerObject.layerInfos) {
-                    for (i = 0; i < webMapDetails.operationalLayers[j].layerObject.layerInfos.length; i++) {
-                        layer = webMapDetails.operationalLayers[j].url + "/" + webMapDetails.operationalLayers[j].layerObject.layerInfos[i].id;
-                        mapServerArray.push(layer);
+        _addLayerLegendWebmap: function (webMapLayers, webmapLayerList) {
+            var mapServerArray = [], i, j, legendObject, layer;
+            for (j = 0; j < webMapLayers.length; j++) {
+                if (webMapLayers[j].layerObject) {
+                    if (webMapLayers[j].layerObject.layerInfos) {
+                        for (i = 0; i < webMapLayers[j].layerObject.layerInfos.length; i++) {
+                            layer = webMapLayers[j].url + "/" + webMapLayers[j].layerObject.layerInfos[i].id;
+                            mapServerArray.push(layer);
+                        }
+                    } else {
+                        mapServerArray.push(webMapLayers[j].url);
                     }
                 } else {
-                    mapServerArray.push(webMapDetails.operationalLayers[j].url);
+                    mapServerArray.push(webMapLayers[j].url);
                 }
             }
             legendObject = this._addLegendBox();
-            legendObject.startup(mapServerArray);
+            legendObject.startup(mapServerArray, webmapLayerList);
         },
 
         /**
