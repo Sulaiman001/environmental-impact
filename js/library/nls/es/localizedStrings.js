@@ -32,19 +32,21 @@ define({
         downLoad: "@es@ Download"
     },
     tooltips: {
-        search: "Buscar",
+        search: "@es@ Search",
         reports: "@es@ Reports",
-        locate: "Ubicación actual",
-        share: "Compartir",
-        help: "Ayuda",
+        locate: "@es@ Locate",
+        share: "@es@ Share",
+        help: "@es@ Help",
         clearEntry: "@es@ Clear",
         selectInitialCoordinates: "@es@ Select Initial Coordinates",
         loadingText: "@es@ Loading...",
-        settingsIconTitle: "@es@ Choose fields to view in summary report"
+        settingsIconTitle: "@es@ Choose fields to view in summary report",
+        selectFeature: "@es@ Press double click to finish the opertaion",
+        selectCoordinates: "@es@ Please select the point"
     },
     titles: {
         areaOfInterestTabText: "@es@ Area of Interest",
-        reportTabText: "Report",
+        reportTabText: "@es@ Report",
         webpageDisplayText: "@es@ Copy/Paste HTML into your web page",
         pointToolText: "@es@ Point",
         multipointToolText: "@es@ Multipoint",
@@ -73,8 +75,8 @@ define({
         drawingTitle: "@es@ Draw",
         uploadShapefileTitle: "@es@ Shapefile",
         coordinatesTitle: "@es@ Coordinates",
-        distanceLabel: "Distance",
-        bearingLabel: "Bearing"
+        distanceLabel: "@es@ Distance",
+        bearingLabel: "@es@ Bearing"
     },
     messages: {
         legendLoadingText: "@es@ Loading...",
@@ -89,7 +91,7 @@ define({
         radioBtnFeet: "@es@ Feet",
         radioBtnMeters: "@es@ Meters",
         radioBtnKilometers: "@es@ Kilometers",
-        bearingContainerTitle: "Bearing and Distance",
+        bearingContainerTitle: "@es@ Bearing and Distance",
         bearingContainerText: "@es@ Define Start point using address search",
         startPoint: "@es@ Click on map to select start point",
         orText: "@es@ OR",
@@ -99,7 +101,7 @@ define({
         bearingValue: "@es@ (0-360)",
         distance: "@es@ Distance (Miles)",
         reportPanelHeader: "@es@ Summary Report for Area of Interest",
-        selectReportFields: "Select report fields"
+        selectReportFields: "@es@ Select report fields"
     },
     errorMessages: {
         invalidSearch: "No hay resultados",
@@ -113,6 +115,7 @@ define({
         bufferSliderValue: "@es@ Buffer slider should not be set to zero distance",
         addLatitudeValue: "@es@ Please enter valid Latitude",
         addLongitudeValue: "@es@ Please enter valid Longitude.",
+        addLatitudeandLongitudeValue: "@es@ Please enter valid Latitude and Longitude",
         addBearingValue: "@es@ Please specify bearing values between 0 to 360 degrees",
         addDistanceMiles: "@es@ Please add valid distance in ${0}.",
         distanceMaxLimit: "@es@ Please specify distance between 0 to ${0}.",
@@ -124,7 +127,8 @@ define({
         noFeaturesFound: "@es@ Features not found.",
         browseFile: "@es@ Please browse a file.",
         noFeaturesInAOI: "@es@ No features found in AOI.",
-        noFieldsSelected: "@es@ No fields selected."
+        noFieldsSelected: "@es@ No fields selected.",
+        selectFeatureError: "@es@ Please double click on map to complete the select Feature."
     },
     // End of shared nls
 

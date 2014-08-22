@@ -39,8 +39,18 @@ define([
     "esri/tasks/query",
     "esri/geometry/Extent",
     "dojo/dom-geometry",
-    "esri/tasks/QueryTask"
-], function (declare, domConstruct, domStyle, lang, array, query, domAttr, on, dom, domClass, template, topic, Deferred, DeferredList, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, esriRequest, Query, GeometryExtent, domGeom, QueryTask) {
+    "esri/tasks/QueryTask",
+    "esri/tasks/BufferParameters",
+    "esri/tasks/GeometryService",
+    "esri/geometry/Point",
+    "esri/SpatialReference",
+    "esri/symbols/SimpleFillSymbol",
+    "esri/symbols/SimpleLineSymbol",
+    "dojo/_base/Color",
+    "esri/graphic",
+    "esri/geometry/Polyline",
+    "esri/geometry/Polygon"
+], function (declare, domConstruct, domStyle, lang, array, query, domAttr, on, dom, domClass, template, topic, Deferred, DeferredList, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, esriRequest, Query, GeometryExtent, domGeom, QueryTask, BufferParameters, GeometryService, Point, SpatialReference, SimpleFillSymbol, SimpleLineSymbol, Color, Graphic, Polyline, Polygon) {
 
     //========================================================================================================================//
 
@@ -65,11 +75,10 @@ define([
         */
         postCreate: function () {
             this._createLegendContainerUI();
-            var currentExtentLegend, legendDefaultExtent, layerUrl;
+            var currentExtentLegend, legendDefaultExtent, layerUrl, graphicDetails, geometryService, params, pointGeometry, polyline, polygon, extent;
             this.logoContainer = query(".esriControlsBR")[0];
             if (!this.logoContainer) {
-                this.logoContainer = (query(".map .logo-sm") && query(".map .logo-sm")[0])
-                    || (query(".map .logo-med") && query(".map .logo-med")[0]);
+                this.logoContainer = (query(".map .logo-sm") && query(".map .logo-sm")[0]) || (query(".map .logo-med") && query(".map .logo-med")[0]);
             }
             topic.subscribe("setLegendPositionUp", lang.hitch(this, function () {
                 this._setLegendPositionUp();
@@ -80,11 +89,100 @@ define([
             }));
 
             if (window.location.toString().split("?extent=").length > 1) {
+
                 this.shareLegendExtent = true;
                 currentExtentLegend = this._getQueryString('extent');
                 legendDefaultExtent = currentExtentLegend.split(',');
-                legendDefaultExtent = new GeometryExtent({ "xmin": parseFloat(legendDefaultExtent[0]), "ymin": parseFloat(legendDefaultExtent[1]), "xmax": parseFloat(legendDefaultExtent[2]), "ymax": parseFloat(legendDefaultExtent[3]), "spatialReference": { "wkid": this.map.spatialReference.wkid} });
+                graphicDetails = currentExtentLegend.split('|');
+                legendDefaultExtent = new GeometryExtent({
+                    "xmin": parseFloat(legendDefaultExtent[0]),
+                    "ymin": parseFloat(legendDefaultExtent[1]),
+                    "xmax": parseFloat(legendDefaultExtent[2]),
+                    "ymax": parseFloat(legendDefaultExtent[3]),
+                    "spatialReference": {
+                        "wkid": this.map.spatialReference.wkid
+                    }
+                });
+
+                if (graphicDetails.length > 0) {
+                    if (graphicDetails[1] === "point") {
+                        geometryService = new GeometryService(dojo.configData.GeometryService);
+                        params = new BufferParameters();
+                        params.distances = [graphicDetails[4]];
+                        params.bufferSpatialReference = new esri.SpatialReference({
+                            "wkid": this.map.spatialReference.wkid
+                        });
+                        params.outSpatialReference = this.map.spatialReference;
+                        params.unit = GeometryService[graphicDetails[5]];
+                        pointGeometry = new Point(graphicDetails[2], graphicDetails[3], new esri.SpatialReference({
+                            "wkid": this.map.spatialReference.wkid
+                        }));
+                        params.geometries = [pointGeometry];
+                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
+                            this.showBuffer(geometries);
+                        }));
+                    } else if (graphicDetails[1] === "polyline") {
+                        geometryService = new GeometryService(dojo.configData.GeometryService);
+                        params = new BufferParameters();
+                        params.distances = [graphicDetails[3]];
+                        params.bufferSpatialReference = new esri.SpatialReference({
+                            "wkid": this.map.spatialReference.wkid
+                        });
+                        params.outSpatialReference = this.map.spatialReference;
+                        params.unit = GeometryService[graphicDetails[4]];
+                        polyline = new Polyline();
+                        polyline.paths = JSON.parse(graphicDetails[2]);
+                        polyline.spatialReference = new esri.SpatialReference({
+                            "wkid": this.map.spatialReference.wkid
+                        });
+                        params.geometries = [polyline];
+                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
+                            this.showBuffer(geometries);
+                        }));
+                    } else if (graphicDetails[1] === "extent") {
+                        geometryService = new GeometryService(dojo.configData.GeometryService);
+                        params = new BufferParameters();
+                        params.distances = [graphicDetails[6]];
+                        params.bufferSpatialReference = new esri.SpatialReference({
+                            "wkid": this.map.spatialReference.wkid
+                        });
+                        params.outSpatialReference = this.map.spatialReference;
+                        params.unit = GeometryService[graphicDetails[7]];
+                        extent = new esri.geometry.Extent({
+                            "xmin": graphicDetails[2],
+                            "ymin": graphicDetails[3],
+                            "xmax": graphicDetails[4],
+                            "ymax": graphicDetails[5],
+                            "spatialReference": {
+                                "wkid": this.map.spatialReference.wkid
+                            }
+                        });
+                        params.geometries = [extent];
+                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
+                            this.showBuffer(geometries);
+                        }));
+                    } else if (graphicDetails[1] === "polygon") {
+                        geometryService = new GeometryService(dojo.configData.GeometryService);
+                        params = new BufferParameters();
+                        params.distances = [graphicDetails[3]];
+                        params.bufferSpatialReference = new esri.SpatialReference({
+                            "wkid": this.map.spatialReference.wkid
+                        });
+                        params.outSpatialReference = this.map.spatialReference;
+                        params.unit = GeometryService[graphicDetails[4]];
+                        polygon = new Polygon();
+                        polygon.rings = JSON.parse(graphicDetails[2]);
+                        polygon.spatialReference = new esri.SpatialReference({
+                            "wkid": this.map.spatialReference.wkid
+                        });
+                        params.geometries = [polygon];
+                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
+                            this.showBuffer(geometries);
+                        }));
+                    }
+                }
             }
+
             if (this.isExtentBasedLegend) {
                 this.map.on("extent-change", lang.hitch(this, function (evt) {
                     var defQueryArray = [],
@@ -143,7 +241,10 @@ define([
                     domStyle.set(query(".esriCTRightArrow")[0], "display", "none");
                     domStyle.set(query(".esriCTLeftArrow")[0], "display", "none");
 
-                    domConstruct.create("span", { "innerHTML": sharedNls.titles.loadingText, "class": "divlegendLoadingContainer" }, this.divlegendContainer);
+                    domConstruct.create("span", {
+                        "innerHTML": sharedNls.titles.loadingText,
+                        "class": "divlegendLoadingContainer"
+                    }, this.divlegendContainer);
                     if (defQueryArray.length > 0) {
                         queryDefList = new DeferredList(defQueryArray);
                         queryDefList.then(lang.hitch(this, function (result) {
@@ -160,7 +261,10 @@ define([
                                 this._displayWebmapRenderer();
                                 this._displayHostedLayerRenderer();
                             } else if (resultListArray.length === 0) {
-                                domConstruct.create("span", { innerHTML: sharedNls.messages.noLegend, "class": "divNoLegendContainer" }, this.divlegendContainer);
+                                domConstruct.create("span", {
+                                    innerHTML: sharedNls.messages.noLegend,
+                                    "class": "divNoLegendContainer"
+                                }, this.divlegendContainer);
                             }
 
                         }));
@@ -170,15 +274,38 @@ define([
                             this._displayWebmapRenderer();
                             this._displayHostedLayerRenderer();
                         } else {
-                            domConstruct.create("span", { "innerHTML": sharedNls.messages.noLegend, "class": "divNoLegendContainer" }, this.divlegendContainer);
+                            domConstruct.create("span", {
+                                "innerHTML": sharedNls.messages.noLegend,
+                                "class": "divNoLegendContainer"
+                            }, this.divlegendContainer);
                         }
                     }
                 }));
             }
         },
 
+        showBuffer: function (bufferedGeometries) {
+            var _self, symbol, graphic;
+            _self = this;
+            symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
+                new SimpleLineSymbol(
+                    SimpleLineSymbol.STYLE_SOLID,
+                    new Color([parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[0], 10), parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[1], 10), parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.BufferSymbology.LineSymbolTransparency.split(",")[0], 10)]),
+                    2
+                ),
+                new Color([parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[0], 10), parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[1], 10), parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.BufferSymbology.FillSymbolTransparency.split(",")[0], 10)])
+                );
+            array.forEach(bufferedGeometries, function (geometry) {
+                graphic = new Graphic(geometry, symbol);
+                _self.map.getLayer("tempBufferLayer").clear();
+                _self.map.getLayer("tempBufferLayer").add(graphic);
+                _self.map.setExtent(graphic.geometry.getExtent().expand(1.6));
+            });
+        },
+
         _checkLayerVisibility: function (layerUrl) {
-            var layer, layerUrlIndex = layerUrl.split('/'), returnVal = false;
+            var layer, layerUrlIndex = layerUrl.split('/'),
+                returnVal = false;
             layerUrlIndex = layerUrlIndex[layerUrlIndex.length - 1];
             for (layer in this.map._layers) {
                 if (this.map._layers.hasOwnProperty(layer)) {
@@ -241,14 +368,22 @@ define([
                 domConstruct.destroy(legendOuterContainer[0].parentElement);
             }
             dom.byId("esriCTParentDivContainer").appendChild(this.esriCTdivLegendbox);
-            divlegendContainer = domConstruct.create("div", { "class": "divlegendContainer" }, this.divlegendList);
-            this.divlegendContainer = domConstruct.create("div", { "class": "divlegendContent" }, divlegendContainer);
-            divLeftArrow = domConstruct.create("div", { "class": "esriCTLeftArrow" }, this.legendbox);
+            divlegendContainer = domConstruct.create("div", {
+                "class": "divlegendContainer"
+            }, this.divlegendList);
+            this.divlegendContainer = domConstruct.create("div", {
+                "class": "divlegendContent"
+            }, divlegendContainer);
+            divLeftArrow = domConstruct.create("div", {
+                "class": "esriCTLeftArrow"
+            }, this.legendbox);
             domStyle.set(divLeftArrow, "display", "none");
             on(divLeftArrow, "click", lang.hitch(this, function () {
                 this._slideLeft();
             }));
-            this.divRightArrow = domConstruct.create("div", { "class": "esriCTRightArrow" }, this.legendbox);
+            this.divRightArrow = domConstruct.create("div", {
+                "class": "esriCTRightArrow"
+            }, this.legendbox);
             on(this.divRightArrow, "click", lang.hitch(this, function () {
                 this._slideRight();
             }));
@@ -342,7 +477,9 @@ define([
         * @memberOf widgets/legends/legends
         */
         startup: function (layerArray, updatedRendererArray) {
-            var mapServerURL, featureLayerUrl, index, hostedDefArray = [], defArray = [], params, layersRequest, deferredList, hostedDeferredList, hostedLayers, i;
+            var mapServerURL, featureLayerUrl, index, hostedDefArray = [],
+                defArray = [],
+                params, layersRequest, deferredList, hostedDeferredList, hostedLayers, i;
             this.mapServerArray = [];
             this.featureServerArray = [];
             this.legendListWidth = [];
@@ -351,7 +488,9 @@ define([
             for (i = 0; i < hostedLayers.length; i++) {
                 params = {
                     url: hostedLayers[i],
-                    content: { f: "json" },
+                    content: {
+                        f: "json"
+                    },
                     handleAs: "json",
                     callbackParamName: "callback"
                 };
@@ -382,7 +521,10 @@ define([
                 mapServerURL = layerArray[index].split("/");
                 mapServerURL.pop();
                 mapServerURL = mapServerURL.join("/");
-                this.mapServerArray.push({ "url": mapServerURL, "featureLayerUrl": featureLayerUrl });
+                this.mapServerArray.push({
+                    "url": mapServerURL,
+                    "featureLayerUrl": featureLayerUrl
+                });
             }
 
             this.mapServerArray = this._removeDuplicate(this.mapServerArray);
@@ -390,7 +532,9 @@ define([
             for (index = 0; index < this.mapServerArray.length; index++) {
                 params = {
                     url: this.mapServerArray[index].url + "/legend",
-                    content: { f: "json" },
+                    content: {
+                        f: "json"
+                    },
                     handleAs: "json",
                     callbackParamName: "callback"
                 };
@@ -478,14 +622,20 @@ define([
                         }
                     }
                 } else {
-                    this.divLegendlist = domConstruct.create("div", { "class": "divLegendlist" }, this.divlegendContainer);
-                    divLegendImage = dojo.create("div", { "class": "legend" }, null);
+                    this.divLegendlist = domConstruct.create("div", {
+                        "class": "divLegendlist"
+                    }, this.divlegendContainer);
+                    divLegendImage = dojo.create("div", {
+                        "class": "legend"
+                    }, null);
                     if (renderer.symbol.url) {
                         image = this._createImage(renderer.symbol.url, "", false, renderer.symbol.width, renderer.symbol.height);
                     }
                     domConstruct.place(image, divLegendImage);
                     this.divLegendlist.appendChild(divLegendImage);
-                    divLegendLabel = dojo.create("div", { "class": "legendlbl" }, null);
+                    divLegendLabel = dojo.create("div", {
+                        "class": "legendlbl"
+                    }, null);
                     this.divLegendlist.appendChild(divLegendLabel);
                 }
             }
@@ -497,8 +647,12 @@ define([
         */
         _createSymbol: function (symbolType, url, color, width, height, imageData, label) {
             var bgColor, divLegendLabel, divLegendImage, divSymbol, image;
-            this.divLegendlist = domConstruct.create("div", { "class": "divLegendlist" }, this.divlegendContainer);
-            divLegendImage = domConstruct.create("div", { "class": "legend" }, null);
+            this.divLegendlist = domConstruct.create("div", {
+                "class": "divLegendlist"
+            }, this.divlegendContainer);
+            divLegendImage = domConstruct.create("div", {
+                "class": "legend"
+            }, null);
             if (symbolType === "picturemarkersymbol" && url) {
                 image = this._createImage(url, "", false, width, height);
                 divLegendImage.appendChild(image);
@@ -525,7 +679,9 @@ define([
                 divLegendImage.appendChild(divSymbol);
                 this.divLegendlist.appendChild(divLegendImage);
             }
-            divLegendLabel = dojo.create("div", { "class": "legendlbl" }, null);
+            divLegendLabel = dojo.create("div", {
+                "class": "legendlbl"
+            }, null);
             domAttr.set(divLegendLabel, "innerHTML", label);
             this.divLegendlist.appendChild(divLegendLabel);
             this.legendListWidth.push(this.divLegendlist.offsetWidth + width);
@@ -580,7 +736,9 @@ define([
                         layerTempArray.push(layer);
                         params = {
                             url: layer,
-                            content: { f: "json" },
+                            content: {
+                                f: "json"
+                            },
                             handleAs: "json",
                             callbackParamName: "callback"
                         };
@@ -623,7 +781,8 @@ define([
         * @memberOf widgets/legends/legends
         */
         _removeDuplicate: function (mapServerArray) {
-            var filterArray = [], fliteredArray = [];
+            var filterArray = [],
+                fliteredArray = [];
             array.filter(mapServerArray, function (item) {
                 if (array.indexOf(filterArray, item.url) === -1) {
                     fliteredArray.push(item);
@@ -660,7 +819,10 @@ define([
         * @memberOf widgets/legends/legends
         */
         _addlegendListWidth: function (legendListWidth) {
-            var listWidth = legendListWidth, total = 0, j, boxWidth;
+            var listWidth = legendListWidth,
+                total = 0,
+                j,
+                boxWidth;
             for (j = 0; j < listWidth.length; j++) {
                 total += listWidth[j] + 20;
             }
@@ -684,15 +846,25 @@ define([
         _addLegendSymbol: function (legend, layerName) {
             var divLegendImage, image, divLegendLabel;
             if (legend) {
-                this.divLegendlist = domConstruct.create("div", { "class": "divLegendlist" }, this.divlegendContainer);
-                divLegendImage = domConstruct.create("div", { "class": "legend" }, null);
+                this.divLegendlist = domConstruct.create("div", {
+                    "class": "divLegendlist"
+                }, this.divlegendContainer);
+                divLegendImage = domConstruct.create("div", {
+                    "class": "legend"
+                }, null);
                 image = this._createImage("data:image/gif;base64," + legend.imageData, "", false, legend.width, legend.height);
                 domConstruct.place(image, divLegendImage);
                 this.divLegendlist.appendChild(divLegendImage);
                 if (legend.label) {
-                    divLegendLabel = domConstruct.create("div", { "class": "legendlbl", "innerHTML": legend.label }, null);
+                    divLegendLabel = domConstruct.create("div", {
+                        "class": "legendlbl",
+                        "innerHTML": legend.label
+                    }, null);
                 } else {
-                    divLegendLabel = domConstruct.create("div", { "class": "legendlbl", "innerHTML": layerName }, null);
+                    divLegendLabel = domConstruct.create("div", {
+                        "class": "legendlbl",
+                        "innerHTML": layerName
+                    }, null);
                 }
                 this.divLegendlist.appendChild(divLegendLabel);
                 this.legendListWidth.push(this.divLegendlist.offsetWidth + legend.width);
@@ -706,7 +878,10 @@ define([
         _createImage: function (imageSrc, title, isCursorPointer, imageWidth, imageHeight) {
             var imgLocate, imageHeightWidth;
             imgLocate = domConstruct.create("img");
-            imageHeightWidth = { width: imageWidth + 'px', height: imageHeight + 'px' };
+            imageHeightWidth = {
+                width: imageWidth + 'px',
+                height: imageHeight + 'px'
+            };
             domAttr.set(imgLocate, "style", imageHeightWidth);
             if (isCursorPointer) {
                 domStyle.set(imgLocate, "cursor", "pointer");

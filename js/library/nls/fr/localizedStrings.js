@@ -40,11 +40,13 @@ define({
         clearEntry: "@fr@ Clear",
         selectInitialCoordinates: "@fr@ Select Initial Coordinates",
         loadingText: "@fr@ Loading...",
-        settingsIconTitle: "@fr@ Choose fields to view in summary report"
+        settingsIconTitle: "@fr@ Choose fields to view in summary report",
+        selectFeature: "@fr@ Press double click to finish the opertaion",
+        selectCoordinates: "@fr@ Please select the point"
     },
     titles: {
         areaOfInterestTabText: "@fr@ Area of Interest",
-        reportTabText: "Report",
+        reportTabText: "@fr@ Report",
         webpageDisplayText: "@fr@ Copy/Paste HTML into your web page",
         pointToolText: "@fr@ Point",
         multipointToolText: "Multipoint",
@@ -73,8 +75,8 @@ define({
         drawingTitle: "@fr@ Draw",
         uploadShapefileTitle: "@fr@ Shapefile",
         coordinatesTitle: "@fr@ Coordinates ",
-        distanceLabel: "Distance",
-        bearingLabel: "Bearing"
+        distanceLabel: "@fr@ Distance",
+        bearingLabel: "@fr@ Bearing"
     },
     messages: {
         legendLoadingText: "@fr@ Loading...",
@@ -99,7 +101,7 @@ define({
         bearingValue: "@fr@ (0-360)",
         distance: "@fr@ Distance (Miles)",
         reportPanelHeader: "@fr@ Summary Report for Area of Interest",
-        selectReportFields: "Select report fields"
+        selectReportFields: "@fr@ Select report fields"
     },
     errorMessages: {
         invalidSearch: "Aucun résultat",
@@ -113,6 +115,7 @@ define({
         bufferSliderValue: "@fr@ Buffer slider should not be set to zero distance",
         addLatitudeValue: "@fr@ Please enter valid Latitude",
         addLongitudeValue: "@fr@ Please enter valid Longitude.",
+        addLatitudeandLongitudeValue: "@fr@ Please enter valid Latitude and Longitude",
         addBearingValue: "@fr@ Please specify bearing values between 0 to 360 degrees.",
         addDistanceMiles: "@fr@ Please add valid distance in ${0}.",
         distanceMaxLimit: "@fr@ Please specify distance between 0 to ${0}.",
@@ -124,7 +127,8 @@ define({
         noFeaturesFound: "@fr@ Features not found.",
         browseFile: "@fr@ Please browse a file.",
         noFeaturesInAOI: "@fr@ No features found in AOI.",
-        noFieldsSelected: "@fr@ No fields selected."
+        noFieldsSelected: "@fr@ No fields selected.",
+        selectFeatureError: "@fr@ Please double click on map to complete the select Feature."
     },
     // End of shared nls
 

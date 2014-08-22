@@ -20,7 +20,7 @@ define({
     buttons: {
         okButtonText: "@it@ OK",
         link: "@it@ Link",
-        email: "e-mail",  // Shown next to icon for sharing the current map extents via email; works with shareViaEmail tooltip
+        email: "@it@ e-mail",  // Shown next to icon for sharing the current map extents via email; works with shareViaEmail tooltip
         facebook: "Facebook",  // Shown next to icon for sharing the current map extents via a Facebook post; works with shareViaFacebook tooltip
         twitter: "Twitter",  // Shown next to icon for sharing the current map extents via a Twitter tweet; works with shareViaTwitter tooltip
         embedding: "@it@ Embedded URL",
@@ -40,7 +40,9 @@ define({
         clearEntry: "@it@ Clear",
         selectInitialCoordinates: "@it@ Select Initial Coordinates",
         loadingText: "@it@ Loading...",
-        settingsIconTitle: "@it@ Choose fields to view in summary report"
+        settingsIconTitle: "@it@ Choose fields to view in summary report",
+        selectFeature: "@it@ Press double click to finish the opertaion",
+        selectCoordinates: "@it@ Please select the point"
     },
     titles: {
         areaOfInterestTabText: "@it@ Area of Interest",
@@ -113,6 +115,7 @@ define({
         bufferSliderValue: "@it@ Buffer slider should not be set to zero distance",
         addLatitudeValue: "@it@ Please enter valid Latitude",
         addLongitudeValue: "@it@ Please enter valid Longitude.",
+        addLatitudeandLongitudeValue: "@it@ Please enter valid Latitude and Longitude",
         addBearingValue: "@it@ Please add Bearing value.",
         addDistanceMiles: "@it@ Please add Valid distance in ${0}.",
         distanceMaxLimit: "Please specify distance between 0 to ${0}.",
@@ -125,6 +128,7 @@ define({
         browseFile: "@it@ Please browse a file.",
         noFeaturesInAOI: "@it@ No features found in AOI.",
         noFieldsSelected: "@it@ No fields selected."
+        selectFeatureError: "@it@ Please double click on map to complete the select Feature."
     },
     // End of shared nls
 

@@ -40,7 +40,9 @@ define({
         clearEntry: "Clear",
         selectInitialCoordinates: "Select Initial Coordinates",
         loadingText: "Loading...",
-        settingsIconTitle: "Choose fields to view in summary report"
+        settingsIconTitle: "Choose fields to view in summary report",
+        selectFeature: "Press double click to finish the opertaion",
+        selectCoordinates: "Please select the point"
     },
     titles: {
         areaOfInterestTabText: "Area of Interest",
@@ -125,7 +127,8 @@ define({
         noFeaturesFound: "Features not found.",
         browseFile: "Please browse a file.",
         noFeaturesInAOI: "No features found in AOI.",
-        noFieldsSelected: "No fields selected."
+        noFieldsSelected: "No fields selected.",
+        selectFeatureError: "Please double click on map to complete the select Feature."
     },
     // End of shared nls
 

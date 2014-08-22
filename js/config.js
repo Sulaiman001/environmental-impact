@@ -122,13 +122,13 @@ define([], function () {
         // Configure operational layers  below. The order of displaying layers is reversed on map. The last configured layer is displayed on top.
         // ServiceURL: URL of the layer.
         // LoadAsServiceType: Field to specify if the operational layers should be added as dynamic map service layer or feature layer.
-        //                    Supported service types are 'dynamic' or 'feature'.
+        // Supported service types are 'dynamic' or 'feature'.
         OperationalLayers: [{
             ServiceURL: "http://54.193.222.183:6080/arcgis/rest/services/EIAPoly/MapServer/0",
-            LoadAsServiceType: "dynamic"
+            LoadAsServiceType: "feature"
         }, {
-            ServiceURL: "http://54.193.222.183:6080/arcgis/rest/services/EIAPoly/MapServer/10",
-            LoadAsServiceType: "dynamic"
+            ServiceURL: "http://54.193.222.183:6080/arcgis/rest/services/EIAPoly/MapServer/8",
+            LoadAsServiceType: "feature"
         }],
 
         // ------------------------------------------------------------------------------------------------------------------------
@@ -159,7 +159,7 @@ define([], function () {
             UnifiedSearch: "true"
         }, {
             Title: "EIAPoly",
-            QueryLayerId: "10",
+            QueryLayerId: "8",
             SearchDisplayTitle: "Florida Managed Areas",
             SearchDisplayFields: "${MANAME}",
             SearchExpression: "UPPER(MANAME) LIKE UPPER('%${0}%')",
@@ -187,6 +187,12 @@ define([], function () {
             FillSymbolTransparency: "0.10",
             LineSymbolColor: "255,0,0",
             LineSymbolTransparency: "0.30"
+        },
+
+        // Select feature symbol
+        SelectFeatureSymbology: {
+            SymbolColor: "0,255,255",
+            SymbolWidth: "1"
         },
 
         // Configure graphic color to be set for searched features
@@ -231,9 +237,6 @@ define([], function () {
             Selected: false
         }],
 
-        // Configure this flag to show or hide map attribution data
-        ShowMapAttribution: true,
-
         // Configure this flag to show or hide legend panel
         ShowLegend: true,
 
@@ -271,7 +274,7 @@ define([], function () {
             }]
         }, {
             Title: "EIAPoly",
-            QueryLayerId: "10",
+            QueryLayerId: "8",
             InfoWindowHeaderField: "${MANAME}",
             InfoWindowData: [{
                 DisplayText: "Name:",
@@ -371,20 +374,18 @@ define([], function () {
         // Set geometry service URL
         GeometryService: "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer",
 
-        // Set GP service for uploading shapefile
-        UploadFileUrl: "http://203.199.47.114/arcgis/rest/services/EnvironmentImpactV2/EnvironmentImpactServices/GPServer/uploads/upload",
-
         // Set GP service for generating report after uploading shapefile
-        ShapefileTOAOI: "http://203.199.47.114/arcgis/rest/services/EnvironmentImpactV2/EnvironmentImpactServices/GPServer/ShapefileToAOI",
+        ShapefileTOAOI: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/EnvironmentalImpact/GPServer/ShapefileToAOI",
 
         // Set GP service for uploading shapefile for analysis
-        AnalyseShapefile: "http://203.199.47.114/arcgis/rest/services/EnvironmentImpactV2/EnvironmentImpactServices/GPServer/AnalyseShapefile",
+        AnalyseShapefile: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/EnvironmentalImpact/GPServer/AnalyseShapefile",
 
         // Set GP service for generating report
-        GenerateReport: "http://203.199.47.114/arcgis/rest/services/EnvironmentImpactV2/EnvironmentImpactServices/GPServer/GenerateReport",
+        GenerateReport: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/Generate_Report/GPServer/GenerateReport",
 
         //LayerJson for Detailed Report
-        LayerJson: [{ "mxd_path": "C:\\GISData\\Environmental Impact\\Data For Tesing\\EnvImpact.mxd",
+        LayerJson: [{
+            "mxd_path": "C:\\GISData\\Environmental Impact\\Data For Tesing\\EnvImpact.mxd",
             "layerID": 0,
             "fields": [{
                 "name": "ACCESS"
@@ -392,9 +393,8 @@ define([], function () {
                 "name": "COUNTY"
             }, {
                 "name": "AGNCY_NAME"
-            }
-                ]
-            }, {
+            }]
+        }, {
             "mxd_path": "C:\\GISData\\Environmental Impact\\Data For Tesing\\EnvImpact.mxd",
             "layerID": 1,
             "fields": [{
@@ -415,8 +415,7 @@ define([], function () {
                 "name": "County"
             }, {
                 "name": "WebLegend"
-            }
-                ]
+            }]
         }, {
             "mxd_path": "C:\\GISData\\Environmental Impact\\Data For Tesing\\EnvImpact.mxd",
             "layerID": 2,
@@ -424,10 +423,8 @@ define([], function () {
                 "name": "NAME"
             }, {
                 "name": "FTYPE"
-            }
-                      ]
-        }
-                   ],
+            }]
+        }],
 
         // SETTINGS FOR MAP SHARING
         // ------------------------------------------------------------------------------------------------------------------------
