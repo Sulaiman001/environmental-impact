@@ -45,8 +45,12 @@ define([
     "esri/layers/ArcGISDynamicMapServiceLayer",
     "esri/geometry/webMercatorUtils",
     "dojo/_base/array",
+    "esri/graphic",
+    "esri/symbols/SimpleMarkerSymbol",
+    "esri/symbols/SimpleLineSymbol",
+    "esri/symbols/SimpleFillSymbol",
     "dojo/domReady!"
-], function (declare, domConstruct, domStyle, lang, esriUtils, dom, domAttr, query, domClass, _WidgetBase, sharedNls, esriMap, ImageParameters, FeatureLayer, GraphicsLayer, BaseMapGallery, Legends, GeometryExtent, HomeButton, Deferred, DeferredList, topic, on, InfoWindow, template, ArcGISDynamicMapServiceLayer, webMercatorUtils, array) {
+], function (declare, domConstruct, domStyle, lang, esriUtils, dom, domAttr, query, domClass, _WidgetBase, sharedNls, esriMap, ImageParameters, FeatureLayer, GraphicsLayer, BaseMapGallery, Legends, GeometryExtent, HomeButton, Deferred, DeferredList, topic, on, InfoWindow, template, ArcGISDynamicMapServiceLayer, webMercatorUtils, array, Graphic, SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol) {
 
     //========================================================================================================================//
 
@@ -82,7 +86,7 @@ define([
                 mapDeferred = esriUtils.createMap(dojo.configData.WebMapId, "esriCTParentDivContainer", {
                     mapOptions: {
                         slider: true,
-                        showAttribution: dojo.configData.ShowMapAttribution
+                        showAttribution: true
                     },
                     ignorePopups: true
                 });
@@ -111,7 +115,7 @@ define([
             } else {
                 this._generateLayerURL(dojo.configData.OperationalLayers);
                 this.map = esriMap("esriCTParentDivContainer", {
-                    showAttribution: dojo.configData.ShowMapAttribution
+                    showAttribution: true
                 });
                 dojo.selectedBasemapIndex = 0;
                 if (dojo.configData.BaseMapLayers[0].length > 1) {
@@ -303,7 +307,7 @@ define([
                 this._onSetMapTipPosition(dojo.selectedMapPoint, this.map, this.infoWindowPanel);
             }));
             this.map.on("click", lang.hitch(this, function (evt) {
-                if (!dojo.activatedDrawTool && !dojo.initialCoordinates) {
+                if (!dojo.activatedDrawTool && !dojo.initialCoordinates && !dojo.selectFeatureEnabled) {
                     this._showInfoWindowOnMap(evt.mapPoint);
                 }
             }));
@@ -477,16 +481,15 @@ define([
         },
 
         _executeQueryTask: function (index, mapPoint, onMapFeaturArray) {
-            var queryTask, queryLayer, queryOnRouteTask;
+            var queryTask, queryParams, queryOnRouteTask;
 
             queryTask = new esri.tasks.QueryTask(dojo.configData.SearchSettings[index].QueryURL);
-            queryLayer = new esri.tasks.Query();
-            queryLayer.outSpatialReference = this.map.spatialReference;
-            queryLayer.returnGeometry = true;
-            queryLayer.maxAllowableOffset = 100;
-            queryLayer.geometry = this._extentFromPoint(mapPoint);
-            queryLayer.outFields = ["*"];
-            queryOnRouteTask = queryTask.execute(queryLayer, lang.hitch(this, function (results) {
+            queryParams = new esri.tasks.Query();
+            queryParams.outSpatialReference = this.map.spatialReference;
+            queryParams.returnGeometry = true;
+            queryParams.geometry = this._extentFromPoint(mapPoint);
+            queryParams.outFields = ["*"];
+            queryOnRouteTask = queryTask.execute(queryParams, lang.hitch(this, function (results) {
                 var deferred = new Deferred();
                 deferred.resolve(results);
                 return deferred.promise;

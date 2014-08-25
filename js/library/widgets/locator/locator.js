@@ -63,6 +63,7 @@ define([
         locatorAOIBearingScrollbar: null,
         screenPoint: null,
         locatorAOIPlacenameScrollbar: null,
+        codedValueArr: [],
         /**
         * display locator widget
         *
@@ -98,7 +99,10 @@ define([
                 this._attachLocatorEvents(locatorParams);
             }));
 
-            this.domNode = domConstruct.create("div", { "title": sharedNls.tooltips.search, "class": "esriCTHeaderIcons esriCTHeaderSearch" }, null);
+            this.domNode = domConstruct.create("div", {
+                "title": sharedNls.tooltips.search,
+                "class": "esriCTHeaderIcons esriCTHeaderSearch"
+            }, null);
             domConstruct.place(this.divAddressContainer, dom.byId("esriCTParentDivContainer"));
             this.own(on(this.domNode, "click", lang.hitch(this, function () {
                 domStyle.set(this.imgSearchLoader, "display", "none");
@@ -128,6 +132,121 @@ define([
                 isPlacenameSearch: false
             };
             this._attachLocatorEvents(locatorParams);
+            this.codedValueArr = [{
+                "name": "Playa",
+                "code": 36100
+            }, {
+                "name": "Ice Mass",
+                "code": 37800
+            }, {
+                "name": "Swamp/Marsh",
+                "code": 46600
+            }, {
+                "name": "Swamp/Marsh: Hydrographic Category: Intermittent",
+                "code": 46601
+            }, {
+                "name": "Swamp/Marsh: Hydrographic Category: Perennial",
+                "code": 46602
+            }, {
+                "name": "Estuary",
+                "code": 49300
+            }, {
+                "name": "Lake/Pond",
+                "code": 39000
+            }, {
+                "name": "Lake/Pond: Hydrographic Category = Intermittent",
+                "code": 39001
+            }, {
+                "name": "Lake/Pond: Hydrographic Category = Intermittent; Stage = Date of Photography",
+                "code": 39006
+            }, {
+                "name": "Lake/Pond: Hydrographic Category = Intermittent; Stage = High Water Elevation",
+                "code": 39005
+            }, {
+                "name": "Lake/Pond: Hydrographic Category = Perennial",
+                "code": 39004
+            }, {
+                "name": "Lake/Pond: Hydrographic Category = Perennial; Stage = Average Water Elevation",
+                "code": 39009
+            }, {
+                "name": "Lake/Pond: Hydrographic Category = Perennial; Stage = Date of Photography",
+                "code": 39011
+            }, {
+                "name": "Lake/Pond: Hydrographic Category = Perennial; Stage = Normal Pool",
+                "code": 39010
+            }, {
+                "name": "Lake/Pond: Hydrographic Category = Perennial; Stage = Spillway",
+                "code": 39012
+            }, {
+                "name": "Reservoir",
+                "code": 43600
+            }, {
+                "name": "Reservoir: Construction Material = Earthen",
+                "code": 43618
+            }, {
+                "name": "Reservoir: Construction Material = Nonearthen",
+                "code": 43619
+            }, {
+                "name": "Reservoir: Reservoir Type = Aquaculture",
+                "code": 43601
+            }, {
+                "name": "Reservoir: Reservoir Type = Cooling Pond",
+                "code": 43609
+            }, {
+                "name": "Reservoir: Reservoir Type = Decorative Pool",
+                "code": 43603
+            }, {
+                "name": "Reservoir: Reservoir Type = Disposal",
+                "code": 43606
+            }, {
+                "name": "Reservoir: Reservoir Type = Disposal; Construction Material = Earthen",
+                "code": 43625
+            }, {
+                "name": "Reservoir: Reservoir Type = Disposal; Construction Material = Nonearthen",
+                "code": 43626
+            }, {
+                "name": "Reservoir: Reservoir Type = Evaporator",
+                "code": 43607
+            }, {
+                "name": "Reservoir: Reservoir Type = Evaporator; Construction Material = Earthen",
+                "code": 43623
+            }, {
+                "name": "Reservoir: Reservoir Type = Filtration Pond",
+                "code": 43610
+            }, {
+                "name": "Reservoir: Reservoir Type = Settling Pond",
+                "code": 43611
+            }, {
+                "name": "Reservoir: Reservoir Type = Sewage Treatment Pond",
+                "code": 43612
+            }, {
+                "name": "Reservoir: Reservoir Type = Swimming Pool",
+                "code": 43608
+            }, {
+                "name": "Reservoir: Reservoir Type = Tailings Pond",
+                "code": 43605
+            }, {
+                "name": "Reservoir: Reservoir Type = Tailings Pond; Construction Material = Earthen",
+                "code": 43604
+            }, {
+                "name": "Reservoir: Reservoir Type = Treatment",
+                "code": 43624
+            }, {
+                "name": "Reservoir: Reservoir Type = Water Storage",
+                "code": 43617
+            }, {
+                "name": "Reservoir: Reservoir Type = Water Storage; Construction Material = Earthen; Hydrographic Category = Intermittent",
+                "code": 43614
+            }, {
+                "name": "Reservoir: Reservoir Type = Water Storage; Construction Material = Earthen; Hydrographic Category = Perennial",
+                "code": 43615
+            }, {
+                "name": "Reservoir: Reservoir Type = Water Storage; Construction Material = Nonearthen",
+                "code": 43613
+            }, {
+                "name": "Reservoir: Reservoir Type = Water Storage; Hydrographic Category = Perennial",
+                "code": 43621
+            }];
         },
 
         /**
@@ -364,7 +483,9 @@ define([
                 options, searchFields, addressFieldValues, addressFieldName, s, deferredArray,
                 locatorDef, deferred, resultLength, deferredListResult, index, resultAttributes, key, order;
 
-            nameArray = { Address: [] };
+            nameArray = {
+                Address: []
+            };
             domStyle.set(locatorParams.imgSearchLoader, "display", "block");
             domStyle.set(locatorParams.close, "display", "none");
             domAttr.set(locatorParams.textAddress, "defaultAddress", locatorParams.textAddress.value);
@@ -474,7 +595,6 @@ define([
                 queryLayer.where = string.substitute(layerobject.SearchExpression, [lang.trim(locatorParams.textAddress.value).toUpperCase()]) + " AND " + currentTime.getTime().toString() + "=" + currentTime.getTime().toString();
                 queryLayer.outSpatialReference = this.map.spatialReference;
                 queryLayer.returnGeometry = true;
-                queryLayer.maxAllowableOffset = 100;
                 queryLayer.outFields = ["*"];
                 queryTaskResult = queryTask.execute(queryLayer, lang.hitch(this, function (featureSet) {
                     deferred = new Deferred();
@@ -514,8 +634,14 @@ define([
         * @memberOf widgets/locator/locator
         */
         _showLocatedAddress: function (candidates, resultLength, locatorParams) {
-            var addrListCount = 0, addrList = [],
-                candidateArray, divAddressCounty, candidate, listContainer, i, divAddressSearchCell;
+            var addrListCount = 0,
+                addrList = [],
+                candidateArray,
+                divAddressCounty,
+                candidate,
+                listContainer,
+                i,
+                divAddressSearchCell;
 
             domConstruct.empty(locatorParams.divResults);
             if (locatorParams.isAOISearch || locatorParams.isAOIBearingSearch || locatorParams.isPlacenameSearch) {
@@ -525,11 +651,15 @@ define([
                 locatorParams.textAddress.focus();
                 domConstruct.empty(locatorParams.divResults);
                 if (!locatorParams.isAOISearch) {
-                    this.locatorScrollbar = new ScrollBar({ domNode: locatorParams.divAddressScrollContent });
+                    this.locatorScrollbar = new ScrollBar({
+                        domNode: locatorParams.divAddressScrollContent
+                    });
                     this.locatorScrollbar.setContent(locatorParams.divResults);
                     this.locatorScrollbar.createScrollBar();
                 } else {
-                    this.locatorAOIScrollbar = new ScrollBar({ domNode: locatorParams.divAddressScrollContent });
+                    this.locatorAOIScrollbar = new ScrollBar({
+                        domNode: locatorParams.divAddressScrollContent
+                    });
                     this.locatorAOIScrollbar.setContent(locatorParams.divResults);
                     this.locatorAOIScrollbar.createScrollBar();
                 }
@@ -548,7 +678,9 @@ define([
                     domClass.add(this.locatorScrollbar._scrollBarContent, "esriCTZeroHeight");
                     this.locatorScrollbar.removeScrollBar();
                 }
-                this.locatorScrollbar = new ScrollBar({ domNode: locatorParams.divAddressScrollContent });
+                this.locatorScrollbar = new ScrollBar({
+                    domNode: locatorParams.divAddressScrollContent
+                });
                 this.locatorScrollbar.setContent(locatorParams.divResults);
                 this.locatorScrollbar.createScrollBar();
                 // Reset scrollbar for Bearing Search
@@ -557,7 +689,9 @@ define([
                     domClass.add(this.locatorAOIBearingScrollbar._scrollBarContent, "esriCTZeroHeight");
                     this.locatorAOIBearingScrollbar.removeScrollBar();
                 }
-                this.locatorAOIBearingScrollbar = new ScrollBar({ domNode: locatorParams.divAddressScrollContent });
+                this.locatorAOIBearingScrollbar = new ScrollBar({
+                    domNode: locatorParams.divAddressScrollContent
+                });
                 this.locatorAOIBearingScrollbar.setContent(locatorParams.divResults);
                 this.locatorAOIBearingScrollbar.createScrollBar();
                 topic.publish("resizeAOIPanel");
@@ -567,7 +701,9 @@ define([
                     domClass.add(this.locatorAOIPlacenameScrollbar._scrollBarContent, "esriCTZeroHeight");
                     this.locatorAOIPlacenameScrollbar.removeScrollBar();
                 }
-                this.locatorAOIPlacenameScrollbar = new ScrollBar({ domNode: locatorParams.divAddressScrollContent });
+                this.locatorAOIPlacenameScrollbar = new ScrollBar({
+                    domNode: locatorParams.divAddressScrollContent
+                });
                 this.locatorAOIPlacenameScrollbar.setContent(locatorParams.divResults);
                 this.locatorAOIPlacenameScrollbar.createScrollBar();
                 topic.publish("resizeAOIPanel");
@@ -578,7 +714,9 @@ define([
                     domClass.add(this.locatorAOIScrollbar._scrollBarContent, "esriCTZeroHeight");
                     this.locatorAOIScrollbar.removeScrollBar();
                 }
-                this.locatorAOIScrollbar = new ScrollBar({ domNode: locatorParams.divAddressScrollContent });
+                this.locatorAOIScrollbar = new ScrollBar({
+                    domNode: locatorParams.divAddressScrollContent
+                });
                 this.locatorAOIScrollbar.setContent(locatorParams.divResults);
                 this.locatorAOIScrollbar.createScrollBar();
                 topic.publish("resizeAOIPanel");
@@ -588,30 +726,48 @@ define([
                 for (candidateArray in candidates) {
                     if (candidates.hasOwnProperty(candidateArray)) {
                         if (candidates[candidateArray].length > 0) {
-                            divAddressCounty = domConstruct.create("div", { "class": "esriCTSearchGroupRow esriCTBottomBorder esriCTResultColor esriCTCursorPointer esriCTAddressCounty" }, locatorParams.divResults);
-                            divAddressSearchCell = domConstruct.create("div", { "class": "esriCTSearchGroupCell" }, divAddressCounty);
+                            divAddressCounty = domConstruct.create("div", {
+                                "class": "esriCTSearchGroupRow esriCTBottomBorder esriCTResultColor esriCTCursorPointer esriCTAddressCounty"
+                            }, locatorParams.divResults);
+                            divAddressSearchCell = domConstruct.create("div", {
+                                "class": "esriCTSearchGroupCell"
+                            }, divAddressCounty);
                             candidate = candidateArray + " (" + candidates[candidateArray].length + ")";
-                            domConstruct.create("span", { "innerHTML": "+", "class": "esriCTPlusMinus" }, divAddressSearchCell);
-                            domConstruct.create("span", { "innerHTML": candidate, "class": "esriCTGroupList" }, divAddressSearchCell);
+                            domConstruct.create("span", {
+                                "innerHTML": "+",
+                                "class": "esriCTPlusMinus"
+                            }, divAddressSearchCell);
+                            domConstruct.create("span", {
+                                "innerHTML": candidate,
+                                "class": "esriCTGroupList"
+                            }, divAddressSearchCell);
                             domStyle.set(locatorParams.imgSearchLoader, "display", "none");
                             domStyle.set(locatorParams.close, "display", "block");
                             addrList.push(divAddressSearchCell);
                             if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                                 this._toggleAddressList(addrList, addrListCount, locatorParams);
                                 addrListCount++;
-                                listContainer = domConstruct.create("div", { "class": "listContainer esriCTHideAddressList" }, locatorParams.divResults);
+                                listContainer = domConstruct.create("div", {
+                                    "class": "listContainer esriCTHideAddressList"
+                                }, locatorParams.divResults);
                             } else if (!locatorParams.isAOISearch && !locatorParams.isPlacenameSearch && locatorParams.isAOIBearingSearch) {
                                 this._toggleAddressList(addrList, addrListCount, locatorParams);
                                 addrListCount++;
-                                listContainer = domConstruct.create("div", { "class": "listContainerBearingAOI esriCTHideAddressList" }, locatorParams.divResults);
+                                listContainer = domConstruct.create("div", {
+                                    "class": "listContainerBearingAOI esriCTHideAddressList"
+                                }, locatorParams.divResults);
                             } else if (!locatorParams.isAOISearch && locatorParams.isPlacenameSearch && !locatorParams.isAOIBearingSearch) {
                                 this._toggleAddressList(addrList, addrListCount, locatorParams);
                                 addrListCount++;
-                                listContainer = domConstruct.create("div", { "class": "listContainerPlaceNameAOI esriCTHideAddressList" }, locatorParams.divResults);
+                                listContainer = domConstruct.create("div", {
+                                    "class": "listContainerPlaceNameAOI esriCTHideAddressList"
+                                }, locatorParams.divResults);
                             } else {
                                 this._toggleAddressList(addrList, addrListCount, locatorParams);
                                 addrListCount++;
-                                listContainer = domConstruct.create("div", { "class": "listContainerAOI esriCTHideAddressList" }, locatorParams.divResults);
+                                listContainer = domConstruct.create("div", {
+                                    "class": "listContainerAOI esriCTHideAddressList"
+                                }, locatorParams.divResults);
                             }
                             for (i = 0; i < candidates[candidateArray].length; i++) {
                                 this._displayValidLocations(candidates[candidateArray][i], i, candidates[candidateArray], listContainer, locatorParams);
@@ -674,11 +830,22 @@ define([
         * @memberOf widgets/locator/locator
         */
         _displayValidLocations: function (candidate, index, candidateArray, listContainer, locatorParams) {
-            var _this = this, candidateAddress, divAddressRow, normalizedVal, layer, infoIndex, highlightSymbol, highlightGraphic;
+            var _this = this,
+                candidateAddress,
+                divAddressRow,
+                normalizedVal,
+                layer,
+                infoIndex,
+                highlightSymbol,
+                highlightGraphic;
             domClass.remove(locatorParams.divAddressContent, "esriCTAddressResultHeight");
             domClass.add(locatorParams.divAddressContent, "esriCTAddressContainerHeight");
-            divAddressRow = domConstruct.create("div", { "class": "esriCTrowTable" }, listContainer);
-            candidateAddress = domConstruct.create("div", { "class": "esriCTContentBottomBorder esriCTCursorPointer" }, divAddressRow);
+            divAddressRow = domConstruct.create("div", {
+                "class": "esriCTrowTable"
+            }, listContainer);
+            candidateAddress = domConstruct.create("div", {
+                "class": "esriCTContentBottomBorder esriCTCursorPointer"
+            }, divAddressRow);
             domAttr.set(candidateAddress, "index", index);
             try {
                 if (candidate.name) {
@@ -696,7 +863,7 @@ define([
             }
             candidateAddress.onclick = function () {
                 topic.publish("showProgressIndicator");
-                domStyle.set(dojo.query('.esriCTClearAOIButton')[0], "display", "block");
+                domStyle.set(dojo.query('.esriCTClearAOIButton')[0], "display", "none");
                 if (_this.map.infoWindow) {
                     _this.map.infoWindow.hide();
                 }
@@ -818,20 +985,43 @@ define([
             }
             if (dojo.configData.SearchSettings[infoIndex].InfoWindowData) {
                 infoPopupFieldsCollection = dojo.configData.SearchSettings[infoIndex].InfoWindowData;
-                divInfoDetailsTab = domConstruct.create("div", { "class": "esriCTInfoDetailsTab" }, null);
-                this.divInfoDetailsContainer = domConstruct.create("div", { "class": "esriCTInfoDetailsContainer" }, divInfoDetailsTab);
+                divInfoDetailsTab = domConstruct.create("div", {
+                    "class": "esriCTInfoDetailsTab"
+                }, null);
+                this.divInfoDetailsContainer = domConstruct.create("div", {
+                    "class": "esriCTInfoDetailsContainer"
+                }, divInfoDetailsTab);
             } else {
-                divInfoDetailsTab = domConstruct.create("div", { "class": "esriCTInfoDetailsTab" }, null);
-                this.divInfoDetailsContainer = domConstruct.create("div", { "class": "esriCTInfoDetailsContainerError", "innerHTML": sharedNls.errorMessages.emptyInfoWindowContent }, divInfoDetailsTab);
+                divInfoDetailsTab = domConstruct.create("div", {
+                    "class": "esriCTInfoDetailsTab"
+                }, null);
+                this.divInfoDetailsContainer = domConstruct.create("div", {
+                    "class": "esriCTInfoDetailsContainerError",
+                    "innerHTML": sharedNls.errorMessages.emptyInfoWindowContent
+                }, divInfoDetailsTab);
             }
             infoPopupHeight = dojo.configData.InfoPopupHeight;
             infoPopupWidth = dojo.configData.InfoPopupWidth;
             if (infoPopupFieldsCollection) {
                 for (key = 0; key < infoPopupFieldsCollection.length; key++) {
-                    divInfoRow = domConstruct.create("div", { "className": "esriCTDisplayRow" }, this.divInfoDetailsContainer);
+                    divInfoRow = domConstruct.create("div", {
+                        "className": "esriCTDisplayRow"
+                    }, this.divInfoDetailsContainer);
                     // Create the row's label
-                    this.divInfoDisplayField = domConstruct.create("div", { "className": "esriCTDisplayField", "innerHTML": infoPopupFieldsCollection[key].DisplayText }, divInfoRow);
-                    this.divInfoFieldValue = domConstruct.create("div", { "className": "esriCTValueField" }, divInfoRow);
+                    this.divInfoDisplayField = domConstruct.create("div", {
+                        "className": "esriCTDisplayField",
+                        "innerHTML": infoPopupFieldsCollection[key].DisplayText
+                    }, divInfoRow);
+                    this.divInfoFieldValue = domConstruct.create("div", {
+                        "className": "esriCTValueField"
+                    }, divInfoRow);
+
+                    for (i = 0; i < this.codedValueArr.length; i++) {
+                        if (attributes.FCode === this.codedValueArr[i].code) {
+                            attributes.FCode = this.codedValueArr[i].name;
+                        }
+                    }
+
                     for (i in attributes) {
                         if (attributes.hasOwnProperty(i)) {
                             if (!attributes[i]) {
@@ -855,7 +1045,11 @@ define([
                     fieldNames = string.substitute(infoPopupFieldsCollection[key].FieldName, attributes);
                     if (string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("http:") || string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("https:")) {
                         link = fieldNames;
-                        divLink = domConstruct.create("div", { "class": "esriCTLink", "link": link, "innerHTML": sharedNls.buttons.link }, this.divInfoFieldValue);
+                        divLink = domConstruct.create("div", {
+                            "class": "esriCTLink",
+                            "link": link,
+                            "innerHTML": sharedNls.buttons.link
+                        }, this.divInfoFieldValue);
                         on(divLink, "click", this._openDetailWindow);
                     } else {
                         this.divInfoFieldValue.innerHTML = fieldNames;
@@ -991,7 +1185,10 @@ define([
             domStyle.set(locatorParams.close, "display", "block");
             domClass.remove(locatorParams.divAddressContent, "esriCTAddressContainerHeight");
             domClass.add(locatorParams.divAddressContent, "esriCTAddressResultHeight");
-            domConstruct.create("div", { "class": "esriNoResultFound", "innerHTML": sharedNls.errorMessages.invalidSearch }, locatorParams.divResults);
+            domConstruct.create("div", {
+                "class": "esriNoResultFound",
+                "innerHTML": sharedNls.errorMessages.invalidSearch
+            }, locatorParams.divResults);
         },
 
         /**

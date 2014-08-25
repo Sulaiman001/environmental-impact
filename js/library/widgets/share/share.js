@@ -1,4 +1,4 @@
-﻿/*global define,dojo,alert,esri */
+/*global define,dojo,alert,esri */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4 */
 /*
  | Copyright 2013 Esri
@@ -42,7 +42,7 @@ define([
     return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
         templateString: template,
         sharedNls: sharedNls,
-
+        graphicValues: null,
         /**
         * create share widget
         *
@@ -93,6 +93,10 @@ define([
             on(this.imgEmbedding, "click", lang.hitch(this, function () {
                 this._showEmbeddingContainer();
             }));
+
+            topic.subscribe("pointDataToShare", lang.hitch(this, function (pointData) {
+                this.graphicValues = pointData;
+            }));
         },
 
         _showEmbeddingContainer: function () {
@@ -140,9 +144,14 @@ define([
             domAttr.set(this.divShareCodeContainer, "innerHTML", sharedNls.titles.webpageDisplayText);
             mapExtent = this._getMapExtent();
             url = esri.urlToObject(window.location.toString());
-            urlStr = encodeURI(url.path) + "?extent=" + mapExtent;
-            try {
 
+            if (this.graphicValues === null) {
+                urlStr = encodeURI(url.path) + "?extent=" + mapExtent;
+            } else {
+                urlStr = encodeURI(url.path) + "?extent=" + mapExtent + "|" + this.graphicValues;
+            }
+
+            try {
                 /**
                 * call tinyurl service to generate share URL
                 */

@@ -1,4 +1,4 @@
-﻿/*global define,dojo,dojoConfig,Modernizr,alert */
+/*global define,dojo,dojoConfig,Modernizr,alert */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4 */
 /*
  | Copyright 2013 Esri
@@ -28,13 +28,22 @@ define([
     "esri/symbols/PictureMarkerSymbol",
     "esri/SpatialReference",
     "esri/graphic",
-    "dojo/i18n!application/js/library/nls/localizedStrings"
-], function (declare, lang, domConstruct, on, topic, _WidgetBase, GeometryService, Point, PictureMarkerSymbol, SpatialReference, Graphic, sharedNls) {
+    "dojo/i18n!application/js/library/nls/localizedStrings",
+    "esri/tasks/BufferParameters",
+    "esri/symbols/SimpleFillSymbol",
+    "esri/symbols/SimpleLineSymbol",
+    "dojo/_base/Color",
+    "esri/geometry/Polyline",
+    "esri/geometry/Polygon",
+    "dojo/_base/array",
+    "dojo/dom-style"
+], function (declare, lang, domConstruct, on, topic, _WidgetBase, GeometryService, Point, PictureMarkerSymbol, SpatialReference, Graphic, sharedNls, BufferParameters, SimpleFillSymbol, SimpleLineSymbol, Color, Polyline, Polygon, array, domStyle) {
 
     //========================================================================================================================//
 
     return declare([_WidgetBase], {
         sharedNls: sharedNls,
+        graphicValues: null,
 
         /**
         * create geolocation widget
@@ -49,7 +58,13 @@ define([
             * if browser is not supported, geolocation widget is not created
             */
             if (Modernizr.geolocation) {
-                this.domNode = domConstruct.create("div", { "title": sharedNls.tooltips.locate, "class": "esriCTTdGeolocation" }, null);
+                topic.subscribe("geoLocationBufferDetails", lang.hitch(this, function (geoLocationBufferDetails) {
+                    this.graphicValues = geoLocationBufferDetails;
+                }));
+                this.domNode = domConstruct.create("div", {
+                    "title": sharedNls.tooltips.locate,
+                    "class": "esriCTTdGeolocation"
+                }, null);
                 this.own(on(this.domNode, "click", lang.hitch(this, function () {
                     /**
                     * minimize other open header panel widgets and call geolocation service
@@ -77,7 +92,7 @@ define([
             * get device location using geolocation service
             * @param {object} position Co-ordinates of device location in spatialReference of wkid:4326
             */
-            navigator.geolocation.getCurrentPosition(function (position) {
+            navigator.geolocation.getCurrentPosition(lang.hitch(this, function (position) {
                 mapPoint = new Point(position.coords.longitude, position.coords.latitude, new SpatialReference({
                     wkid: 4326
                 }));
@@ -88,7 +103,7 @@ define([
                 * @param {object} mapPoint Map point of device location in spatialReference of wkid:4326
                 * @param {object} newPoint Map point of device location in spatialReference of map
                 */
-                geometryService.project([mapPoint], self.map.spatialReference).then(function (newPoint) {
+                geometryService.project([mapPoint], self.map.spatialReference).then(lang.hitch(this, function (newPoint) {
                     currentBaseMap = self.map.getLayer("defaultBasemap");
                     if (!currentBaseMap) {
                         currentBaseMap = self.map.getLayer("defaultBasemap0");
@@ -102,12 +117,49 @@ define([
                     mapPoint = newPoint[0];
                     self.map.centerAndZoom(mapPoint, dojo.configData.ZoomLevel);
                     self._addGraphic(mapPoint);
-                }, function () {
+
+                    if (this.graphicValues !== null) {
+                        var params;
+                        geometryService = new GeometryService(dojo.configData.GeometryService);
+                        params = new BufferParameters();
+                        params.distances = [this.graphicValues.split('|')[0]];
+                        params.bufferSpatialReference = new esri.SpatialReference({
+                            "wkid": this.map.spatialReference.wkid
+                        });
+                        params.outSpatialReference = this.map.spatialReference;
+                        params.unit = GeometryService[this.graphicValues.split('|')[1]];
+                        params.geometries = [mapPoint];
+                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
+
+                            this.showBuffer(geometries);
+                        }));
+                    }
+                }), function () {
                     alert(sharedNls.errorMessages.invalidProjection);
                 });
-            }, function () {
+            }), function () {
                 alert(sharedNls.errorMessages.invalidLocation);
             });
+        },
+
+        showBuffer: function (bufferedGeometries) {
+            var _self, symbol, graphic;
+            _self = this;
+            symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
+                new SimpleLineSymbol(
+                    SimpleLineSymbol.STYLE_SOLID,
+                    new Color([parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[0], 10), parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[1], 10), parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.BufferSymbology.LineSymbolTransparency.split(",")[0], 10)]),
+                    2
+                ),
+                new Color([parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[0], 10), parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[1], 10), parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.BufferSymbology.FillSymbolTransparency.split(",")[0], 10)])
+                );
+            array.forEach(bufferedGeometries, function (geometry) {
+                graphic = new Graphic(geometry, symbol);
+                _self.map.getLayer("tempBufferLayer").clear();
+                _self.map.getLayer("tempBufferLayer").add(graphic);
+                _self.map.setExtent(graphic.geometry.getExtent().expand(1.6));
+            });
+            domStyle.set(dojo.query('.esriCTClearAOIButton')[0], "display", "block");
         },
 
         /**

@@ -1463,6 +1463,8 @@ input::-ms-clear
 {
     float: right !important;
     margin: 12px 0 !important;
+    width:24px;
+    height:24px;
 }
 
 .horizontalSlider
@@ -2286,4 +2288,9 @@ span .dijitReset .dijitInline .dijitButtonText
 .dijitCheckBoxInput
 {
     opacity: 0.00;
+}
+
+.dijitTooltipConnector
+{
+    display: none;
 }
