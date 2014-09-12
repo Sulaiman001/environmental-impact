@@ -21,7 +21,6 @@ define([], function () {
         // This file contains various configuration settings for esri template
         //
         // Use this file to perform the following:
-        //
         // 1.  Specify application Name                      - [ Tag(s) to look for: ApplicationName ]
         // 2.  Set path for application icon                 - [ Tag(s) to look for: ApplicationIcon ]
         // 3.  Set path for application favicon              - [ Tag(s) to look for: ApplicationFavicon ]
@@ -442,6 +441,21 @@ define([], function () {
         AOITabText: "Area of Interest",
 
         // Set Report Tab Text
-        ReportTabText: "Report"
+        ReportTabText: "Report",
+
+        // Set download report type
+        downloadReportType: {
+            QuickSummary: "Quick Report",
+            DetailedSummary:  "Detailed Report"
+        },
+
+        // Set download report format
+        downloadReportFormat: {
+            PDF: "PDF",
+            Excel:  "CSV Format",
+            FileGDB: "File GDB",
+            Shapefile: "ESRI Shapefile"
+        }
+
     };
 });

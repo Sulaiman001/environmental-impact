@@ -428,3 +428,8 @@
 {
     background: #fff url("../images/settingsIconBlue.png");
 }
+
+.esriCTClearAOIButton
+{
+    background-image: url("../images/clear-aoi-blue.png") !important;
+}

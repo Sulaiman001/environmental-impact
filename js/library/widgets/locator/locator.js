@@ -39,9 +39,11 @@ define([
     "esri/geometry/Point",
     "dojo/text!./templates/locatorTemplate.html",
     "dijit/_WidgetBase",
+    "esri/tasks/GeometryService",
     "dijit/_TemplatedMixin",
     "dijit/_WidgetsInTemplateMixin",
     "dojo/i18n!application/js/library/nls/localizedStrings",
+    "esri/tasks/BufferParameters",
     "dojo/topic",
     "esri/symbols/SimpleLineSymbol",
     "esri/symbols/SimpleFillSymbol",
@@ -50,7 +52,7 @@ define([
     "esri/graphic",
     "esri/geometry/webMercatorUtils",
     "dojo/query"
-], function (declare, domConstruct, domStyle, domAttr, lang, on, domGeom, dom, domClass, query, string, Locator, Query, ScrollBar, Deferred, DeferredList, QueryTask, Geometry, cookie, Point, template, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, topic, SimpleLineSymbol, SimpleFillSymbol, SimpleMarkerSymbol, Color, Graphic, webMercatorUtils, dojoQuery) {
+], function (declare, domConstruct, domStyle, domAttr, lang, on, domGeom, dom, domClass, query, string, Locator, Query, ScrollBar, Deferred, DeferredList, QueryTask, Geometry, cookie, Point, template, _WidgetBase, GeometryService, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, BufferParameters, topic, SimpleLineSymbol, SimpleFillSymbol, SimpleMarkerSymbol, Color, Graphic, webMercatorUtils, dojoQuery) {
     //========================================================================================================================//
 
     return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
@@ -64,6 +66,8 @@ define([
         screenPoint: null,
         locatorAOIPlacenameScrollbar: null,
         codedValueArr: [],
+        graphicValues: null,
+
         /**
         * display locator widget
         *
@@ -86,6 +90,10 @@ define([
                     }
                 }
                 topic.publish("closeDialogBox");
+            }));
+
+            topic.subscribe("geoLocationBufferDetails", lang.hitch(this, function (value) {
+                this.graphicValues = value;
             }));
 
             topic.subscribe("createInfoWindowContent", lang.hitch(this, function (mapPoint, attributes, fields, infoIndex, featureArray, count, zoomToFeature) {
@@ -290,6 +298,11 @@ define([
             })));
             this.own(on(locatorParams.textAddress, "dblclick", lang.hitch(this, function (evt) {
                 this._clearDefaultText(evt, locatorParams);
+                this._hideText(locatorParams);
+                if (locatorParams.divAddressScrollContent !== 'undefined') {
+                    domStyle.set(locatorParams.divAddressScrollContent, "display", "none");
+                }
+
             })));
             this.own(on(locatorParams.textAddress, "blur", lang.hitch(this, function (evt) {
                 this._replaceDefaultText(evt, locatorParams);
@@ -303,6 +316,9 @@ define([
             this.own(on(locatorParams.close, "click", lang.hitch(this, function () {
                 this._hideText(locatorParams);
                 //reset aoi container scrollbar on bearing or draw tool address click
+                if (locatorParams.divAddressScrollContent !== 'undefined') {
+                    domStyle.set(locatorParams.divAddressScrollContent, "display", "none");
+                }
                 topic.publish("resizeAOIPanel");
             })));
         },
@@ -363,6 +379,9 @@ define([
                 domClass.add(this.divAddressHolder, "esriCTAddressContentHeight");
                 domStyle.set(this.txtAddress, "verticalAlign", "middle");
                 this.txtAddress.value = domAttr.get(this.txtAddress, "defaultAddress");
+                if (lang.trim(this.txtAddress.value) === "") {
+                    this.txtAddress.value = dojo.configData.LocatorSettings.LocatorDefaultAddress;
+                }
                 this.lastSearchString = lang.trim(this.txtAddress.value);
             }
         },
@@ -385,6 +404,16 @@ define([
                         domStyle.set(locatorParams.imgSearchLoader, "display", "block");
                         domStyle.set(locatorParams.close, "display", "none");
                         this._locateAddress(locatorParams);
+                        return;
+                    }
+                }
+                if (evt.keyCode === dojo.keys.BACKSPACE) {
+                    if (locatorParams.textAddress.value === '' || locatorParams.textAddress.length === 0 || locatorParams.textAddress.value === null) {
+                        domStyle.set(locatorParams.imgSearchLoader, "display", "none");
+                        domStyle.set(locatorParams.close, "display", "block");
+                        this.clearplaceNameSearchTextbox = "";
+                        domStyle.set(locatorParams.divAddressScrollContent, "display", "none");
+                        domConstruct.empty(locatorParams.divResults);
                         return;
                     }
                 }
@@ -468,7 +497,10 @@ define([
                         domClass.remove(this.locatorAOIPlacenameScrollbar._scrollBarContent, "esriCTZeroHeight");
                     }
                 }
-                this._locatorErrBack(locatorParams);
+                domStyle.set(locatorParams.imgSearchLoader, "display", "none");
+                domStyle.set(locatorParams.close, "display", "block");
+                alert(sharedNls.errorMessages.searchTextErrorMessage);
+
             } else {
                 this._searchLocation(locatorParams);
             }
@@ -502,6 +534,9 @@ define([
                 baseMapExtent = this.map.getLayer(this.map.layerIds[0]).fullExtent;
             } else {
                 baseMapExtent = this.map.getLayer("defaultBasemap").fullExtent;
+                if (!baseMapExtent) {
+                    baseMapExtent = this.map.getLayer("defaultBasemap0").fullExtent;
+                }
             }
             options = {};
             options.address = addressField;
@@ -783,7 +818,7 @@ define([
         },
 
         _toggleAddressList: function (addressList, idx, locatorParams) {
-            on(addressList[idx], "click", lang.hitch(this, function () {
+            on(addressList[idx], "click", lang.hitch(this, function (evt) {
                 var listContainer, listStatusSymbol;
                 if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                     listContainer = query(".listContainer")[idx];
@@ -796,8 +831,8 @@ define([
                 }
                 if (domClass.contains(listContainer, "esriCTShowAddressList")) {
                     domClass.toggle(listContainer, "esriCTShowAddressList");
-                    listStatusSymbol = (domAttr.get(query(".esriCTPlusMinus")[idx], "innerHTML") === "+") ? "-" : "+";
-                    domAttr.set(query(".esriCTPlusMinus")[idx], "innerHTML", listStatusSymbol);
+                    listStatusSymbol = (domAttr.get(query(".esriCTPlusMinus", evt.currentTarget)[0], "innerHTML") === "+") ? "-" : "+";
+                    domAttr.set(query(".esriCTPlusMinus", evt.currentTarget)[0], "innerHTML", listStatusSymbol);
                     if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                         this.locatorScrollbar.resetScrollBar();
                     } else if (!locatorParams.isAOISearch && !locatorParams.isPlacenameSearch && locatorParams.isAOIBearingSearch) {
@@ -810,7 +845,7 @@ define([
                     return;
                 }
                 domClass.add(listContainer, "esriCTShowAddressList");
-                domAttr.set(query(".esriCTPlusMinus")[idx], "innerHTML", "-");
+                domAttr.set(query(".esriCTPlusMinus", evt.currentTarget)[0], "innerHTML", "-");
                 if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                     this.locatorScrollbar.resetScrollBar();
                 } else if (!locatorParams.isAOISearch && !locatorParams.isPlacenameSearch && locatorParams.isAOIBearingSearch) {
@@ -837,7 +872,8 @@ define([
                 layer,
                 infoIndex,
                 highlightSymbol,
-                highlightGraphic;
+                highlightGraphic,
+                geometryCollection;
             domClass.remove(locatorParams.divAddressContent, "esriCTAddressResultHeight");
             domClass.add(locatorParams.divAddressContent, "esriCTAddressContainerHeight");
             divAddressRow = domConstruct.create("div", {
@@ -881,7 +917,10 @@ define([
                     _this._locateAddressOnMap(_this.mapPoint, locatorParams);
                     normalizedVal = webMercatorUtils.xyToLngLat(_this.mapPoint.x, _this.mapPoint.y);
                     if (locatorParams.isAOIBearingSearch) {
-                        topic.publish("setStartPoint", normalizedVal);
+                        topic.publish("setStartPoint", normalizedVal, _this.mapPoint);
+                        geometryCollection = [];
+                        geometryCollection.push(candidate.attributes.location);
+                        topic.publish("createBuffer", geometryCollection, null);
                     }
                 } else {
                     if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
@@ -894,13 +933,13 @@ define([
                             }
                         }
                     } else {
-                        if (candidate.geometry.type === "point") {
+                        if (candidate.attributes.location.type === "point") {
                             if (locatorParams.isAOIBearingSearch) {
-                                normalizedVal = webMercatorUtils.xyToLngLat(candidate.geometry.x, candidate.geometry.y);
-                                topic.publish("setStartPoint", normalizedVal);
+                                normalizedVal = webMercatorUtils.xyToLngLat(candidate.attributes.location.x, candidate.attributes.location.y);
+                                topic.publish("setStartPoint", normalizedVal, null);
                                 topic.publish("hideProgressIndicator");
                             } else {
-                                _this.map.centerAt(candidate.geometry);
+                                _this.map.centerAt(candidate.attributes.location);
                                 highlightSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_CIRCLE, 15,
                                     new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
                                         new Color([
@@ -915,13 +954,15 @@ define([
                                         parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10),
                                         parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)
                                     ]));
-                                highlightGraphic = new Graphic(candidate.geometry, highlightSymbol);
+                                highlightGraphic = new Graphic(candidate.attributes.location, highlightSymbol);
                                 _this.map.getLayer("esriGraphicsLayerMapSettings").add(highlightGraphic);
                                 topic.publish("hideProgressIndicator");
-                                topic.publish("createBuffer", candidate.geometry, null);
+                                geometryCollection = [];
+                                geometryCollection.push(candidate.attributes.location);
+                                topic.publish("createBuffer", geometryCollection, null);
                             }
                         } else {
-                            _this.map.setExtent(candidate.geometry.getExtent());
+                            _this.map.setExtent(candidate.attributes.location.getExtent());
                             _this.map.getLayer("esriGraphicsLayerMapSettings").clear();
                             highlightSymbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
                                 new SimpleLineSymbol(
@@ -939,10 +980,12 @@ define([
                                     parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10),
                                     parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)])
                                 );
-                            highlightGraphic = new Graphic(candidate.geometry, highlightSymbol);
+                            highlightGraphic = new Graphic(candidate.attributes.location, highlightSymbol);
                             _this.map.getLayer("esriGraphicsLayerMapSettings").add(highlightGraphic);
                             topic.publish("hideProgressIndicator");
-                            topic.publish("createBuffer", candidate.geometry, null);
+                            geometryCollection = [];
+                            geometryCollection.push(candidate.attributes.location);
+                            topic.publish("createBuffer", geometryCollection, null);
                         }
                     }
                 }
@@ -1144,7 +1187,7 @@ define([
         },
 
         _locateAddressOnMap: function (mapPoint, locatorParams) {
-            var geoLocationPushpin, locatorMarkupSymbol, graphic;
+            var geoLocationPushpin, locatorMarkupSymbol, graphic, geometryCollection = [];
             this.map.setLevel(dojo.configData.ZoomLevel);
             this.map.centerAt(mapPoint);
             geoLocationPushpin = dojoConfig.baseURL + dojo.configData.LocatorSettings.DefaultLocatorSymbol;
@@ -1154,12 +1197,19 @@ define([
                 graphic.attributes.sourcename = "aoiSearch";
                 topic.publish("clearAllGraphics");
             } else if (locatorParams.isAOIBearingSearch || locatorParams.isPlacenameSearch) {
-                topic.publish("createBuffer", mapPoint, null);
+                geometryCollection.push(mapPoint);
+                topic.publish("createBuffer", geometryCollection, null);
             } else {
                 graphic.attributes.sourcename = "aoiSearch";
+                this.map.getLayer("tempBufferLayer").clear();
+                geometryCollection.push(mapPoint);
+                topic.publish("createBuffer", geometryCollection, this.sliderUnitValue);
             }
+            dojo.hasPushPin = true;
             this.map.getLayer("esriGraphicsLayerMapSettings").clear();
             this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+            this.map.getLayer("tempBufferLayer").clear();
+            this.map.getLayer("tempBufferLayer").add(graphic);
             topic.publish("hideProgressIndicator");
         },
 
