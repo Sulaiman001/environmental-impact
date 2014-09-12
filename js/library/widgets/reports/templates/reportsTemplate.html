@@ -1,7 +1,7 @@
 ﻿<div class="esriCTHeaderReportContainer" data-dojo-attach-point="applicationHeaderReportContainer">
     <div class="esriCTRightPanel">
         <div class="esriCTAreaOfInterestTab" data-dojo-attach-point="areaOfInterestTab">
-            <div data-dojo-attach-point="esriCTClearAOIButton" class="esriCTClearAOIButton">
+            <div data-dojo-attach-point="esriCTClearAOIButton" title="${sharedNls.tooltips.clearAOI}" class="esriCTClearAOIButton">
             </div>
             <div class="esriCTAreaOfInterestTabLabel">
                 ${configData.AOITabText}</div>
@@ -11,10 +11,12 @@
         </div>
     </div>
 
-<div class="esriCTAreaOfInterestContainer esriCTHideContainerHeight" data-dojo-attach-point="areaOfInterestContainer">
-    <div class="esriCTAOIContent" data-dojo-attach-point="areaOfInterestContent">
+<div class="esriCTAreaOfInterestContainer esriCTHideContainerHeight" data-dojo-attach-point="areaOfInterestContainer" >
+    <div class="esriCTAOIContent" data-dojo-attach-point="areaOfInterestContent" id="esriCTAOIContainer">
+      <div class="esriCTLinkContainerDiv">
         <div data-dojo-attach-point="divLinkContainer" class="esriCTLinkContainer">
         </div>
+      </div>
         <div data-dojo-attach-point="placeNameSearch">
             <div data-dojo-attach-point="divplaceNameSearchContainer" class="esriCTAddressResultContainerReport">
                 <div class="esriCTNavigateHeader">
@@ -59,7 +61,7 @@
                             <div data-dojo-attach-point="divAddressPlaceHolder" class="">
                                 <div style="float: left; width: 253px;">
                                     <input type="text" data-dojo-attach-point="txtAOIAddress" class="esriCTTxtAddressReport"
-                                        value="address" onfocus="if(this.setSelectionRange)this.setSelectionRange(this.value.length, this.value.length);" /></div>
+                                        value="" onfocus="if(this.setSelectionRange)this.setSelectionRange(this.value.length, this.value.length);" /></div>
                                 <div class="esriCTSearchClose" data-dojo-attach-point="clearhide">
                                     <span class="esriCTClearInput" title="${sharedNls.tooltips.clearEntry}" data-dojo-attach-point="clearAOITextbox">
                                     </span><span>
@@ -92,7 +94,7 @@
                     <div class="esriCTBrowseButton">
                         <label>
                             ${sharedNls.buttons.browse}</label>
-                        <input type="file" name="file" class="esriCTFileInputHidden" />
+                        <input type="file" name="file" class="esriCTFileInputHidden" id="fileUploadContainer"/>
                     </div>
                     <div class="esriCTUploadButton" data-dojo-attach-point="esriCTUploadButton">
                         ${sharedNls.buttons.upload}</div>
@@ -241,7 +243,7 @@
             <div class="esriCTBrowseButton">
                 <label>
                     ${sharedNls.buttons.browse}</label>
-                <input type="file" name="file" class="esriCTFileInputHidden" />
+                <input type="file" name="file" class="esriCTFileInputHidden" id="analysisFileUploadContainer"/>
             </div>
             <div class="esriCTUploadButton" data-dojo-attach-point="esriCTAnalysisUploadButton">
                 <label>
@@ -250,37 +252,20 @@
     </div>
     </form>
 </div>
-<div class="esriCTuploadShapeContainer" data-dojo-attach-point="downloadReportContainer">
+<div class="esriCTuploadShapeContainer esriCTdownloadReportContainer" data-dojo-attach-point="downloadReportContainer">
     <div class="esriCTUploadHeading">
         ${sharedNls.titles.downLoadReport}</div>
     <div class="esriCTDownloadReportRow">
-        <div class="esriCTcheckkbox">
-            <input class="esriCTdataFormatcheckbox" id="dataFormat" data-dojo-attach-point="dataFormat" name="dataFormat"
-                dojotype="dijit.form.CheckBox" /></div>
-        <div class="esriCTlabel">
-            ${sharedNls.titles.data}</div>
-        <div class="esriCTFormat">
-            <div class="esriCTSelect" data-dojo-attach-point="selectFormatDropDown">
-            </div>
-        </div>
-        <div class="esriCTcheckkbox">
-            <input class="esriCTcheckbox" id="pdfFormat" data-dojo-attach-point="pdfFormat" name="chkPDFFormat"
-                dojotype="dijit.form.CheckBox" /></div>
-        <div class="esriCTlabel">
-            ${sharedNls.titles.pdfReport}</div>
+        <div class="esriCTlabel"> ${sharedNls.titles.selectType} </div>
+        <div class="esriCTReportTypelabel" data-downloadReportType = "${configData.downloadReportType.QuickSummary}"> ${sharedNls.titles.quickSummary} </div>
+        <div class="esriCTReportTypelabel" data-downloadReportType = "${configData.downloadReportType.DetailedSummary}"> ${sharedNls.titles.deatiledSummary} </div>
     </div>
     <div class="esriCTDownloadReportRow">
-        <div class="esriCTRadio">
-            <input type="radio" class="radioBtn" data-dojo-attach-point="esriCTQuickSummaryReport"
-                name="radioSummaryReport" value=  "${sharedNls.titles.quickReport}" />
-        </div>
-        <div class="esriCTlabel">
-            ${sharedNls.titles.quickSummary}</div>
-        <div class="esriCTRadio">
-            <input type="radio" class="radioBtn" data-dojo-attach-point="esriCTDetailedSummaryReport"
-                name="radioSummaryReport" value= "${sharedNls.titles.detailedReport}" /></div>
-        <div class="esriCTlabel">
-            ${sharedNls.titles.deatiledSummary}</div>
+        <div class="esriCTlabel"> ${sharedNls.titles.selectFormat} </div>
+        <div class="esriCTReportlabel" data-downloadFormatType = "${configData.downloadReportFormat.PDF}"> ${sharedNls.titles.pdfReport} </div>
+        <div class="esriCTReportlabel" data-downloadFormatType = "${configData.downloadReportFormat.Excel}"> ${sharedNls.titles.excelReport} </div>
+        <div class="esriCTReportlabel" data-downloadFormatType = "${configData.downloadReportFormat.FileGDB}"> ${sharedNls.titles.fileGDBReport} </div>
+        <div class="esriCTReportlabel" data-downloadFormatType = "${configData.downloadReportFormat.Shapefile}"> ${sharedNls.titles.uploadShapefileTitle} </div>
     </div>
     <div class="esriCTDownloadReportRow">
         <div class="esriCTDownloadButton" data-dojo-attach-point="esriCTDownloadButton">

@@ -1,4 +1,4 @@
-﻿/*global define */
+/*global define */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4 */
 /*
  | Copyright 2013 Esri
@@ -42,7 +42,8 @@ define({
         loadingText: "@es@ Loading...",
         settingsIconTitle: "@es@ Choose fields to view in summary report",
         selectFeature: "@es@ Press double click to finish the opertaion",
-        selectCoordinates: "@es@ Please select the point"
+        selectCoordinates: "@es@ Please select the point",
+        clearAOI: "@es@ clear AOI"
     },
     titles: {
         areaOfInterestTabText: "@es@ Area of Interest",
@@ -60,6 +61,7 @@ define({
         lineStandardUnit: "@es@ miles",
         lineMetricUnit: "@es@ Kilometer",
         standardUnitLabel: "@es@ Standard Units",
+        standardReportUnit: "@es@ Standard",
         metricUnitLabel: "@es@ Show areas in ",
         unitLabel: "@es@ Metric Units",
         uploadShapeFile: "@es@ Upload Shapefile to include in analysis",
@@ -67,7 +69,10 @@ define({
         downLoadReport: "@es@ Download Report",
         data: "@es@ Data",
         selectFormat: "@es@ Select Format",
-        pdfReport: "@es@ PDF Report",
+        selectType: "@es@ Select Type",
+        pdfReport: "@es@ PDF",
+        fileGDBReport: "@es@ File GDB",
+        excelReport: "@es@ Excel",
         quickSummary: "@es@ Quick Summary",
         deatiledSummary: "@es@ Detailed Summary",
         drawingToolUnifiedSearchTitle: "@es@ Navigate to geography",
@@ -76,10 +81,13 @@ define({
         uploadShapefileTitle: "@es@ Shapefile",
         coordinatesTitle: "@es@ Coordinates",
         distanceLabel: "@es@ Distance",
-        bearingLabel: "@es@ Bearing"
+        bearingLabel: "@es@ Bearing",
+        quickReport: "@es@ Quick Report",
+        detailedReport: "@es@ Detailed Report"
     },
     messages: {
         legendLoadingText: "@es@ Loading...",
+        noLegend: "@es@ No Legend Available",
         sliderDisplayText: "@es@ Show results within",
         aoiOptionsText: "@es@ Define AOI by using",
         uploadShapefileText: "@es@ Upload a zipped shapefile to define your AOI",
@@ -122,13 +130,19 @@ define({
         errorPerfomingQuery: "@es@ Error performing query operation",
         esriJobFailMessage: "@es@ Failed to generate AOI from shapefile",
         esriJobFailToAnlayse: "@es@ Failed to execute (AnalyseShapefile)",
+        esriJobFailToGenerateReport: "@es@ Failed to generate Report",
         defineAOI: "@es@ Please define AOI to generate the report.",
         invalidGeometry: "@es@ Invalid geometry.",
         noFeaturesFound: "@es@ Features not found.",
         browseFile: "@es@ Please browse a file.",
         noFeaturesInAOI: "@es@ No features found in AOI.",
         noFieldsSelected: "@es@ No fields selected.",
-        selectFeatureError: "@es@ Please double click on map to complete the select Feature."
+        reportFormat: "@es@ Please Select the Report Format",
+        selectFeatureError: "@es@ Please double click on map to complete the select Feature.",
+        inValideNumericErrorMessage: "@es@ Please enter valid inputs.",
+        inValideZipFile: "@es@ Incorrect File extension\n Should be zip",
+        portalUrlNotFound: "@es@ Portal URL cannot be empty",
+        searchTextErrorMessage: "@es@ Please enter input to search"
     },
     // End of shared nls
 

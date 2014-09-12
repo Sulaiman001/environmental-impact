@@ -688,7 +688,7 @@ input::-ms-clear
 /* clear AOI button*/
 .esriCTClearAOIButton
 {
-    background-image: url("../images/clear-aoi-green.png") !important;
+
     background-repeat: no-repeat;
     background-position: center;
     text-align: center;
@@ -1025,7 +1025,7 @@ input::-ms-clear
 .esriCTMapLogo
 {
     right: 352px;
-    margin-bottom: 30px;
+
 }
 
 .esriCTCustomMapLogo
@@ -1049,7 +1049,7 @@ input::-ms-clear
 
 .esriCTMapLogoBottom
 {
-    right: 352px;
+     margin-bottom: 30px;
 }
 
 /* Grouped address Styles */
@@ -1088,11 +1088,9 @@ input::-ms-clear
 
 .esriCTdivLegendbox
 {
-    height: 31px;
     position: absolute;
     z-index: 998;
     overflow: hidden;
-    width: 100%;
     bottom: 0px;
 }
 
@@ -1147,7 +1145,6 @@ input::-ms-clear
 
 .legendrightbox
 {
-    width: 351px;
     float: right;
     background: transparent;
 }
@@ -1199,7 +1196,7 @@ input::-ms-clear
     position: absolute;
     height: 30px;
     width: 30px;
-    right: 352px;
+    right: 5px;
     overflow: hidden;
     cursor: pointer !important;
 }
@@ -1465,6 +1462,7 @@ input::-ms-clear
     margin: 12px 0 !important;
     width:24px;
     height:24px;
+    cursor:pointer;
 }
 
 .horizontalSlider
@@ -1576,8 +1574,8 @@ input::-ms-clear
 
 .esriCTLinkContainer
 {
-    padding: 5px 15px 10px 15px;
-    width: 90%;
+
+    width: 100%;
     float: left;
     display: table;
 }
@@ -1715,6 +1713,12 @@ input::-ms-clear
     height: 28px;
     position: relative;
     z-index: 1000;
+    cursor:pointer;
+}
+
+.esriCTFileInputHidden::before
+{
+    cursor:pointer;
 }
 
 .esriCTUploadContainer
@@ -1746,6 +1750,9 @@ input::-ms-clear
     width: 70px;
 }
 
+input[type="file"] {
+    cursor:pointer !important;
+}
 .esriCTUploadButton
 {
     border: none;
@@ -1759,6 +1766,10 @@ input::-ms-clear
     margin-right: 5px;
 }
 
+.esriCTUploadButton label
+{
+    cursor:pointer;
+}
 .esriCTDownloadButton
 {
     border: none;
@@ -1770,7 +1781,10 @@ input::-ms-clear
     float: left;
     margin-right: 5px;
 }
-
+.esriCTDownloadButton label
+{
+    cursor:pointer;
+}
 .esriCTStartPoint
 {
     width: 60%;
@@ -2187,6 +2201,11 @@ span .dijitReset .dijitInline .dijitButtonText
     width: 96%;
 }
 
+.esriCTdownloadReportContainer
+{
+    border-bottom:none;
+}
+
 .esriCTChangeUnitContainer
 {
     border-bottom: 1px solid #DFDFDF;
@@ -2250,6 +2269,26 @@ span .dijitReset .dijitInline .dijitButtonText
     margin: 2px 2px;
 }
 
+.esriCTReportlabel
+{
+    float: left;
+    margin: 2px 12px;
+    cursor: pointer;
+}
+
+.esriCTReportTypelabel
+{
+    float: left;
+    margin: 2px;
+    cursor: pointer;
+    padding-left: 20px;
+}
+
+.esriCTReportTypeSelected
+{
+    color: #028D6A;
+}
+
 .esriCTDownloadReportRow div.esriCTFormat
 {
     float: left;
@@ -2293,4 +2332,13 @@ span .dijitReset .dijitInline .dijitButtonText
 .dijitTooltipConnector
 {
     display: none;
+}
+
+.esriCTLinkContainerDiv
+{
+    margin: 0 auto;
+    padding: 0 0 15px 15px;
+    width: 314px;
+    clear: both;
+    float: left;
 }

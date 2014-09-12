@@ -75,9 +75,10 @@ define([
     "esri/tasks/FeatureSet",
     "esri/dijit/Print",
     "esri/tasks/PrintParameters",
-    "esri/tasks/PrintTask"
+    "esri/tasks/PrintTask",
+    "esri/tasks/ProjectParameters"
 
-], function (declare, domConstruct, on, topic, lang, array, domStyle, domAttr, dom, query, domClass, domGeom, GeometryService, Dialog, string, html, template, Color, SimpleLineSymbol, SimpleFillSymbol, SimpleMarkerSymbol, PictureMarkerSymbol, TooltipDialog, Place, CheckBox, Button, Graphic, BufferParameters, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, GraphicsLayer, Draw, HorizontalSlider, HorizontalRule, HorizontalRuleLabels, RadioButton, ScrollBar, Deferred, DeferredList, Query, QueryTask, esriRequest, dojoJson, Point, dojoString, dojoNumber, webMercatorUtils, Polyline, Geoprocessor, DataFile, SelectList, ParameterValue, LinearUnit, FeatureSet, Print, PrintParameters, PrintTask) {
+], function (declare, domConstruct, on, topic, lang, array, domStyle, domAttr, dom, query, domClass, domGeom, GeometryService, Dialog, string, html, template, Color, SimpleLineSymbol, SimpleFillSymbol, SimpleMarkerSymbol, PictureMarkerSymbol, TooltipDialog, Place, CheckBox, Button, Graphic, BufferParameters, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, GraphicsLayer, Draw, HorizontalSlider, HorizontalRule, HorizontalRuleLabels, RadioButton, ScrollBar, Deferred, DeferredList, Query, QueryTask, esriRequest, dojoJson, Point, dojoString, dojoNumber, webMercatorUtils, Polyline, Geoprocessor, DataFile, SelectList, ParameterValue, LinearUnit, FeatureSet, Print, PrintParameters, PrintTask, ProjectParams) {
 
     //========================================================================================================================//
 
@@ -88,7 +89,7 @@ define([
         aoiPanelScrollbar: null,
         reportPanelScrollbar: null,
         stagedBuffer: null,
-        featureGeometry: null,
+        featureGeometryArray: null,
         sliderDistance: null,
         sliderUnitValue: null,
         flagMultiplePoints: null,
@@ -100,6 +101,7 @@ define([
         initialReportCreated: null,
         AOIAttributes: [],
         configData: dojo.configData,
+        initialPoint: null,
         startPointLongitude: null,
         startPointLatitude: null,
         stagedAOIResize: null,
@@ -107,13 +109,14 @@ define([
         featureArrayCollection: [],
         reportArrayCollection: [],
         PDFreportType: null,
+        dataFormatType: [],
+        resultDataArray: null,
         convertedUnitType: null,
-        dataFormatChecked: null,
         _timer: null,
         _isDblClick: false,
         pointData: null,
         _previousGraphics: null,
-
+        currentValue: window.orientation,
         /**
         * create reports widget
         *
@@ -121,7 +124,7 @@ define([
         * @name widgets/reports/reports
         */
         postCreate: function () {
-            var locatorParams;
+            var locatorParams, LegendWidthChange;
             this.initialReportCreated = true;
             this.logoContainer = query(".esriControlsBR")[0];
             topic.subscribe("toggleWidget", lang.hitch(this, function (widgetID) {
@@ -134,9 +137,32 @@ define([
                         domClass.replace(this.domNode, "esriCTReportsImg", "esriCTReportsImgSelected");
                         domClass.replace(this.applicationHeaderReportContainer, "esriCTHideContainerHeight", "esriCTShowContainerHeight");
                         if (this.logoContainer) {
-                            domClass.remove(this.logoContainer, "esriCTMapLogo");
-                            domClass.remove(this.logoContainer, "esriCTMapLogoBottom");
+                            if (dojo.query('.esriCTdivLegendbox').length > 0 || dojo.configData.ShowLegend) {
+                                dojo.setLegnedWidth = true;
+                                domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (window.innerWidth + 4) + 'px');
+                                domClass.remove(this.logoContainer, "esriCTMapLogo");
+                                domClass.add(this.logoContainer, "esriCTMapLogoBottom");
+                            }
                         }
+                    }
+                } else {
+                    dojo.setLegnedWidth = false;
+                    LegendWidthChange = window.innerWidth - parseInt(document.getElementById('esriCTAOIContainer').clientWidth, 10);
+                    if (dojo.query('.esriCTdivLegendbox').length > 0) {
+                        domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (LegendWidthChange + 2) + 'px');
+                    }
+                    //set Default text
+                    if (lang.trim(this.txtplaceName.value) === "") {
+                        this.txtplaceName.value = dojo.configData.LocatorSettings.LocatorDefaultPlaceNameSearchAddress;
+                        domStyle.set(locatorParams.divAddressScrollContent, "display", "none");
+                    }
+                    if (lang.trim(this.txtAOIAddress.value) === "") {
+                        this.txtAOIAddress.value = dojo.configData.LocatorSettings.LocatorDefaultAOIAddress;
+                        domStyle.set(locatorParams.divAddressScrollContent, "display", "none");
+                    }
+                    if (lang.trim(this.txtAOIBearingAddress.value) === "") {
+                        this.txtAOIBearingAddress.value = dojo.configData.LocatorSettings.LocatorDefaultAOIBearingAddress;
+                        domStyle.set(locatorParams.divAddressScrollContent, "display", "none");
                     }
                 }
                 topic.publish("deactivateToolbar");
@@ -157,8 +183,10 @@ define([
             topic.subscribe("deactivateToolbar", lang.hitch(this, this.deactivateToolbar));
             topic.subscribe("clearAllGraphics", lang.hitch(this, this._clearAllGraphics));
             this.divInitialCoordinates.title = sharedNls.tooltips.selectInitialCoordinates;
-            this.esriCTQuickSummaryReport.checked = true;
-            this.report_type = sharedNls.titles.quickReport;
+            domClass.add(dojo.query(".esriCTReportTypelabel", this.downloadReportContainer)[0], "esriCTReportTypeSelected");
+            domClass.add(dojo.query(".esriCTReportlabel", this.downloadReportContainer)[0], "esriCTReportTypeSelected");
+            this.report_type = dojo.configData.downloadReportType.QuickSummary;
+            this.PDFreportType = true;
             /**
             * minimize other open header panel widgets and show AOI panel
             */
@@ -168,6 +196,18 @@ define([
 
             this.reportHandle = this.own(on(this.domNode, "click", lang.hitch(this, function () {
                 topic.publish("toggleWidget", "reports");
+                dojo.initialCoordinates = false;
+                dojo.selectFeatureEnabled = false;
+                if (dojo.query('.esriCTdivLegendbox').length > 0) {
+                    if (domClass.contains(this.domNode, "esriCTReportsImgSelected")) {
+                        dojo.setLegnedWidth = true;
+                        domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (window.innerWidth + 4) + "px");
+                    } else {
+                        dojo.setLegnedWidth = false;
+                        LegendWidthChange = window.innerWidth - parseInt(document.getElementById('esriCTAOIContainer').clientWidth, 10);
+                        domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (LegendWidthChange + 2) + 'px');
+                    }
+                }
                 domStyle.set(this.applicationHeaderReportContainer, "display", "block");
                 this._showHideContainer();
                 if (this.map.getLayer("tempBufferLayer").graphics.length > 0) {
@@ -178,10 +218,11 @@ define([
             })));
 
             if (this.logoContainer) {
-                if (dojo.configData.ShowLegend) {
+                if (dojo.query('.esriCTdivLegendbox').length > 0 || dojo.configData.ShowLegend) {
+                    domClass.add(this.logoContainer, "esriCTMapLogoBottom");
                     domClass.add(this.logoContainer, "esriCTMapLogo");
                 } else {
-                    domClass.add(this.logoContainer, "esriCTMapLogoBottom");
+                    domClass.add(this.logoContainer, "esriCTMapLogo");
                 }
             }
             this.own(on(this.areaOfInterestTab, "click", lang.hitch(this, function () {
@@ -194,6 +235,7 @@ define([
                 domStyle.set(dojo.query('.esriCTClearAOIButton')[0], "display", "none");
                 domAttr.set(this.addLatitudeValue, "value", "");
                 domAttr.set(this.addLongitudeValue, "value", "");
+                this.flagMultiplePoints = 0;
                 this._horizontalSlider.setValue(dojo.configData.DistanceUnitSettings[1].MinimumValue);
                 for (i = 0; i < BearingTextboxLength.length; i++) {
                     this._destroyBearingTextBox();
@@ -207,9 +249,12 @@ define([
 
             this.own(on(this.addBearingTextBox, "click", lang.hitch(this, function () {
                 document.activeElement.blur();
-                var validRecord = this._validateBearingInputText();
-                if (validRecord) {
+                var validRecord = this._validateBearingInputText(),
+                    validNumericValue = this._validateNumericInputText();
+                if (validRecord && validNumericValue) {
                     this._addBearingTextBox();
+                    this.addBearingValue.value = "";
+                    this.addDistanceMiles.value = "";
                     dojo.innerCoordinateBufferClear = true;
                 }
             })));
@@ -226,9 +271,8 @@ define([
                         for (i = 0; i < graphicLayerCollection.length; i++) {
                             if (this.sliderDistance === 0 && graphicLayerCollection[i].geometry.type !== "polygon") {
                                 isNonPolygonGraphic = true;
-                            }
-                            if (bufferedGraphics.length > 0) {
-                                geometryArray.push(bufferedGraphics[i].geometry);
+                            } else {
+                                geometryArray.push(graphicLayerCollection[i].geometry);
                             }
                         }
                         if (isNonPolygonGraphic) {
@@ -245,8 +289,11 @@ define([
                             }
                         }
                     } else {
-                        if (this._previousGraphics !== null && this._previousGraphics === this.map.getLayer("tempBufferLayer").graphics[0]) {
+                        if (this._previousGraphics && this._previousGraphics === this.map.getLayer("tempBufferLayer").graphics[0]) {
                             this._showReportsTab();
+                            if (dojo.areaHasRecord) {
+                                domStyle.set(this.divChangeUnit, "display", "block");
+                            }
                             topic.publish("resizeReportsPanel");
                             return;
                         }
@@ -307,23 +354,11 @@ define([
             });
 
             this.own(on(this.locateLatLongValue, "click", lang.hitch(this, function () {
-                if (((lang.trim(this.addLatitudeValue.value) === "" || lang.trim(this.addLatitudeValue.value) < -90 || lang.trim(this.addLatitudeValue.value) > 90)) && ((lang.trim(this.addLongitudeValue.value) === "" || lang.trim(this.addLongitudeValue.value) < -180 || lang.trim(this.addLongitudeValue.value) > 180))) {
-                    alert(sharedNls.errorMessages.addLatitudeandLongitudeValue);
-                } else {
-                    if (lang.trim(this.addLatitudeValue.value) === "" || lang.trim(this.addLatitudeValue.value) < -90 || lang.trim(this.addLatitudeValue.value) > 90) {
-                        alert(sharedNls.errorMessages.addLatitudeValue);
-                    } else if (parseFloat(this.startPointLatitude) !== parseFloat(this.addLatitudeValue.value)) {
-                        this.startPointLatitude = this.addLatitudeValue.value;
-                        this._clearAllGraphics();
-                        this._updateAOIonMap();
-                    }
-                    if (lang.trim(this.addLongitudeValue.value) === "" || lang.trim(this.addLongitudeValue.value) < -180 || lang.trim(this.addLongitudeValue.value) > 180) {
-                        alert(sharedNls.errorMessages.addLongitudeValue);
-                    } else if (parseFloat(this.startPointLongitude) !== parseFloat(this.addLongitudeValue.value)) {
-                        this.startPointLongitude = this.addLongitudeValue.value;
-                        this._clearAllGraphics();
-                        this._updateAOIonMap();
-                    }
+                if (this._validateLocateLatLongValues()) {
+                    this.startPointLatitude = this.addLatitudeValue.value;
+                    this.startPointLongitude = this.addLongitudeValue.value;
+                    this._relocateInitialPoint();
+
                 }
             })));
 
@@ -333,16 +368,32 @@ define([
             topic.publish("resizeReportsPanel");
             this._createSelectOption();
 
-            this.own(on(dom.byId("uploadForm"), "change", lang.hitch(this, function (event) {
-                var fileName = event.target.value.toLowerCase();
-                this.name = fileName.split(".");
-                this.name = this.name[0].replace("c:\\fakepath\\", "");
+            this.own(on(dom.byId("fileUploadContainer"), "change", lang.hitch(this, function (event) {
+                var fileName = event.target.value.toLowerCase(),
+                    fileNameArray = fileName.split(".")[0].split("\\");
+                this.name = fileNameArray[fileNameArray.length - 1];
                 dom.byId('fileName').value = this.name;
             })));
 
             this.own(on(this.esriCTUploadButton, "click", lang.hitch(this, function (event) {
-                var _self = this;
-                this._generateFeatureCollection(this.name, _self);
+                var _self = this, isZipFile,
+                    shapeFilePath = document.getElementById('fileUploadContainer'),
+                    reg_exp = /\.zip/i;
+
+                if (shapeFilePath.value.search(reg_exp) === -1) {
+                    if (shapeFilePath.value === "") {
+                        alert(sharedNls.errorMessages.browseFile);
+                        isZipFile = false;
+                    } else {
+                        alert(sharedNls.errorMessages.inValideZipFile);
+                        shapeFilePath.form.reset();
+                        isZipFile = false;
+                    }
+                } else {
+                    this._generateFeatureCollection(this.name, _self);
+                    isZipFile = true;
+                }
+                return isZipFile;
             })));
             this.own(on(this.divInitialCoordinates, "click", lang.hitch(this, function () {
                 dojo.initialCoordinates = true;
@@ -381,39 +432,45 @@ define([
                 id: "reportDialogId"
             });
 
-            this.own(on(this.divChangeUnit, "click", lang.hitch(this, function (evt) {
+            this.own(on(dojo.query(".esriCTUnitLabel"), "click", lang.hitch(this, function (evt) {
                 this._toggleAreaUnit();
             })));
 
-            this.own(on(dom.byId("uploadAnalysisForm"), "change", lang.hitch(this, function (event) {
-                var fileName = event.target.value.toLowerCase();
-                this.analysisFileNaame = fileName.split(".");
-                this.analysisFileNaame = this.analysisFileNaame[0].replace("c:\\fakepath\\", "");
-                dom.byId('analysisFileName').value = this.analysisFileNaame;
+            this.own(on(dom.byId("analysisFileUploadContainer"), "change", lang.hitch(this, function (event) {
+                var fileName = event.target.value.toLowerCase(),
+                    fileNameArray = fileName.split(".")[0].split("\\");
+                this.analysisFileName = fileNameArray[fileNameArray.length - 1];
+                dom.byId('analysisFileName').value = this.analysisFileName;
             })));
 
-            this.own(on(this.esriCTAnalysisUploadButton, "click", lang.hitch(this, function () {
-                this._generateAnalysisFeatureCollection(this.analysisFileNaame);
+            this.own(on(this.esriCTAnalysisUploadButton, "click", lang.hitch(this, function (event) {
+                var _self = this, isZipFile,
+                    shapeFilePath = document.getElementById('analysisFileUploadContainer'),
+                    reg_exp = /\.zip/i;
+                if (shapeFilePath.value.search(reg_exp) === -1) {
+                    if (shapeFilePath.value === "") {
+                        alert(sharedNls.errorMessages.browseFile);
+                        isZipFile = false;
+                    } else {
+                        alert(sharedNls.errorMessages.inValideZipFile);
+                        shapeFilePath.form.reset();
+                        isZipFile = false;
+                    }
+                } else {
+                    this._generateFeatureCollection(this.name, _self);
+                    isZipFile = true;
+                }
+                return isZipFile;
             })));
 
             this.map.on("click", lang.hitch(this, function (evt) {
-                var geoLocationPushpin, locatorMarkupSymbol, graphic, normalizedVal;
+                dojo.hasPushPin = false;
                 if (dojo.initialCoordinates) {
-                    topic.publish("hideMapTip");
-                    dojo.initialCoordinates = false;
-                    normalizedVal = webMercatorUtils.xyToLngLat(evt.mapPoint.x, evt.mapPoint.y);
-                    geoLocationPushpin = dojoConfig.baseURL + dojo.configData.LocatorSettings.DefaultLocatorSymbol;
-                    locatorMarkupSymbol = new esri.symbol.PictureMarkerSymbol(geoLocationPushpin, dojo.configData.LocatorSettings.MarkupSymbolSize.width, dojo.configData.LocatorSettings.MarkupSymbolSize.height);
-                    graphic = new esri.Graphic(evt.mapPoint, locatorMarkupSymbol, {}, null);
-                    this._clearAllGraphics();
-                    this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
-                    this._setStartPoint(normalizedVal);
-                    domStyle.set(dojo.query('.esriCTClearAOIButton')[0], "display", "none");
+                    this._locateInitialCoordinatePoint(evt.mapPoint);
                 }
                 if (dojo.selectFeatureEnabled && !dojo.activatedDrawTool && !dojo.initialCoordinates) {
                     if (dojo.hasOnMapClick) {
                         this._clearAllGraphics();
-                        //this._horizontalSlider.setValue(dojo.configData.DistanceUnitSettings[1].MinimumValue);
                         dojo.hasOnMapClick = false;
                     }
                     if (this._timer) {
@@ -463,16 +520,104 @@ define([
                     Place.at(dialog.domNode, { x: evt.pageX, y: evt.pageY }, ["TL", "TR"], { x: 5, y: 5 });
                 }
             }));
+
+            this.map.on("mouse-out", lang.hitch(this, function (evt) {
+                topic.publish("hideMapTip");
+            }));
+
+            if (dojo.query('.esriCTdivLegendbox').length > 0 && dojo.query('.esriCTHeaderReportContainer').length > 0) {
+                LegendWidthChange = window.innerWidth - parseInt(dojo.query('.esriCTHeaderReportContainer')[0].offsetWidth, 10);
+                domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (window.innerWidth + 4) + "px");
+            }
+
+        },
+
+        _validateLocateValue: function () {
+            var allFieldValid = false,
+                LatValue = this.addLatitudeValue.value,
+                LongValue = this.addLongitudeValue.value;
+            if ((LongValue !== "") && (LatValue !== "")) {
+                if ((!LatValue.match(/^-?\d+(?:\.\d+)?$/)) && (!LongValue.match(/^-?\d+(?:\.\d+)?$/))) {
+                    alert(sharedNls.errorMessages.inValideNumericErrorMessage + " in " + sharedNls.messages.latitude + " and " + sharedNls.messages.longitude);
+                } else if (!LatValue.match(/^-?\d+(?:\.\d+)?$/) && LongValue.match(/^-?\d+(?:\.\d+)?$/)) {
+                    alert(sharedNls.errorMessages.inValideNumericErrorMessage + " in " + sharedNls.messages.latitude);
+                } else if (!LongValue.match(/^-?\d+(?:\.\d+)?$/) && LatValue.match(/^-?\d+(?:\.\d+)?$/)) {
+                    alert(sharedNls.errorMessages.inValideNumericErrorMessage + " in " + sharedNls.messages.longitude);
+                } else {
+                    allFieldValid = true;
+                    dojo.initialCoordinates = false;
+                }
+                return allFieldValid;
+            }
+        },
+
+        _validateLocateLatLongValues: function () {
+            if (this._validateLocateValue() && ((lang.trim(this.addLatitudeValue.value) === "" || lang.trim(this.addLatitudeValue.value) < -90 || lang.trim(this.addLatitudeValue.value) > 90)) && ((lang.trim(this.addLongitudeValue.value) === "" || lang.trim(this.addLongitudeValue.value) < -180 || lang.trim(this.addLongitudeValue.value) > 180))) {
+                alert(sharedNls.errorMessages.addLatitudeandLongitudeValue);
+                return false;
+            }
+            if (lang.trim(this.addLatitudeValue.value) === "" || lang.trim(this.addLatitudeValue.value) < -90 || lang.trim(this.addLatitudeValue.value) > 90) {
+                alert(sharedNls.errorMessages.addLatitudeValue);
+                return false;
+            }
+            if (lang.trim(this.addLongitudeValue.value) === "" || lang.trim(this.addLongitudeValue.value) < -180 || lang.trim(this.addLongitudeValue.value) > 180) {
+                alert(sharedNls.errorMessages.addLongitudeValue);
+                return false;
+            }
+            if (parseFloat(this.startPointLatitude) === parseFloat(this.addLatitudeValue.value) && parseFloat(this.startPointLongitude) === parseFloat(this.addLongitudeValue.value)) {
+                return false;
+            }
+            return true;
+        },
+
+        _relocateInitialPoint: function () {
+            var params, geometryService = new GeometryService(dojo.configData.GeometryService);
+            this.mapPoint = new Point({ "x": this.startPointLongitude, "y": this.startPointLatitude, "spatialReference": { "wkid": 4326} });
+            params = new ProjectParams();
+            params.geometries = [this.mapPoint];
+            params.outSR = this.map.spatialReference;
+            geometryService.project(params, lang.hitch(this, function (geometries) {
+                this.map.centerAt(geometries[0]);
+                this._locateInitialCoordinatePoint(geometries[0]);
+            }));
+        },
+
+        _locateInitialCoordinatePoint: function (mapPoint) {
+            var normalizedVal, geoLocationPushpin, locatorMarkupSymbol, graphic;
+            topic.publish("hideMapTip");
+            dojo.hasPushPin = false;
+            normalizedVal = webMercatorUtils.xyToLngLat(mapPoint.x, mapPoint.y);
+            geoLocationPushpin = dojoConfig.baseURL + dojo.configData.LocatorSettings.DefaultLocatorSymbol;
+            locatorMarkupSymbol = new esri.symbol.PictureMarkerSymbol(geoLocationPushpin, dojo.configData.LocatorSettings.MarkupSymbolSize.width, dojo.configData.LocatorSettings.MarkupSymbolSize.height);
+            graphic = new esri.Graphic(mapPoint, locatorMarkupSymbol, {}, null);
+            this._clearAllGraphics();
+            this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+            this._setStartPoint(normalizedVal, mapPoint);
+            if (this.sliderDistance === 0) {
+                domStyle.set(dojo.query('.esriCTClearAOIButton')[0], "display", "none");
+                dojo.hasPushPin = true;
+            }
         },
 
         //buffer selected features
         _bufferSelectedFeatures: function () {
-            var graphicLayerCollection = this.map.getLayer("hGraphicLayer").graphics,
-                i;
+            var graphicLayerCollection = this.map.getLayer("hGraphicLayer").graphics, geometryCollection = [], i, graphicGeometry;
             this.map.getLayer("tempBufferLayer").clear();
             for (i = 0; i < graphicLayerCollection.length; i++) {
-                this._createBuffer(graphicLayerCollection[i].geometry);
+                graphicGeometry = graphicLayerCollection[i].geometry.type === "extent" ? this._createPolygonGeometry(graphicLayerCollection[i].geometry) : graphicLayerCollection[i].geometry;
+                geometryCollection.push(graphicGeometry);
             }
+            this._createBuffer(geometryCollection);
+        },
+        /**
+        * convert extent type of geometry to Polygon geometry
+        * param {object} geometry extent type of geometry
+        * @memberOf widgets/reports/reports
+        */
+        _createPolygonGeometry: function (geometry) {
+            var polygon = new esri.geometry.Polygon(geometry.spatialReference);
+            polygon.addRing([[geometry.xmin, geometry.ymin], [geometry.xmin, geometry.ymax], [geometry.xmax, geometry.ymax], [geometry.xmax, geometry.ymin], [geometry.xmin, geometry.ymin]]);
+            return polygon;
         },
 
         //select Feature result query functionality
@@ -561,7 +706,6 @@ define([
         //extend query
         _executeQueryTask: function (index, mapPoint, onMapFeaturArray) {
             var queryTask, queryParms, queryOnRouteTask;
-
             queryTask = new esri.tasks.QueryTask(dojo.configData.SearchSettings[index].QueryURL);
             queryParms = new esri.tasks.Query();
             queryParms.outSpatialReference = this.map.spatialReference;
@@ -591,68 +735,49 @@ define([
         },
 
         _createSelectOption: function () {
-            var selectFormat, options;
-            options = this._setSelectionOption(dojo.configData.DownloadReportFormat.Format.split(","));
-            selectFormat = new SelectList({
-                options: options,
-                id: "selectFormat"
-            }, this.selectFormatDropDown);
             this._setDownloadReportType();
-            this._setSelectedOption(selectFormat);
-            this._setReportType();
-            return selectFormat;
+            this._setReportFormatOption();
         },
 
         _setDownloadReportType: function () {
-            var _self = this;
-            array.forEach(dojo.query('.esriCTcheckbox'), lang.hitch(this, function (chkBox) {
-                on(chkBox, 'change', function (evt) {
-                    if (evt.target.checked) {
-                        _self.PDFreportType = true;
-                    } else {
-                        _self.PDFreportType = false;
-                    }
-                });
-            }));
-
-            array.forEach(dojo.query('.esriCTdataFormatcheckbox'), lang.hitch(this, function (chkBox) {
-                on(chkBox, 'change', function (evt) {
-                    if (evt.target.checked) {
-                        _self.dataFormatChecked = true;
-                    } else {
-                        _self.dataFormatChecked = false;
-                    }
-                });
-            }));
+            array.forEach(dojo.query(".esriCTReportTypelabel", this.downloadReportContainer), lang.hitch(this, function (reportType) {
+                on(reportType, 'click', lang.hitch(this, function (evt) {
+                    domClass.remove(dojo.query(".esriCTReportTypeSelected", this.downloadReportContainer)[0], "esriCTReportTypeSelected");
+                    domClass.add(evt.currentTarget, "esriCTReportTypeSelected");
+                    this.report_type = domAttr.get(evt.currentTarget, "data-downloadReportType");
+                }));
+            }), this);
         },
 
-
-        _setSelectedOption: function (dropDown) {
-            var i, _self = this;
-            this.dataFormatType = dropDown.options[0].value;
-            this.own(on(dropDown, "change", lang.hitch(this, function () {
-                for (i = 0; i < dropDown.options.length; i++) {
-                    if (dropDown.options[i].selected) {
-                        _self.dataFormatType = dropDown.options[i].value; //set format of data download report i.e csv, shapefile etc
+        _setReportFormatOption: function () {
+            array.forEach(dojo.query(".esriCTReportlabel", this.downloadReportContainer), lang.hitch(this, function (reportFormat) {
+                on(reportFormat, 'click', lang.hitch(this, function (evt) {
+                    if (domClass.contains(evt.currentTarget, "esriCTReportTypeSelected")) {
+                        domClass.remove(evt.currentTarget, "esriCTReportTypeSelected");
+                        if (this.PDFreportType && domAttr.get(evt.currentTarget, "data-downloadFormatType") === dojo.configData.downloadReportFormat.PDF) {
+                            this.PDFreportType = false;
+                        } else {
+                            this.dataFormatType.splice(this.dataFormatType.indexOf(domAttr.get(evt.currentTarget, "data-downloadFormatType")), 1);
+                        }
+                    } else {
+                        domClass.add(evt.currentTarget, "esriCTReportTypeSelected");
+                        if (domAttr.get(evt.currentTarget, "data-downloadFormatType") === dojo.configData.downloadReportFormat.PDF) {
+                            this.PDFreportType = true;
+                        } else {
+                            this.dataFormatType.push(domAttr.get(evt.currentTarget, "data-downloadFormatType"));
+                        }
                     }
-                }
-            })));
+                }));
+            }), this);
         },
 
         _selectFeature: function (evt) {
             dojo.selectFeatureEnabled = true;
+            topic.publish("deactivateToolbar");
             this._oneTimeClearGraphics();
         },
         _oneTimeClearGraphics: function (evt) {
             dojo.hasOnMapClick = true;
-        },
-        _setReportType: function () {
-            var _self = this;
-            array.forEach(dojo.query('.radioBtn'), lang.hitch(this, function (radio) {
-                on(radio, 'change', function (evt) {
-                    _self.report_type = evt.currentTarget.value; //set type of report i.e quick or detailed
-                });
-            }));
         },
 
         /**
@@ -699,7 +824,12 @@ define([
             }
         },
 
-        _setStartPoint: function (normalizedVal) {
+        _setStartPoint: function (normalizedVal, initialPoint) {
+            this.initialPoint = null;
+            if (initialPoint) {
+                this.initialPoint = initialPoint;
+                this.flagMultiplePoints = 0;
+            }
             this.addLongitudeValue.value = this.startPointLongitude = parseFloat(normalizedVal[0]).toFixed(5);
             this.addLatitudeValue.value = this.startPointLatitude = parseFloat(normalizedVal[1]).toFixed(5);
             this._updateAOIonMap();
@@ -713,7 +843,6 @@ define([
                 domClass.add(this.applicationHeaderReportContainer, "esriCTZeroHeight");
                 if (this.logoContainer) {
                     domClass.remove(this.logoContainer, "esriCTMapLogo");
-                    domClass.remove(this.logoContainer, "esriCTMapLogoBottom");
                 }
                 domClass.replace(this.domNode, "esriCTReportsImg", "esriCTReportsImgSelected");
                 domClass.replace(this.applicationHeaderReportContainer, "esriCTHideContainerHeight", "esriCTShowContainerHeight");
@@ -725,10 +854,11 @@ define([
                 */
                 domClass.remove(this.applicationHeaderReportContainer, "esriCTZeroHeight");
                 if (this.logoContainer) {
-                    if (dojo.configData.ShowLegend) {
+                    if (dojo.query('.esriCTdivLegendbox').length > 0 || dojo.configData.ShowLegend) {
+                        domClass.add(this.logoContainer, "esriCTMapLogoBottom");
                         domClass.add(this.logoContainer, "esriCTMapLogo");
                     } else {
-                        domClass.add(this.logoContainer, "esriCTMapLogoBottom");
+                        domClass.add(this.logoContainer, "esriCTMapLogo");
                     }
                 }
                 domClass.replace(this.domNode, "esriCTReportsImgSelected", "esriCTReportsImg");
@@ -832,11 +962,10 @@ define([
             _self = this;
             array.forEach(query(".esriCTSelectionIcon"), function (value) {
                 _self.own(on(value, "click", function () {
+                    topic.publish("hideMapTip");
                     _self.activateTool(this.id);
                 }));
             });
-
-
 
             this.toolbar.on("draw-end", lang.hitch(this, function (evt) {
                 _self.addToMap(evt, _self.sliderUnitValue);
@@ -896,7 +1025,7 @@ define([
                 this.own(on(spanRadioContent, "click", lang.hitch(this, this._getSliderValue)));
             }
             this.own(on(this._horizontalSlider, "change", lang.hitch(this, function (value) {
-                var sliderText, message, graphics;
+                var sliderText, message, graphics, geometryCollection;
                 sliderText = this.spanSliderValue.innerHTML.split(" ");
                 message = Math.round(value) + " " + sliderText[1];
                 this.spanSliderValue.innerHTML = message;
@@ -918,15 +1047,25 @@ define([
                     } else {
                         graphics = this.map.getLayer("esriGraphicsLayerMapSettings").graphics[0];
                         if (graphics && graphics.geometry) {
-                            this.featureGeometry = graphics.geometry;
+                            geometryCollection = [];
+                            geometryCollection.push(graphics.geometry);
+                            this.featureGeometryArray = geometryCollection;
                             if (parseInt(this.sliderDistance, 10) === 0) {
                                 this.map.getLayer("tempBufferLayer").clear();
                             } else if (!graphics.attributes || (graphics.attributes && graphics.attributes.sourcename !== "aoiSearch")) {
-                                topic.publish("createBuffer", this.featureGeometry, this.sliderUnitValue);
+                                topic.publish("createBuffer", this.featureGeometryArray, this.sliderUnitValue);
+                            } else {
+                                topic.publish("createBuffer", this.featureGeometryArray, this.sliderUnitValue);
                             }
                         }
                     }
-
+                    if (this.sliderDistance === dojo.configData.DistanceUnitSettings[1].MinimumValue) {
+                        if (dojo.hasPushPin || dojo.isGeoLocationEnabled) {
+                            domStyle.set(dojo.query('.esriCTClearAOIButton')[0], "display", "none");
+                        } else {
+                            dojo.hasPushPin = false;
+                        }
+                    }
                 }), 500);
             })));
 
@@ -1040,6 +1179,11 @@ define([
                     this._showSelectedLinkContainer(this.placeNameSearch);
                     domStyle.set(divAreaIntContainer, "display", "none");
                     this.aoiPanelScrollbar.rePositionScrollBar();
+                    topic.publish("setDefaultTextboxValue", this.txtplaceName, "defaultPlaceNameSearchAddress", dojo.configData.LocatorSettings.LocatorDefaultPlaceNameSearchAddress);
+                    if (lang.trim(this.txtplaceName.value) === "") {
+                        this.txtplaceName.value = dojo.configData.LocatorSettings.LocatorDefaultPlaceNameSearchAddress;
+                    }
+
                 }
             }));
 
@@ -1085,7 +1229,9 @@ define([
                     domStyle.set(divAreaIntContainer, "display", "block");
                     this.aoiPanelScrollbar.rePositionScrollBar();
                     topic.publish("setDefaultTextboxValue", this.txtAOIAddress, "defaultAOIAddress", dojo.configData.LocatorSettings.LocatorDefaultAOIAddress);
-                    this.txtAOIAddress.value = dojo.configData.LocatorSettings.LocatorDefaultAOIAddress;
+                    if (lang.trim(this.txtAOIAddress.value) === "") {
+                        this.txtAOIAddress.value = dojo.configData.LocatorSettings.LocatorDefaultAOIAddress;
+                    }
                     locatorParams = {
                         divSearch: this.divAOISearch,
                         close: this.clearAOITextbox,
@@ -1108,6 +1254,7 @@ define([
                 dojo.innerCoordinateBufferClear = false;
                 this.settingsDialog.hide();
                 this._destroyBearingTextBox();
+                domAttr.set(this.addDistanceMiles, "maxlength", dojo.configData.BearingDistanceMaxLimit.toString().length + 3);
                 if (domStyle.get(this.divBearingContainer, "display") === "none") {
                     this.deactivateToolbar();
                     //Clear all graphics on click of link
@@ -1119,13 +1266,14 @@ define([
                     //Clear previous link and select new Link
                     domClass.remove(dojo.query(".esriCTAOILinkSelect")[0], "esriCTAOILinkSelect");
                     domClass.add(dom.byId("divLinkCoordinates"), "esriCTAOILinkSelect");
-
                     domConstruct.place(this.divBearingContainer, this.divBufferDistance, "before");
                     //Hide previous div and show new div
                     this._showSelectedLinkContainer(this.divBearingContainer);
                     domStyle.set(divAreaIntContainer, "display", "none");
                     topic.publish("setDefaultTextboxValue", this.txtAOIBearingAddress, "defaultAOIBearingAddress", dojo.configData.LocatorSettings.LocatorDefaultAOIBearingAddress);
-                    this.txtAOIBearingAddress.value = dojo.configData.LocatorSettings.LocatorDefaultAOIBearingAddress;
+                    if (lang.trim(this.txtAOIBearingAddress.value) === "") {
+                        this.txtAOIBearingAddress.value = dojo.configData.LocatorSettings.LocatorDefaultAOIBearingAddress;
+                    }
                     var locatorParams = {
                         divSearch: this.divAOIBearingSearch,
                         close: this.clearAOIBearingTextbox,
@@ -1287,29 +1435,30 @@ define([
         * @name widgets/reports/reports
         */
         addToMap: function (evt) {
-            var symbol, graphic, jsonStringGeometry;
+            var symbol, graphic, jsonStringGeometry, graphicGeometry, geometryCollection = [];
             this.map.getLayer("esriGraphicsLayerMapSettings").clear();
             this.deactivateToolbar();
-            switch (evt.geometry.type) {
+            graphicGeometry = evt.geometry.type === "extent" ? this._createPolygonGeometry(evt.geometry) : evt.geometry;
+            symbol = this._createFeatureSymbol(graphicGeometry.type);
+            graphic = new Graphic(graphicGeometry, symbol);
+            switch (graphicGeometry.type) {
             case "point":
-                this.pointData = "point" + "|" + evt.geometry.x + "|" + evt.geometry.y;
+                this.pointData = "point" + "|" + graphicGeometry.x + "|" + graphicGeometry.y;
                 break;
             case "polyline":
-                jsonStringGeometry = JSON.stringify(evt.geometry.paths);
+                jsonStringGeometry = JSON.stringify(graphicGeometry.paths);
                 this.pointData = "polyline" + "|" + jsonStringGeometry;
                 break;
-            case "extent":
-                this.pointData = "extent" + "|" + evt.geometry.xmin + "|" + evt.geometry.ymin + "|" + evt.geometry.xmax + "|" + evt.geometry.ymax;
-                break;
             case "polygon":
-                jsonStringGeometry = JSON.stringify(evt.geometry.rings);
+                jsonStringGeometry = JSON.stringify(graphicGeometry.rings);
                 this.pointData = "polygon" + "|" + jsonStringGeometry;
                 break;
             }
-            symbol = this._createFeatureSymbol(evt.geometry.type);
-            graphic = new Graphic(evt.geometry, symbol);
             this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
-            topic.publish("createBuffer", evt.geometry, this.sliderUnitValue);
+            dojo.hasPushPin = false;
+            dojo.isGeoLocationEnabled = false;
+            geometryCollection.push(graphicGeometry);
+            topic.publish("createBuffer", geometryCollection, this.sliderUnitValue);
         },
 
         deactivateToolbar: function () {
@@ -1333,13 +1482,14 @@ define([
         * @class
         * @name widgets/reports/reports
         */
-        _createBuffer: function (geometry) {
-            var geometryService, params;
+        _createBuffer: function (geometryCollection) {
+            var geometryService, params, i, j, k, m, deferredListSimplifyResult, deferredListBufferResult, simplifyRequestArray = [], bufferRequestArray = [], unionBufferArray = [], unionResultArray = [],
+                pointGeometryCollection = [], polylineGeometryCollection = [], polygonGeometryCollection = [], pointBufferCollection = [], polylineBufferCollection = [], polygonBufferCollection = [];
             domConstruct.empty(this.reportScrollContent);
             domStyle.set(this.divChangeUnit, "display", "none");
             this._showLoadingIndicatorReports();
             geometryService = new GeometryService(dojo.configData.GeometryService);
-            this.featureGeometry = geometry;
+            this.featureGeometryArray = geometryCollection;
             dojo.activatedDrawTool = false;
             //set the buffer parameters
             params = new BufferParameters();
@@ -1349,35 +1499,99 @@ define([
             });
             params.outSpatialReference = this.map.spatialReference;
             params.unit = GeometryService[this.sliderUnitValue];
+            params.unionResults = true;
             if (this.sliderDistance !== 0) {
-                if (this.featureGeometry.type === "polygon") {
-                    //if geometry is a polygon then simplify polygon. This will make the user drawn polygon topologically correct.
-                    geometryService.simplify([this.featureGeometry], lang.hitch(this, function (geometries) {
-                        params.geometries = geometries;
-                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
-                            this.showBuffer(geometries);
-                        }));
-                    }));
-                } else if (this.featureGeometry.type === "polyline") {
-                    //if geometry is a polygon then simplify polygon. This will make the user drawn polygon topologically correct.
-                    geometryService.simplify([this.featureGeometry], lang.hitch(this, function (geometries) {
-                        params.geometries = geometries;
-                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
-                            this.showBuffer(geometries);
-                        }));
-                    }));
-                } else {
-                    params.geometries = [this.featureGeometry];
+                if (this._validateGeometryType()) {
+                    params.geometries = this.featureGeometryArray;
                     geometryService.buffer(params, lang.hitch(this, function (geometries) {
                         this.showBuffer(geometries);
+                    }));
+                } else {
+                    //simplify geometry based on geometry type of featureArrayCollection
+                    for (i = 0; i < this.featureGeometryArray.length; i++) {
+                        switch (this.featureGeometryArray[i].type) {
+                        case "point":
+                            pointGeometryCollection.push(this.featureGeometryArray[i]);
+                            break;
+                        case "polyline":
+                            polylineGeometryCollection.push(this.featureGeometryArray[i]);
+                            break;
+                        case "polygon":
+                            polygonGeometryCollection.push(this.featureGeometryArray[i]);
+                            break;
+                        }
+                    }
+                    if (polylineGeometryCollection.length > 0) {
+                        simplifyRequestArray.push(geometryService.simplify(polylineGeometryCollection));
+                    }
+                    if (polygonGeometryCollection.length > 0) {
+                        simplifyRequestArray.push(geometryService.simplify(polygonGeometryCollection));
+                    }
+                    deferredListSimplifyResult = new DeferredList(simplifyRequestArray);
+                    deferredListSimplifyResult.then(lang.hitch(this, function (result) {
+                        for (j = 0; j < pointGeometryCollection.length; j++) {
+                            result[0][1].push(pointGeometryCollection[j]);
+                        }
+                        //create buffer based on geomtery type of simplify result
+                        for (k = 0; k < result[0][1].length; k++) {
+                            switch (result[0][1][k].type) {
+                            case "point":
+                                pointBufferCollection.push(result[0][1][k]);
+                                break;
+                            case "polyline":
+                                polylineBufferCollection.push(result[0][1][k]);
+                                break;
+                            case "polygon":
+                                polygonBufferCollection.push(result[0][1][k]);
+                                break;
+                            }
+                        }
+                        if (pointBufferCollection.length > 0) {
+                            params.geometries = pointBufferCollection;
+                            bufferRequestArray.push(geometryService.buffer(params));
+                        }
+                        if (polylineBufferCollection.length > 0) {
+                            params.geometries = polylineBufferCollection;
+                            bufferRequestArray.push(geometryService.buffer(params));
+                        }
+                        if (polygonBufferCollection.length > 0) {
+                            params.geometries = polygonBufferCollection;
+                            bufferRequestArray.push(geometryService.buffer(params));
+                        }
+                        deferredListBufferResult = new DeferredList(bufferRequestArray);
+                        deferredListBufferResult.then(lang.hitch(this, function (result) {
+                            for (m = 0; m < result.length; m++) {
+                                unionBufferArray.push(result[m][1][0]);
+                            }
+                            geometryService.union(unionBufferArray, lang.hitch(this, function (geometry) {
+                                unionResultArray.push(geometry);
+                                this.showBuffer(unionResultArray);
+                            }));
+                        }));
                     }));
                 }
                 domStyle.set(dojo.query('.esriCTClearAOIButton')[0], "display", "block");
             } else {
-                if (this.featureGeometry.type !== "polygon" && this.featureGeometry.type !== "extent") {
+                if (this.featureGeometryArray.type !== "polygon" && this.featureGeometryArray.type !== "extent") {
                     this.map.getLayer("tempBufferLayer").clear();
                 }
             }
+        },
+
+        /**
+        * validate the geometries if having geometry type as extent
+        * @name widgets/reports/reports
+        * @method _validateGeometryType
+        * @return isExtent
+        */
+        _validateGeometryType: function () {
+            var i, areAllPoint = true;
+            for (i = 0; i < this.featureGeometryArray.length; i++) {
+                if (this.featureGeometryArray[i] && this.featureGeometryArray[i].type !== "point") {
+                    areAllPoint = false;
+                }
+            }
+            return areAllPoint;
         },
 
         /**
@@ -1415,6 +1629,7 @@ define([
                 if (dojo.innerCoordinateBufferClear) {
                     _self.map.getLayer("tempBufferLayer").clear();
                 }
+                _self.map.getLayer("tempBufferLayer").clear();
                 _self.map.getLayer("tempBufferLayer").add(graphic);
                 _self.map.setExtent(graphic.geometry.getExtent().expand(1.6));
             });
@@ -1427,18 +1642,8 @@ define([
         * @name widgets/reports/reports
         */
         _queryLayers: function (geometry) {
-            var _self = this,
-                statisticResultArray = [],
-                layerFieldCount = [],
-                reportFields,
-                staticFieldName,
-                reportFieldName,
-                statisticTypeValue,
-                index,
-                k,
-                deferredListResult,
-                requestHandle,
-                onMapFeaturArray = [];
+            var _self = this, index, i, j, k, requestHandle, deferredListFeature, deferredListCount, statisticType, statisticTypeValue, standardPointLayerUnit, reportFields, layerName, reportFieldName,
+                staticFieldName, count, deferredListInfo, noResultCount = 0, reportFieldsCount = 0, onMapFeaturArray = [], statisticFieldsCount = [], statisticFieldsInfo = [];
             this.counter = 0;
             domConstruct.empty(this.reportScrollContent);
             this._showLoadingIndicatorReports();
@@ -1453,73 +1658,67 @@ define([
                 requestHandle.then(_self.requestSucceeded, _self.requestFailed);
                 onMapFeaturArray.push(requestHandle);
             }
-            deferredListResult = new DeferredList(onMapFeaturArray);
-            deferredListResult.then(lang.hitch(this, function (result) {
-                var i, statisticType, layerInfoCollection = [],
-                    reportFieldsCount = 0,
-                    count, standardPointLayerUnit, resultCount = 0,
-                    layerName,
-                    noResultCount = 0;
-                layerInfoCollection.push(result);
-                if (result) {
-                    for (i = 0; i < result.length; i++) {
-                        if (result[i].length === 0) {
-                            noResultCount++;
-                        }
+            deferredListFeature = new DeferredList(onMapFeaturArray);
+            deferredListFeature.then(lang.hitch(this, function (featureResult) {
+                if (featureResult) {
+                    for (i = 0; i < dojo.configData.SearchSettings.length; i++) {
+                        statisticFieldsCount.push(this._executeQueryTaskForCount(i, geometry));
                     }
-                    if (noResultCount === result.length) {
-                        alert(sharedNls.errorMessages.invalidSearch);
-                    } else {
-                        for (i = 0; i < dojo.configData.SearchSettings.length; i++) {
-                            if (result[i][1].geometryType === "esriGeometryPoint") {
-                                statisticType = "COUNT";
-                                statisticTypeValue = "count";
-                                standardPointLayerUnit = "";
-                                reportFields = dojo.configData.SearchSettings[i].QuickSummaryReportFields;
-                                reportFieldsCount = reportFields.length;
-                                layerFieldCount.push(reportFieldsCount);
-                                layerName = result[i][1].name;
-                                for (count = 0; count < reportFieldsCount; count++) {
-                                    reportFieldName = reportFields[count];
-                                    staticFieldName = reportFieldName;
-                                    statisticResultArray.push(this._executeQueryTaskPointReport(i, geometry, statisticType, reportFieldName, staticFieldName, statisticTypeValue, standardPointLayerUnit, layerName));
-                                }
-                            }
-
-                            if (result[i][1].geometryType === "esriGeometryPolygon") {
-                                statisticType = "SUM";
-                                statisticTypeValue = "area";
-                                reportFields = dojo.configData.SearchSettings[i].QuickSummaryReportFields;
-                                reportFieldsCount = reportFields.length;
-                                layerFieldCount.push(reportFieldsCount);
-                                layerName = result[i][1].name;
-                                for (count = 0; count < reportFieldsCount; count++) {
-                                    reportFieldName = reportFields[count];
-                                    staticFieldName = dojo.configData.SearchSettings[i].SummaryStatisticField;
-                                    statisticResultArray.push(this._executeQueryTaskPointReport(i, geometry, statisticType, reportFieldName, staticFieldName, statisticTypeValue, sharedNls.titles.areaStandardUnit, layerName));
-                                }
-                            }
-                        }
-                        deferredListResult = new DeferredList(statisticResultArray);
-                        deferredListResult.then(lang.hitch(this, function (result) {
-                            this.queryAllResults = result;
-                            if (result) {
-                                for (k = 0; k < result.length; k++) {
-                                    if (result[k][0] === false) {
-                                        resultCount++;
+                    deferredListCount = new DeferredList(statisticFieldsCount);
+                    deferredListCount.then(lang.hitch(this, function (countResult) {
+                        for (j = 0; j < countResult.length; j++) {
+                            if (countResult[j][1].result > 0) {
+                                if (featureResult[j][1].geometryType === "esriGeometryPoint") {
+                                    statisticType = "COUNT";
+                                    statisticTypeValue = "count";
+                                    standardPointLayerUnit = "";
+                                    reportFields = dojo.configData.SearchSettings[j].QuickSummaryReportFields;
+                                    reportFieldsCount = reportFields.length;
+                                    layerName = featureResult[j][1].name;
+                                    for (count = 0; count < reportFieldsCount; count++) {
+                                        reportFieldName = reportFields[count];
+                                        staticFieldName = reportFieldName;
+                                        statisticFieldsInfo.push(this._executeQueryTaskPointReport(j, geometry, statisticType, reportFieldName, staticFieldName, statisticTypeValue, standardPointLayerUnit, layerName));
                                     }
                                 }
-                                if (resultCount === result.length) {
+                                if (featureResult[j][1].geometryType === "esriGeometryPolygon") {
+                                    statisticType = "SUM";
+                                    statisticTypeValue = "area";
+                                    reportFields = dojo.configData.SearchSettings[j].QuickSummaryReportFields;
+                                    reportFieldsCount = reportFields.length;
+                                    layerName = featureResult[j][1].name;
+                                    for (count = 0; count < reportFieldsCount; count++) {
+                                        reportFieldName = reportFields[count];
+                                        staticFieldName = dojo.configData.SearchSettings[j].SummaryStatisticField;
+                                        statisticFieldsInfo.push(this._executeQueryTaskPointReport(j, geometry, statisticType, reportFieldName, staticFieldName, statisticTypeValue, sharedNls.titles.areaStandardUnit, layerName));
+                                    }
+                                }
+                            }
+                        }
+                        deferredListInfo = new DeferredList(statisticFieldsInfo);
+                        deferredListInfo.then(lang.hitch(this, function (infoResult) {
+                            this.queryAllResults = infoResult;
+                            if (infoResult) {
+                                for (k = 0; k < infoResult.length; k++) {
+                                    if (infoResult[k][0] === false) {
+                                        noResultCount++;
+                                    }
+                                }
+                                if (noResultCount === infoResult.length) {
                                     alert(sharedNls.errorMessages.errorPerfomingQuery);
                                     this._hideLoadingIndicatorReports();
                                 } else {
+                                    dojo.hasAreaStandardUnit = false;
+                                    dojo.areaHasRecord = false;
                                     this._createReport();
                                 }
                             }
                         }), function (err) {
                             alert(err.messgae);
                         });
-                    }
+                    }), function (err) {
+                        alert(err.message);
+                    });
                 }
             }), function (err) {
                 alert(err.message);
@@ -1622,6 +1821,10 @@ define([
         },
 
         _createReportOnCheckboxClick: function () {
+            this._createModifiedReportData();
+        },
+
+        _createModifiedReportData: function () {
             var i, j, x, reportDialog;
             reportDialog = document.getElementById("reportDialogId");
             this.featureArrayCollection.length = 0;
@@ -1635,7 +1838,7 @@ define([
                                         attr: this.queryAllResults[i][1].result.features,
                                         FieldName: this.queryAllResults[i][1].reportFieldName,
                                         FieldTypeValue: this.queryAllResults[i][1].statictypevalue,
-                                        unitType: (domStyle.get(this.esriCTchangeMetricUnit, "display") === "none") ? sharedNls.titles.areaMetricUnit : this.queryAllResults[i][1].unit,
+                                        unitType: this.queryAllResults[i][1].unit,
                                         layerName: this.queryAllResults[i][1].layerName
                                     });
                                 }
@@ -1643,9 +1846,6 @@ define([
                         }
                     }
                 }
-            }
-            if (domStyle.get(this.esriCTchangeMetricUnit, "display") === "none") {
-                this._toggleAreaUnit();
             }
             this._displayReport(this.featureArrayCollection, true, reportDialog);
         },
@@ -1657,13 +1857,13 @@ define([
         * @name widgets/reports/reports
         */
         _displayReport: function (featureArrayCollection, checkboxFlag, reportDialog) {
-            var featureCollection, reportPanelHeight, createReport;
+            var searchSettingsIndex, reportPanelHeight, createReport;
             domConstruct.empty(this.reportScrollContent);
             domStyle.set(this.divChangeUnit, "display", "block");
             this._hideLoadingIndicatorReports();
-            for (featureCollection = 0; featureCollection < dojo.configData.SearchSettings.length; featureCollection++) {
+            for (searchSettingsIndex = 0; searchSettingsIndex < dojo.configData.SearchSettings.length; searchSettingsIndex++) {
                 createReport = true;
-                this._createReportPanelContent(featureCollection, featureArrayCollection, createReport, checkboxFlag, reportDialog);
+                this._createReportPanelContent(searchSettingsIndex, featureArrayCollection, createReport, checkboxFlag, reportDialog);
             }
             if (this.reportPanelScrollbar) {
                 domClass.add(this.reportPanelScrollbar._scrollBarContent, "esriCTZeroHeight");
@@ -1685,7 +1885,7 @@ define([
         * @class
         * @name widgets/reports/reports
         */
-        _createReportPanelContent: function (featureCollection, featureArrayCollection, createReport, checkboxFlag, reportDialog) {
+        _createReportPanelContent: function (searchSettingsIndex, featureArrayCollection, createReport, checkboxFlag, reportDialog) {
             var divnoDataAvailable, count, j, target, divReportLayerSettingPanel, divReportLayerPanel, divReportLayersettingIcon, divFieldTypeContent, title, settingsIconId;
             this.changeFeatureSetUnit = [];
 
@@ -1699,12 +1899,12 @@ define([
                 }, divReportLayerPanel);
                 domConstruct.create("div", {
                     "class": "esriCTDivReportLayerTitle",
-                    "innerHTML": dojo.configData.SearchSettings[featureCollection].SearchDisplayTitle
+                    "innerHTML": dojo.configData.SearchSettings[searchSettingsIndex].SearchDisplayTitle
                 }, divReportLayerSettingPanel);
-                settingsIconId = dojo.configData.SearchSettings[featureCollection].QueryURL;
+                settingsIconId = dojo.configData.SearchSettings[searchSettingsIndex].QueryURL;
                 divReportLayersettingIcon = domConstruct.create("div", {
                     "class": "esriCTSettingsIcon",
-                    "displayTitle": dojo.configData.SearchSettings[featureCollection].SearchDisplayTitle,
+                    "displayTitle": dojo.configData.SearchSettings[searchSettingsIndex].SearchDisplayTitle,
                     "id": settingsIconId,
                     "title": sharedNls.tooltips.settingsIconTitle
                 }, divReportLayerSettingPanel);
@@ -1714,72 +1914,120 @@ define([
                     title = domAttr.get(target, "displayTitle");
                     this._configureDialogBox(target.id, title);
                 })));
+                if (this._validateFieldsCount(searchSettingsIndex, featureArrayCollection)) {
+                    dojo.hasAreaStandardUnit = false;
+                    for (count = 0; count < featureArrayCollection.length; count++) {
+                        if (featureArrayCollection[count].layerName === dojo.configData.SearchSettings[searchSettingsIndex].SearchDisplayTitle) {
+                            if (createReport && divnoDataAvailable) {
+                                //if report is getting created and no result found error message is already appended with that section then we clear it
+                                domConstruct.destroy(divnoDataAvailable);
+                                domStyle.set(divReportLayersettingIcon, "display", "block");
+                            }
+                            createReport = false;
+                            domConstruct.create("div", {
+                                "class": "esriCTReportZoneName",
+                                "innerHTML": featureArrayCollection[count].FieldName
+                            }, divReportLayerPanel, "last");
+                            for (j = 0; j < featureArrayCollection[count].attr.length; j++) {
+                                this.value = string.substitute("${" + featureArrayCollection[count].FieldName + "}",
+                                                featureArrayCollection[count].attr[j].attributes);
+                                this.StatisticTypeValue = string.substitute("${Total}", featureArrayCollection[count].attr[j].attributes);
 
-                for (count = 0; count < featureArrayCollection.length; count++) {
-                    if ((dojo.configData.SearchSettings[featureCollection].QuickSummaryReportFields.indexOf(featureArrayCollection[count].FieldName) >= 0) ||
-                            (featureArrayCollection[count].FieldName === dojo.configData.SearchSettings[featureCollection].SummaryStatisticField)) {
-                        if (createReport && divnoDataAvailable) {
-                            //if report is getting created and no result found error message is already appended with that section then we clear it
-                            domConstruct.destroy(divnoDataAvailable);
-                            domStyle.set(divReportLayersettingIcon, "display", "block");
-                        }
-                        createReport = false;
-                        domConstruct.create("div", {
-                            "class": "esriCTReportZoneName",
-                            "innerHTML": featureArrayCollection[count].FieldName
-                        }, divReportLayerPanel, "last");
-                        for (j = 0; j < featureArrayCollection[count].attr.length; j++) {
-                            this.value = string.substitute("${" + featureArrayCollection[count].FieldName + "}",
-                                featureArrayCollection[count].attr[j].attributes);
-
-                            this.StatisticTypeValue = string.substitute("${Total}", featureArrayCollection[count].attr[j].attributes);
-                            if (featureArrayCollection.length > 1) {
-                                if ((featureArrayCollection[count].unitType === sharedNls.titles.areaStandardUnit) && (!this.initialReportCreated)) {
-                                    this.StatisticTypeValue = parseFloat(this.StatisticTypeValue);
-                                    this.StatisticTypeValue = (this.StatisticTypeValue * 247.105381);
+                                // reports has AreaStandardUnit then we enble the show standard unit
+                                if ((featureArrayCollection[count].unitType === sharedNls.titles.areaStandardUnit) || (featureArrayCollection[count].unitType === sharedNls.titles.areaMetricUnit)) {
+                                    dojo.hasAreaStandardUnit = true;
                                 }
-                            } else {
-                                featureCollection = count;
+                                if (featureArrayCollection.length > 1) {
+                                    if ((featureArrayCollection[count].unitType === sharedNls.titles.areaStandardUnit) && (!this.initialReportCreated)) {
+                                        this.StatisticTypeValue = parseFloat(this.StatisticTypeValue);
+                                        this.StatisticTypeValue = (this.StatisticTypeValue * 247.105381);
+                                    }
+                                } else {
+                                    searchSettingsIndex = count;
+                                }
+                                divFieldTypeContent = domConstruct.create("div", {
+                                    "class": "esriCTReportZoneList"
+                                }, divReportLayerPanel);
+                                domConstruct.create("span", {
+                                    "class": "esriCTReportZoneField",
+                                    "innerHTML": this.value + " "
+                                }, divFieldTypeContent);
+                                this.StatisticTypeValue = parseInt(this.StatisticTypeValue, 10);
+                                if (((featureArrayCollection[count].unitType === sharedNls.titles.areaStandardUnit) || (featureArrayCollection[count].unitType === sharedNls.titles.areaMetricUnit)) && (this.initialReportCreated)) {
+                                    this.StatisticTypeValue = dojoNumber.format(this.StatisticTypeValue);
+                                }
+                                domConstruct.create("span", {
+                                    "class": "esriCTReportZoneCount",
+                                    "innerHTML": ("(" + featureArrayCollection[count].FieldTypeValue + " " + " - " + this.StatisticTypeValue + (featureArrayCollection[count].unitType === "" ? "" : " ") + featureArrayCollection[count].unitType + ")")
+                                }, divFieldTypeContent);
                             }
-                            divFieldTypeContent = domConstruct.create("div", {
-                                "class": "esriCTReportZoneList"
-                            }, divReportLayerPanel);
-                            domConstruct.create("span", {
-                                "class": "esriCTReportZoneField",
-                                "innerHTML": this.value + " "
-                            }, divFieldTypeContent);
-                            this.StatisticTypeValue = parseInt(this.StatisticTypeValue, 10);
-                            if (((featureArrayCollection[count].unitType === sharedNls.titles.areaStandardUnit) || (featureArrayCollection[count].unitType === sharedNls.titles.areaMetricUnit)) && (this.initialReportCreated)) {
-                                this.StatisticTypeValue = dojoNumber.format(this.StatisticTypeValue);
-                            }
-                            domConstruct.create("span", {
-                                "class": "esriCTReportZoneCount",
-                                "innerHTML": ("(" + featureArrayCollection[count].FieldTypeValue + " " + " - " + this.StatisticTypeValue + (featureArrayCollection[count].unitType === "" ? "" : " ") + featureArrayCollection[count].unitType + ")")
-                            }, divFieldTypeContent);
+                        }
+                    }
+                } else {
+                    if (divnoDataAvailable) { //if already no result message is appended in the current structure then remove duplicate,clear it and create new one.
+                        domConstruct.destroy(divnoDataAvailable);
+                    }
+                    divnoDataAvailable = domConstruct.create("div", {
+                        "class": "esriCTReportZoneName"
+                    }, divReportLayerPanel, "last");
+                    if (this._validateResultCount(searchSettingsIndex)) {
+                        domAttr.set(divnoDataAvailable, "innerHTML", sharedNls.errorMessages.invalidSearch);
+                        if (dojo.configData.SearchSettings[searchSettingsIndex].QueryURL === domAttr.get(divReportLayersettingIcon, "id")) {
+                            domStyle.set(divReportLayersettingIcon, "display", "none");
                         }
                     } else {
-                        if (createReport) { // if no report is created yet then only proceed
-                            if (divnoDataAvailable) { //if already no result message is appended in the current structure then remove duplicate,clear it and create new one.
-                                domConstruct.destroy(divnoDataAvailable);
-                            }
-                            divnoDataAvailable = domConstruct.create("div", {
-                                "class": "esriCTReportZoneName"
-                            }, divReportLayerPanel, "last");
-                            if (reportDialog && (reportDialog.innerText.indexOf(dojo.configData.SearchSettings[featureCollection].SearchDisplayTitle) >= 0)) {
-                                domAttr.set(divnoDataAvailable, "innerHTML", sharedNls.errorMessages.noFieldsSelected);
-                            } else {
-                                domAttr.set(divnoDataAvailable, "innerHTML", sharedNls.errorMessages.invalidSearch);
-                                if (dojo.configData.SearchSettings[featureCollection].QueryURL === domAttr.get(divReportLayersettingIcon, "id")) {
-                                    domStyle.set(divReportLayersettingIcon, "display", "none");
-                                }
-                            }
-
-                        }
+                        domAttr.set(divnoDataAvailable, "innerHTML", sharedNls.errorMessages.noFieldsSelected);
                     }
                 }
             }
             this._createReportData();
-            domStyle.set(this.divChangeUnit, "display", "block");
+            if (dojo.hasAreaStandardUnit) {
+                domStyle.set(this.divChangeUnit, "display", "block");
+                dojo.areaHasRecord = true;
+            } else {
+                domStyle.set(this.divChangeUnit, "display", "none");
+                dojo.areaHasRecord = false;
+            }
+        },
+
+        /**
+        * validates the checked fields count
+        * param {searchSettingsIndex} index for the featureArrayCollection array
+        * param {featureArrayCollection} selected featureset
+        * @name widgets/reports/reports
+        * @method _validateFieldsCount
+        * @param {} searchSettingsIndex
+        * @param {} featureArrayCollection
+        * @return fieldChecked
+        */
+        _validateFieldsCount: function (searchSettingsIndex, featureArrayCollection) {
+            var i, j, fieldChecked = false;
+            for (i = 0; i < dojo.configData.SearchSettings[searchSettingsIndex].QuickSummaryReportFields.length; i++) {
+                for (j = 0; j < featureArrayCollection.length; j++) {
+                    if (dojo.configData.SearchSettings[searchSettingsIndex].QuickSummaryReportFields[i] === featureArrayCollection[j].FieldName) {
+                        fieldChecked = true;
+                    }
+                }
+            }
+            return fieldChecked;
+        },
+
+        /**
+        * validates the query result fields count
+        * param {searchSettingsIndex} index for the featureArrayCollection array
+        * @name widgets/reports/reports
+        * @method _validateResultCount
+        * @param {} searchSettingsIndex
+        * @return fieldNotFound
+        */
+        _validateResultCount: function (searchSettingsIndex) {
+            var j, fieldNotFound = true;
+            for (j = 0; j < this.queryAllResults.length; j++) {
+                if (this.queryAllResults[j][0] && dojo.configData.SearchSettings[searchSettingsIndex].SearchDisplayTitle === this.queryAllResults[j][1].layerName) {
+                    fieldNotFound = false;
+                }
+            }
+            return fieldNotFound;
         },
 
         /**
@@ -1854,6 +2102,35 @@ define([
                     _self.settingsDialog.show();
                 }
             }
+        },
+
+        /**
+        * get of count of featuresets
+        * param {number} index of the configured operational layer
+        * param {object} geometry of the buffer
+        * @name widgets/reports/reports
+        */
+        _executeQueryTaskForCount: function (index, geometry) {
+            var obj = {},
+                queryTask,
+                queryLayer,
+                deferred;
+            queryTask = new esri.tasks.QueryTask(dojo.configData.SearchSettings[index].QueryURL);
+            queryLayer = new esri.tasks.Query();
+            queryLayer.outSpatialReference = this.map.spatialReference;
+            queryLayer.returnGeometry = false;
+            queryLayer.geometry = geometry;
+            queryLayer.outFields = ["*"];
+            //return queryTask.executeForCount(queryLayer);
+            deferred = new Deferred();
+            queryTask.executeForCount(queryLayer, lang.hitch(this, function (results) {
+                obj.result = results;
+                deferred.resolve(obj);
+            }), function (err) {
+                alert(err.message);
+                deferred.reject();
+            });
+            return deferred.promise;
         },
 
         /**
@@ -2019,13 +2296,14 @@ define([
 
             on(customButton, "click", function () {
                 _self.settingsDialog.hide();
+                _self.resultDispalyFields = dojo.clone(_self.tempDisplayFields);
                 _self._createReportOnCheckboxClick();
             });
             return divSettingDialogContainer;
         },
 
         _addReportCheckBox: function (layerURL, detailReportFieldLength, divCheckboxContainer, detailFieldValues) {
-            var addReportCheckBox, divDetailReportField;
+            var addReportCheckBox, divDetailReportField, itemIndex;
             this.divCheckBox = domConstruct.create("div", {
                 "class": "esriCTDivCheckboxContent"
             }, divCheckboxContainer);
@@ -2050,22 +2328,29 @@ define([
             }, this.divCheckBox);
             divDetailReportField.innerHTML = detailFieldValues[detailReportFieldLength];
             self = this;
+            self.tempDisplayFields = dojo.clone(self.resultDispalyFields);
             on(addReportCheckBox, "click", function (evt) {
+                var st = domAttr.get(this.domNode.lastChild, "aria-checked");
+                if (st === "true") {
+                    evt.currentTarget.checked = false;
+                } else {
+                    evt.currentTarget.checked = true;
+                }
                 if (evt.currentTarget.checked) {
-                    if (array.indexOf(self.resultDispalyFields[this.layerURL], evt.currentTarget.value) === -1) {
-                        self.resultDispalyFields[this.layerURL].push(evt.currentTarget.value);
+                    if (array.indexOf(self.tempDisplayFields[this.layerURL], evt.currentTarget.value) === -1) {
+                        self.tempDisplayFields[this.layerURL].push(evt.currentTarget.value);
                     }
                 } else {
-                    if (array.indexOf(self.resultDispalyFields[this.layerURL], evt.currentTarget.value) >= 0) {
-                        var itemIndex = array.indexOf(self.resultDispalyFields[this.layerURL], evt.currentTarget.value);
-                        self.resultDispalyFields[this.layerURL].splice(itemIndex, 1);
+                    if (array.indexOf(self.tempDisplayFields[this.layerURL], evt.currentTarget.value) >= 0) {
+                        itemIndex = array.indexOf(self.tempDisplayFields[this.layerURL], evt.currentTarget.value);
+                        self.tempDisplayFields[this.layerURL].splice(itemIndex, 1);
                     }
                 }
             });
         },
 
         /**
-        *hide moving dijit dialog box
+        * hide moving dijit dialog box
         * @class
         * @name widgets/reports/reports
         */
@@ -2080,7 +2365,7 @@ define([
         },
 
         /**
-        *add dynamic textbox for entering bearing and distance value
+        * add dynamic textbox for entering bearing and distance value
         * @class
         * @name widgets/reports/reports
         */
@@ -2141,6 +2426,8 @@ define([
                     for (index = 0; index < this.AOIAttributes.length; index++) {
                         if (parseInt(this.AOIAttributes[index].aoiAttributesIndex, 10) === parseInt(aoiAttributesIndex, 10)) {
                             this.AOIAttributes.splice(index, 1);
+                            this.polyLine.paths.length = 0;
+                            this.aoiPanelScrollbar.rePositionScrollBar();
                             break;
                         }
                     }
@@ -2168,7 +2455,13 @@ define([
             distanceUnit = dojo.configData.BearingDistanceUnit;
             this.destVincenty(initiallong, intialLat, initialbearing, this._convertDistanceIntoMiles(initialdistance, distanceUnit), false, aoiAttributesIndex);
             this.addBearingValue.value = this.addDistanceMiles.value = "";
-            this.resizeAOIPanel();
+
+
+            setTimeout(lang.hitch(this, function () {
+                this.resizeAOIPanel();
+            }), 1000);
+
+
         },
 
         // supported units are feet, meters, miles and kilometers.
@@ -2208,9 +2501,9 @@ define([
 
         //calculate destination point given bearing,distance and bearing
         destVincenty: function (lon1, lat1, brng, dist, isRemoved, aoiAttributesIndex) {
-            var tmp, lat2, lambda, long2, normalizedVal, polylineSymbol, graphic, sinSigma, cosSigma, C, L,
+            var tmp, lat2, lambda, long2, normalizedVal, polylineSymbol, sinSigma, cosSigma, C, L, geometryCollection = [],
                 a = 6378137,
-                deltaSigma, locatorMarkupSymbol,
+                deltaSigma,
                 cos2SigmaM,
                 b = 6356752.3142,
                 f = 1 / 298.257223563,
@@ -2245,22 +2538,6 @@ define([
             lat2 = this.toDeg(lat2);
             long2 = parseFloat(lon1) + this.toDeg(L);
 
-            locatorMarkupSymbol = new SimpleMarkerSymbol(
-                SimpleMarkerSymbol.STYLE_CIRCLE,
-                12,
-                new SimpleLineSymbol(
-                    SimpleLineSymbol.STYLE_SOLID,
-                    new Color([parseInt(dojo.configData.AOISymbology.PointSymbolBorder.split(",")[0], 10),
-                        parseInt(dojo.configData.AOISymbology.PointSymbolBorder.split(",")[1], 10),
-                        parseInt(dojo.configData.AOISymbology.PointSymbolBorder.split(",")[2], 10)
-                        ]),
-                    dojo.configData.AOISymbology.PointSymbolBorderWidth
-                ),
-                new Color([parseInt(dojo.configData.AOISymbology.PointFillSymbolColor.split(",")[0], 10),
-                    parseInt(dojo.configData.AOISymbology.PointFillSymbolColor.split(",")[1], 10),
-                    parseInt(dojo.configData.AOISymbology.PointFillSymbolColor.split(",")[2], 10)
-                    ])
-            );
             polylineSymbol = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
                 new Color([parseInt(dojo.configData.AOISymbology.LineSymbolColor.split(",")[0], 10),
                     parseInt(dojo.configData.AOISymbology.LineSymbolColor.split(",")[1], 10),
@@ -2269,18 +2546,21 @@ define([
                 dojo.configData.AOISymbology.LineSymbolWidth);
             normalizedVal = webMercatorUtils.lngLatToXY(long2, lat2);
             this.mapPoint = new esri.geometry.Point(normalizedVal[0], normalizedVal[1], this.map.spatialReference);
-            graphic = new esri.Graphic(this.mapPoint, locatorMarkupSymbol, {}, null);
-
             this.map.setLevel(dojo.configData.ZoomLevel);
             this.map.centerAt(this.mapPoint);
             if (this.flagMultiplePoints === 0) {
                 this.map.getLayer("esriGraphicsLayerMapSettings").clear();
-                this.polyLine.addPath([
-                    [this.mapPoint.x, this.mapPoint.y]
-                ]);
                 this.flagMultiplePoints++;
-                this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
-                topic.publish("createBuffer", this.mapPoint, null);
+                if (this.AOIAttributes.length === 0) {
+                    this.polyLine.addPath([
+                        [this.initialPoint.x, this.initialPoint.y]
+                    ]);
+                    this.polyLine.paths[0].push([this.mapPoint.x, this.mapPoint.y]);
+                    dojo.coordinatesPolyLine = true;
+                    this.map.getLayer("esriGraphicsLayerMapSettings").add(new Graphic(this.polyLine, polylineSymbol));
+                    geometryCollection.push(this.polyLine);
+                }
+                topic.publish("createBuffer", geometryCollection, null);
             } else {
                 this.map.getLayer("esriGraphicsLayerMapSettings").clear();
                 if (this.polyLine && this.polyLine.paths.length > 0) {
@@ -2290,8 +2570,10 @@ define([
                         [this.mapPoint.x, this.mapPoint.y]
                     ]);
                 }
+                dojo.coordinatesPolyLine = true;
                 this.map.getLayer("esriGraphicsLayerMapSettings").add(new Graphic(this.polyLine, polylineSymbol));
-                topic.publish("createBuffer", this.polyLine, null);
+                geometryCollection.push(this.polyLine);
+                topic.publish("createBuffer", geometryCollection, null);
             }
             // distance is converted into meter so unit will be meter
             this.AOIAttributes.push({
@@ -2317,6 +2599,30 @@ define([
             return true;
         },
 
+        //validate dot value
+        /**
+        * Description
+        * @method _validateNumericInputText
+        * @return allFieldValid
+        */
+        _validateNumericInputText: function () {
+            var allFieldValid = false,
+                BearingValue = this.addBearingValue.value,
+                DistanceValue = this.addDistanceMiles.value;
+            if ((BearingValue !== "") && (DistanceValue !== "")) {
+                if ((!BearingValue.match(/^-?\d+(?:\.\d+)?$/)) && (!DistanceValue.match(/^-?\d+(?:\.\d+)?$/))) {
+                    alert(sharedNls.errorMessages.inValideNumericErrorMessage + " in " + sharedNls.titles.bearingLabel + " and " + sharedNls.titles.distanceLabel);
+                } else if ((!BearingValue.match(/^-?\d+(?:\.\d+)?$/)) && (DistanceValue.match(/^-?\d+(?:\.\d+)?$/))) {
+                    alert(sharedNls.errorMessages.inValideNumericErrorMessage + " in " + sharedNls.titles.bearingLabel);
+                } else if ((BearingValue.match(/^-?\d+(?:\.\d+)?$/)) && (!DistanceValue.match(/^-?\d+(?:\.\d+)?$/))) {
+                    alert(sharedNls.errorMessages.inValideNumericErrorMessage + " in " + sharedNls.titles.distanceLabel);
+                } else {
+                    allFieldValid = true;
+                    dojo.initialCoordinates = false;
+                }
+                return allFieldValid;
+            }
+        },
         //Validate the text box such that mandatory field should not be left empty
         _validateBearingInputText: function () {
             var allFieldValid = false;
@@ -2328,14 +2634,16 @@ define([
                 alert(sharedNls.errorMessages.addBearingValue);
             } else if (lang.trim(this.addDistanceMiles.value) === "") {
                 alert(string.substitute(sharedNls.errorMessages.addDistanceMiles, [dojo.configData.BearingDistanceUnit]));
-            } else if (lang.trim(this.addDistanceMiles.value) < 0 || lang.trim(this.addDistanceMiles.value) > dojo.configData.BearingDistanceMaxLimit) {
+            } else if (lang.trim(this.addDistanceMiles.value) < 0 || lang.trim(this.addDistanceMiles.value) > dojo.configData.BearingDistanceMaxLimit || parseFloat(this.addDistanceMiles.value) <= 0) {
                 alert(string.substitute(sharedNls.errorMessages.distanceMaxLimit, [dojo.configData.BearingDistanceMaxLimit]));
             } else {
                 allFieldValid = true;
                 dojo.initialCoordinates = false;
             }
-            this.startPointLatitude = this.addLatitudeValue.value;
-            this.startPointLongitude = this.addLongitudeValue.value;
+            if (this.addLatitudeValue.value !== "" && this.addLongitudeValue.value !== "") {
+                this.startPointLatitude = this.addLatitudeValue.value;
+                this.startPointLongitude = this.addLongitudeValue.value;
+            }
             return allFieldValid;
         },
 
@@ -2636,7 +2944,8 @@ define([
                 rendererColor,
                 lineColor,
                 fillColor,
-                graphicObj;
+                graphicObj,
+                geometryCollection = [];
             this.shapeFileForAnalysis = output.value;
             this.shapeFilegeometryType = output.value.features[0].geometry.type;
             if (feature && feature.geometry) {
@@ -2658,7 +2967,8 @@ define([
                     graphicObj = new Graphic(geometries[0], symbol);
                     this.map.getLayer("esriGraphicsLayerMapSettings").add(graphicObj);
                     this.map.setExtent(graphicObj.geometry.getExtent().expand(1.6));
-                    topic.publish("createBuffer", feature.geometry, null);
+                    geometryCollection.push(feature.geometry);
+                    topic.publish("createBuffer", geometryCollection, null);
                     topic.publish("hideProgressIndicator");
 
                 }), lang.hitch(this, function (err) {
@@ -2724,22 +3034,20 @@ define([
                 domStyle.set(this.esriCTchangeStandardUnit, "display", "block");
             }
 
-            if (this.storeFeatureArrayCollection) {
-                for (i = 0; i < this.storeFeatureArrayCollection.length; i++) {
-
-                    if (this.storeFeatureArrayCollection[i].unitType === sharedNls.titles.areaStandardUnit) {
+            if (this.queryAllResults) {
+                for (i = 0; i < this.queryAllResults.length; i++) {
+                    if (this.queryAllResults[i][1].unit.toLowerCase() === sharedNls.titles.areaStandardUnit.toLowerCase()) {
                         this._convertUnit(sharedNls.titles.areaMetricUnit, 0.0040468564300508, i);
-                    } else if (this.storeFeatureArrayCollection[i].unitType === sharedNls.titles.areaMetricUnit) {
+                    } else if (this.queryAllResults[i][1].unit.toLowerCase() === sharedNls.titles.areaMetricUnit.toLowerCase()) {
                         this._convertUnit(sharedNls.titles.areaStandardUnit, 247.105381, i);
-                    } else if (this.storeFeatureArrayCollection[i].unitType === sharedNls.titles.lineStandardUnit) {
+                    } else if (this.queryAllResults[i][1].unit.toLowerCase() === sharedNls.titles.lineStandardUnit.toLowerCase()) {
                         this._convertUnit(sharedNls.titles.lineMetricUnit, 1.609344497892563, i);
-                    } else if (this.storeFeatureArrayCollection[i].unitType === sharedNls.titles.lineMetricUnit) {
+                    } else if (this.queryAllResults[i][1].unit.toLowerCase() === sharedNls.titles.lineMetricUnit.toLowerCase()) {
                         this._convertUnit(sharedNls.titles.lineStandardUnit, 0.621371, i);
                     }
                 }
-                this._displayReport(this.storeFeatureArrayCollection, true);
+                this._createModifiedReportData();
             }
-
             if (this.shapeAreaAnalysisEnable) {
                 this.initialAnalysisValues = 0;
                 this._toggleShapeFileAreaUnit();
@@ -2747,11 +3055,11 @@ define([
         },
         _convertUnit: function (Unit, MultiplyBy, i) {
             var j, valueBeforeUnitChange, valueAfterUnitChange;
-            for (j = 0; j < this.storeFeatureArrayCollection[i].attr.length; j++) {
-                valueBeforeUnitChange = string.substitute("${Total}", this.storeFeatureArrayCollection[i].attr[j].attributes);
+            for (j = 0; j < this.queryAllResults[i][1].result.features.length; j++) {
+                valueBeforeUnitChange = string.substitute("${Total}", this.queryAllResults[i][1].result.features[j].attributes);
                 valueAfterUnitChange = (valueBeforeUnitChange * MultiplyBy);
-                this.storeFeatureArrayCollection[i].attr[j].attributes.Total = valueAfterUnitChange;
-                this.storeFeatureArrayCollection[i].unitType = Unit;
+                this.queryAllResults[i][1].result.features[j].attributes.Total = valueAfterUnitChange;
+                this.queryAllResults[i][1].unit = Unit;
             }
         },
 
@@ -2789,8 +3097,8 @@ define([
         },
         //download report in PDF format or data file format
         _downloadReport: function (jsonObject) {
-            var gp, params;
-            if ((!this.dataFormatChecked) && (!this.PDFreportType)) {
+            var gp, params, i, j, k, deferredList, deferredResultDataList, dataTypeReportArray = [];
+            if (this.dataFormatType.length === 0 && !this.PDFreportType) {
                 alert(sharedNls.errorMessages.reportFormat);
                 return;
             }
@@ -2806,18 +3114,47 @@ define([
                 "Layer_JSON_for_Detailed_report": JSON.stringify(dojo.configData.LayerJson),
                 "Layer_JSON_for_Quick_report": JSON.stringify(this.reportArrayCollection),
                 "PDF_Report": this.PDFreportType,
-                "Data_Download_Type": this.dataFormatType,
+                "Data_Download_Type": "",
                 "Report_Units": this.convertedUnitType,
                 "PDF_Report_Logo": ""
             };
-
-            gp = new Geoprocessor(dojo.configData.GenerateReport);
-            gp.submitJob(params, lang.hitch(this, this.downloadSucceed), this.downloadSucceedJobStatus, this.downloadSucceedJobFailed);
-        },
-
-        //download report service fails to generate the expected output
-        downloadSucceedJobFailed: function (err) {
-            alert(err.message);
+            for (i = 0; i < this.dataFormatType.length; i++) {
+                params.Data_Download_Type = this.dataFormatType[i];
+                params.PDF_Report = false;
+                gp = new Geoprocessor(dojo.configData.GenerateReport);
+                dataTypeReportArray.push(gp.submitJob(params));
+            }
+            //when only pdf format is selected
+            if (this.dataFormatType.length === 0 || this.PDFreportType) {
+                params.PDF_Report = this.PDFreportType;
+                params.Data_Download_Type = "";
+                gp = new Geoprocessor(dojo.configData.GenerateReport);
+                dataTypeReportArray.push(gp.submitJob(params));
+            }
+            deferredList = new DeferredList(dataTypeReportArray);
+            deferredList.then(lang.hitch(this, function (result) {
+                this.resultDataArray = [];
+                for (j = 0; j < result.length; j++) {
+                    this.downloadSucceed(result[j][1]);
+                }
+                deferredResultDataList = new DeferredList(this.resultDataArray);
+                deferredResultDataList.then(lang.hitch(this, function (result) {
+                    for (k = 0; k < result.length; k++) {
+                        if (result[k][1].paramName === "PDF_Report_File") {
+                            this._downloadPDFFile(result[k][1]);
+                        } else {
+                            this._downloadDataFile(result[k][1]);
+                        }
+                    }
+                }), function (err) {
+                    alert(err.message);
+                    topic.publish("hideProgressIndicator");
+                });
+            }), function (err) {
+                //download report service fails to generate the expected output
+                alert(err.message);
+                topic.publish("hideProgressIndicator");
+            });
         },
 
         //download report succesfully  generates the url of expected output
@@ -2826,10 +3163,10 @@ define([
             var gp = new Geoprocessor(dojo.configData.GenerateReport);
             if (jobInfo.jobStatus !== "esriJobFailed") {
                 if (this.PDFreportType) {
-                    gp.getResultData(jobInfo.jobId, "PDF_Report_File", lang.hitch(this, this._downloadPDFFile));
+                    this.resultDataArray.push(gp.getResultData(jobInfo.jobId, "PDF_Report_File"));
                 }
-                if (this.dataFormatChecked) {
-                    gp.getResultData(jobInfo.jobId, "Downloaded_data_zip_file", lang.hitch(this, this._downloadDataFile));
+                if (this.dataFormatType.length > 0) {
+                    this.resultDataArray.push(gp.getResultData(jobInfo.jobId, "Downloaded_data_zip_file"));
                 }
             } else {
                 alert(sharedNls.errorMessages.esriJobFailToGenerateReport);
@@ -2842,7 +3179,11 @@ define([
         },
 
         _downloadDataFile: function (outputFile) {
-            window.location = outputFile.value.url;
+            var iframe = document.createElement('iframe');
+            iframe.id = 'hiddenReportDownloader';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            iframe.src = outputFile.value.url;
         },
 
         _createMapJsonData: function () {

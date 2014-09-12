@@ -43,7 +43,8 @@ define({
             loadingText: "Loading...",
             settingsIconTitle: "Choose fields to view in summary report",
             selectFeature: "Press double click to finish the opertaion",
-            selectCoordinates: "Please select the point"
+            selectCoordinates: "Please select the point",
+            clearAOI: "clear AOI"
         },
         titles: {
             areaOfInterestTabText: "Area of Interest",
@@ -69,7 +70,10 @@ define({
             downLoadReport: "Download Report",
             data: "Data",
             selectFormat: "Select Format",
-            pdfReport: "PDF Report",
+            selectType: "Select Type",
+            pdfReport: "PDF",
+            fileGDBReport: "File GDB",
+            excelReport: "Excel",
             quickSummary: "Quick Summary",
             deatiledSummary: "Detailed Summary",
             drawingToolUnifiedSearchTitle: "Navigate to geography",
@@ -135,7 +139,11 @@ define({
             noFeaturesInAOI: "No features found in AOI.",
             noFieldsSelected: "No fields selected.",
             reportFormat: "Please Select the Report Format",
-            selectFeatureError: "Please double click on map to complete the select Feature."
+            selectFeatureError: "Please double click on map to complete the select Feature.",
+            inValideNumericErrorMessage: "Please enter valid input",
+            inValideZipFile: "Incorrect File extension\n Should be zip.",
+            portalUrlNotFound: "Portal URL cannot be empty",
+            searchTextErrorMessage: "Please enter inputs to search"
         },
         // End of shared nls
 

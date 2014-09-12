@@ -75,6 +75,7 @@ define([
                     this._showCurrentLocation();
                 })));
             }
+            dojo.isGeoLocationEnabled = false;
         },
 
         /**
@@ -142,6 +143,12 @@ define([
             });
         },
 
+        /**
+        * Description
+        * @method showBuffer
+        * @param {} bufferedGeometries
+        * @return
+        */
         showBuffer: function (bufferedGeometries) {
             var _self, symbol, graphic;
             _self = this;
@@ -164,8 +171,10 @@ define([
 
         /**
         * add push pin on the map
-        * @param {object} mapPoint Map point of device location in spatialReference of map
         * @memberOf widgets/geoLocation/geoLocation
+        * @method _addGraphic
+        * @param {object} mapPoint Map point of device location in spatialReference of map
+        * @return
         */
         _addGraphic: function (mapPoint) {
             var locatorMarkupSymbol, geoLocationPushpin, graphic;
@@ -174,6 +183,7 @@ define([
             graphic = new Graphic(mapPoint, locatorMarkupSymbol, null, null);
             this.map.getLayer("esriGraphicsLayerMapSettings").clear();
             this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+            dojo.isGeoLocationEnabled = true;
         }
 
     });

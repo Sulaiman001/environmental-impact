@@ -1,4 +1,4 @@
-﻿/*global define */
+/*global define */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4 */
 /*
  | Copyright 2013 Esri
@@ -42,7 +42,8 @@ define({
         loadingText: "Loading...",
         settingsIconTitle: "Choose fields to view in summary report",
         selectFeature: "Press double click to finish the opertaion",
-        selectCoordinates: "Please select the point"
+        selectCoordinates: "Please select the point",
+        clearAOI: "clear AOI"
     },
     titles: {
         areaOfInterestTabText: "Area of Interest",
@@ -60,6 +61,7 @@ define({
         lineStandardUnit: "miles",
         lineMetricUnit: "Kilometer",
         standardUnitLabel: "Standard Units",
+        standardReportUnit: "Standard",
         metricUnitLabel: "Show areas in ",
         unitLabel: "Metric Units",
         uploadShapeFile: "Upload Shapefile to include in analysis",
@@ -67,7 +69,10 @@ define({
         downLoadReport: "Download Report",
         data: "Data",
         selectFormat: "Select Format",
-        pdfReport: "PDF Report",
+        selectType: "Select Type",
+        pdfReport: "PDF",
+        fileGDBReport: "File GDB",
+        excelReport: "Excel",
         quickSummary: "Quick Summary",
         deatiledSummary: "Detailed Summary",
         drawingToolUnifiedSearchTitle: "Navigate to geography",
@@ -76,10 +81,13 @@ define({
         uploadShapefileTitle: "Shapefile",
         coordinatesTitle: "Coordinates",
         distanceLabel: "Distance",
-        bearingLabel: "Bearing"
+        bearingLabel: "Bearing",
+        quickReport: "Quick Report",
+        detailedReport: "Detailed Report"
     },
     messages: {
         legendLoadingText: "Loading...",
+        noLegend: "No Legend Available",
         sliderDisplayText: "Show results within",
         aoiOptionsText: "Define AOI by using",
         uploadShapefileText: "Upload a zipped shapefile to define your AOI",
@@ -122,13 +130,19 @@ define({
         errorPerfomingQuery: "Error performing query operation",
         esriJobFailMessage: "Failed to generate AOI from shapefile",
         esriJobFailToAnlayse: "Failed to execute (AnalyseShapefile)",
+        esriJobFailToGenerateReport: "Failed to generate Report",
         defineAOI: "Please define AOI to generate the report.",
         invalidGeometry: "Invalid geometry.",
         noFeaturesFound: "Features not found.",
         browseFile: "Please browse a file.",
         noFeaturesInAOI: "No features found in AOI.",
         noFieldsSelected: "No fields selected.",
-        selectFeatureError: "Please double click on map to complete the select Feature."
+        reportFormat: "Please Select the Report Format",
+        selectFeatureError: "Please double click on map to complete the select Feature.",
+        inValideNumericErrorMessage: "Please enter valid input",
+        inValideZipFile: "Incorrect File extension\n Should be zip",
+        portalUrlNotFound: "Portal URL cannot be empty",
+        searchTextErrorMessage: "Please enter input to search"
     },
     // End of shared nls
 

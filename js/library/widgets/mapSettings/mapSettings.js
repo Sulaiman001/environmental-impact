@@ -43,6 +43,8 @@ define([
     "widgets/infoWindow/infoWindow",
     "dojo/text!../infoWindow/templates/infoWindow.html",
     "esri/layers/ArcGISDynamicMapServiceLayer",
+    "esri/layers/ArcGISTiledMapServiceLayer",
+    "esri/layers/OpenStreetMapLayer",
     "esri/geometry/webMercatorUtils",
     "dojo/_base/array",
     "esri/graphic",
@@ -50,7 +52,7 @@ define([
     "esri/symbols/SimpleLineSymbol",
     "esri/symbols/SimpleFillSymbol",
     "dojo/domReady!"
-], function (declare, domConstruct, domStyle, lang, esriUtils, dom, domAttr, query, domClass, _WidgetBase, sharedNls, esriMap, ImageParameters, FeatureLayer, GraphicsLayer, BaseMapGallery, Legends, GeometryExtent, HomeButton, Deferred, DeferredList, topic, on, InfoWindow, template, ArcGISDynamicMapServiceLayer, webMercatorUtils, array, Graphic, SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol) {
+], function (declare, domConstruct, domStyle, lang, esriUtils, dom, domAttr, query, domClass, _WidgetBase, sharedNls, esriMap, ImageParameters, FeatureLayer, GraphicsLayer, BaseMapGallery, Legends, GeometryExtent, HomeButton, Deferred, DeferredList, topic, on, InfoWindow, template, ArcGISDynamicMapServiceLayer, ArcGISTiledMapServiceLayer, OpenStreetMapLayer, webMercatorUtils, array, Graphic, SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol) {
 
     //========================================================================================================================//
 
@@ -70,7 +72,7 @@ define([
         * @name widgets/mapSettings/mapSettings
         */
         postCreate: function () {
-            var mapDeferred, layer;
+            var mapDeferred, layer, i;
             topic.publish("showProgressIndicator");
             topic.subscribe("setInfoWindowOnMap", lang.hitch(this, function (infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count) {
                 this._onSetInfoWindowPosition(infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count);
@@ -118,14 +120,18 @@ define([
                     showAttribution: true
                 });
                 dojo.selectedBasemapIndex = 0;
-                if (dojo.configData.BaseMapLayers[0].length > 1) {
-                    array.forEach(dojo.configData.BaseMapLayers[0], lang.hitch(this, function (basemapLayer, index) {
-                        layer = new esri.layers.ArcGISTiledMapServiceLayer(basemapLayer.MapURL, { id: "defaultBasemap" + index, visible: true });
-                        this.map.addLayer(layer);
-                    }));
+                if (!dojo.configData.BaseMapLayers[0].length) {
+                    if (dojo.configData.BaseMapLayers[0].layerType === "OpenStreetMap") {
+                        layer = new OpenStreetMapLayer({ id: "defaultBasemap", visible: true });
+                    } else {
+                        layer = new ArcGISTiledMapServiceLayer(dojo.configData.BaseMapLayers[0].MapURL, { id: "defaultBasemap", visible: true });
+                    }
+                    this.map.addLayer(layer, 0);
                 } else {
-                    layer = new esri.layers.ArcGISTiledMapServiceLayer(dojo.configData.BaseMapLayers[0].MapURL, { id: "defaultBasemap", visible: true });
-                    this.map.addLayer(layer);
+                    for (i = 0; i < dojo.configData.BaseMapLayers[0].length; i++) {
+                        layer = new ArcGISTiledMapServiceLayer(dojo.configData.BaseMapLayers[0][i].MapURL, { id: "defaultBasemap" + i, visible: true });
+                        this.map.addLayer(layer, i);
+                    }
                 }
                 this.map.on("load", lang.hitch(this, function () {
                     this._mapOnLoad();
@@ -145,6 +151,16 @@ define([
                         topic.publish("resizeAOIPanel");
                         topic.publish("resizeReportsPanel");
                         topic.publish("resizeDialogBox");
+
+                        setTimeout(lang.hitch(this, function () {
+                            if (dojo.setLegnedWidth) {
+                                domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (window.innerWidth + 2) + 'px');
+                            } else {
+                                var LegendWidthChange = window.innerWidth - parseInt(document.getElementById('esriCTAOIContainer').clientWidth, 10);
+                                domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (LegendWidthChange + 2) + 'px');
+                            }
+
+                        }), 1000);
                     }
                 }));
             } else {
@@ -155,20 +171,37 @@ define([
                         topic.publish("resizeReportsPanel");
                         topic.publish("resizeDialogBox");
 
+                        setTimeout(lang.hitch(this, function () {
+                            if (dojo.setLegnedWidth && dojo.query('.esriCTHeaderReportContainer').length > 0) {
+                                domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (window.innerWidth + 4) + 'px');
+                            } else {
+                                var LegendWidthChange = window.innerWidth - parseInt(document.getElementById('esriCTAOIContainer').clientWidth, 10);
+                                if (dojo.query('.esriCTdivLegendbox').length > 0) {
+                                    domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (LegendWidthChange + 2) + 'px');
+
+                                }
+                            }
+                        }), 1000);
+
                     }
                 }));
             }
         },
 
         _createWebmapLegendLayerList: function (layers) {
-            var i, webMapLayers = [], webmapLayerList = [];
+            var i, webMapLayers = [], webmapLayerList = {}, hasLayers = false;
             for (i = 0; i < layers.length; i++) {
-                if (layers[i].layerDefinition && layers[i].layerDefinition.drawingInfo) {
-                    webmapLayerList[layers[i].url] = layers[i];
-                } else {
-                    webMapLayers.push(layers[i]);
+                if (layers[i].visibility) {
+                    if (layers[i].layerDefinition && layers[i].layerDefinition.drawingInfo) {
+                        webmapLayerList[layers[i].url] = layers[i];
+                        hasLayers = true;
+                    } else {
+                        webMapLayers.push(layers[i]);
+                    }
                 }
-
+            }
+            if (!hasLayers) {
+                webmapLayerList = null;
             }
             this._addLayerLegendWebmap(webMapLayers, webmapLayerList);
         },
@@ -194,13 +227,14 @@ define([
         */
         _setBasemapId: function (basmap, defaultId) {
             var layerIndex;
+            this.map.getLayer(basmap.id).id = defaultId;
+            this.map._layers[defaultId] = this.map.getLayer(basmap.id);
+            layerIndex = array.indexOf(this.map.layerIds, basmap.id);
             if (basmap.id !== defaultId) {
-                this.map.getLayer(basmap.id).id = defaultId;
-                this.map._layers[defaultId] = this.map.getLayer(basmap.id);
-                layerIndex = array.indexOf(this.map.layerIds, basmap.id);
                 delete this.map._layers[basmap.id];
-                this.map.layerIds[layerIndex] = defaultId;
             }
+            this.map.layerIds[layerIndex] = defaultId;
+
         },
         _fetchWebMapData: function (response) {
             var searchSettings, i, j, k, l, p, str, field, index, webMapDetails, operationalLayers, serviceTitle, operationalLayerId, lastIndex, layerInfo;
@@ -682,7 +716,7 @@ define([
             /**
             * set layerMode of the operational layer if it's type is feature
             */
-            switch (layerInfo.layermode && layerInfo.layermode.toLowerCase()) {
+            switch (layerInfo.LoadAsServiceType.toLowerCase()) {
             case "ondemand":
                 layerMode = FeatureLayer.MODE_ONDEMAND;
                 break;
@@ -773,6 +807,7 @@ define([
             }
             legendObject = this._addLegendBox();
             legendObject.startup(mapServerArray, webmapLayerList);
+            topic.publish("setMaxLegendLength");
         },
 
         /**

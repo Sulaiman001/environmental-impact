@@ -257,6 +257,16 @@
         margin: 8px 15px !important;
     }
 
+    .esriCTReportTypelabel:nth-child(3)
+    {
+        margin-left:88px;
+    }
+
+    .esriCTReportlabel:nth-child(5)
+    {
+        margin-left:113px;
+    }
+
     .esriCTApplicationHeader
     {
         height: 60px;
