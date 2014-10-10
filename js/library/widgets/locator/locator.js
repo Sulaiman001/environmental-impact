@@ -67,6 +67,9 @@ define([
         locatorAOIPlacenameScrollbar: null,
         codedValueArr: [],
         graphicValues: null,
+        emailSharedData: null,
+        emailSharingData: null,
+        webMapResponseData: null,
 
         /**
         * display locator widget
@@ -92,12 +95,13 @@ define([
                 topic.publish("closeDialogBox");
             }));
 
-            topic.subscribe("geoLocationBufferDetails", lang.hitch(this, function (value) {
-                this.graphicValues = value;
+            topic.subscribe("webMapResponse", lang.hitch(this, function (response) {
+                this.webMapResponseData = response;
             }));
+            topic.publish("getWebMapResponse");
 
-            topic.subscribe("createInfoWindowContent", lang.hitch(this, function (mapPoint, attributes, fields, infoIndex, featureArray, count, zoomToFeature) {
-                this._createInfoWindowContent(mapPoint, attributes, fields, infoIndex, featureArray, count, zoomToFeature);
+            topic.subscribe("createInfoWindowContent", lang.hitch(this, function (anchorPoint, geometry, attributes, fields, infoIndex, featureArray, count, zoomToFeature) {
+                this._createInfoWindowContent(anchorPoint, geometry, attributes, fields, infoIndex, featureArray, count, zoomToFeature);
             }));
 
             topic.subscribe("setDefaultTextboxValue", lang.hitch(this, function (node, attribute, value) {
@@ -109,7 +113,8 @@ define([
 
             this.domNode = domConstruct.create("div", {
                 "title": sharedNls.tooltips.search,
-                "class": "esriCTHeaderIcons esriCTHeaderSearch"
+                "class": "esriCTHeaderIcons esriCTHeaderSearch",
+                "id": "locatorHeaderIcon"
             }, null);
             domConstruct.place(this.divAddressContainer, dom.byId("esriCTParentDivContainer"));
             this.own(on(this.domNode, "click", lang.hitch(this, function () {
@@ -140,121 +145,6 @@ define([
                 isPlacenameSearch: false
             };
             this._attachLocatorEvents(locatorParams);
-            this.codedValueArr = [{
-                "name": "Playa",
-                "code": 36100
-            }, {
-                "name": "Ice Mass",
-                "code": 37800
-            }, {
-                "name": "Swamp/Marsh",
-                "code": 46600
-            }, {
-                "name": "Swamp/Marsh: Hydrographic Category: Intermittent",
-                "code": 46601
-            }, {
-                "name": "Swamp/Marsh: Hydrographic Category: Perennial",
-                "code": 46602
-            }, {
-                "name": "Estuary",
-                "code": 49300
-            }, {
-                "name": "Lake/Pond",
-                "code": 39000
-            }, {
-                "name": "Lake/Pond: Hydrographic Category = Intermittent",
-                "code": 39001
-            }, {
-                "name": "Lake/Pond: Hydrographic Category = Intermittent; Stage = Date of Photography",
-                "code": 39006
-            }, {
-                "name": "Lake/Pond: Hydrographic Category = Intermittent; Stage = High Water Elevation",
-                "code": 39005
-            }, {
-                "name": "Lake/Pond: Hydrographic Category = Perennial",
-                "code": 39004
-            }, {
-                "name": "Lake/Pond: Hydrographic Category = Perennial; Stage = Average Water Elevation",
-                "code": 39009
-            }, {
-                "name": "Lake/Pond: Hydrographic Category = Perennial; Stage = Date of Photography",
-                "code": 39011
-            }, {
-                "name": "Lake/Pond: Hydrographic Category = Perennial; Stage = Normal Pool",
-                "code": 39010
-            }, {
-                "name": "Lake/Pond: Hydrographic Category = Perennial; Stage = Spillway",
-                "code": 39012
-            }, {
-                "name": "Reservoir",
-                "code": 43600
-            }, {
-                "name": "Reservoir: Construction Material = Earthen",
-                "code": 43618
-            }, {
-                "name": "Reservoir: Construction Material = Nonearthen",
-                "code": 43619
-            }, {
-                "name": "Reservoir: Reservoir Type = Aquaculture",
-                "code": 43601
-            }, {
-                "name": "Reservoir: Reservoir Type = Cooling Pond",
-                "code": 43609
-            }, {
-                "name": "Reservoir: Reservoir Type = Decorative Pool",
-                "code": 43603
-            }, {
-                "name": "Reservoir: Reservoir Type = Disposal",
-                "code": 43606
-            }, {
-                "name": "Reservoir: Reservoir Type = Disposal; Construction Material = Earthen",
-                "code": 43625
-            }, {
-                "name": "Reservoir: Reservoir Type = Disposal; Construction Material = Nonearthen",
-                "code": 43626
-            }, {
-                "name": "Reservoir: Reservoir Type = Evaporator",
-                "code": 43607
-            }, {
-                "name": "Reservoir: Reservoir Type = Evaporator; Construction Material = Earthen",
-                "code": 43623
-            }, {
-                "name": "Reservoir: Reservoir Type = Filtration Pond",
-                "code": 43610
-            }, {
-                "name": "Reservoir: Reservoir Type = Settling Pond",
-                "code": 43611
-            }, {
-                "name": "Reservoir: Reservoir Type = Sewage Treatment Pond",
-                "code": 43612
-            }, {
-                "name": "Reservoir: Reservoir Type = Swimming Pool",
-                "code": 43608
-            }, {
-                "name": "Reservoir: Reservoir Type = Tailings Pond",
-                "code": 43605
-            }, {
-                "name": "Reservoir: Reservoir Type = Tailings Pond; Construction Material = Earthen",
-                "code": 43604
-            }, {
-                "name": "Reservoir: Reservoir Type = Treatment",
-                "code": 43624
-            }, {
-                "name": "Reservoir: Reservoir Type = Water Storage",
-                "code": 43617
-            }, {
-                "name": "Reservoir: Reservoir Type = Water Storage; Construction Material = Earthen; Hydrographic Category = Intermittent",
-                "code": 43614
-            }, {
-                "name": "Reservoir: Reservoir Type = Water Storage; Construction Material = Earthen; Hydrographic Category = Perennial",
-                "code": 43615
-            }, {
-                "name": "Reservoir: Reservoir Type = Water Storage; Construction Material = Nonearthen",
-                "code": 43613
-            }, {
-                "name": "Reservoir: Reservoir Type = Water Storage; Hydrographic Category = Perennial",
-                "code": 43621
-            }];
         },
 
         /**
@@ -303,15 +193,6 @@ define([
                     domStyle.set(locatorParams.divAddressScrollContent, "display", "none");
                 }
 
-            })));
-            this.own(on(locatorParams.textAddress, "blur", lang.hitch(this, function (evt) {
-                this._replaceDefaultText(evt, locatorParams);
-            })));
-            this.own(on(locatorParams.textAddress, "focus", lang.hitch(this, function () {
-                if (domStyle.get(locatorParams.imgSearchLoader, "display") === "none") {
-                    domStyle.set(locatorParams.close, "display", "block");
-                }
-                domClass.add(locatorParams.textAddress, "esriCTColorChange");
             })));
             this.own(on(locatorParams.close, "click", lang.hitch(this, function () {
                 this._hideText(locatorParams);
@@ -679,11 +560,8 @@ define([
                 divAddressSearchCell;
 
             domConstruct.empty(locatorParams.divResults);
-            if (locatorParams.isAOISearch || locatorParams.isAOIBearingSearch || locatorParams.isPlacenameSearch) {
-                domStyle.set(locatorParams.divAddressScrollContent, "display", "block");
-            }
+            domStyle.set(locatorParams.divAddressScrollContent, "display", "block");
             if (lang.trim(locatorParams.textAddress.value) === "") {
-                locatorParams.textAddress.focus();
                 domConstruct.empty(locatorParams.divResults);
                 if (!locatorParams.isAOISearch) {
                     this.locatorScrollbar = new ScrollBar({
@@ -730,6 +608,7 @@ define([
                 this.locatorAOIBearingScrollbar.setContent(locatorParams.divResults);
                 this.locatorAOIBearingScrollbar.createScrollBar();
                 topic.publish("resizeAOIPanel");
+                locatorParams.textAddress.focus();
                 // Reset scrollbar for Place name Search
             } else if (!locatorParams.isAOISearch && locatorParams.isPlacenameSearch && !locatorParams.isAOIBearingSearch) {
                 if (this.locatorAOIPlacenameScrollbar) {
@@ -742,6 +621,7 @@ define([
                 this.locatorAOIPlacenameScrollbar.setContent(locatorParams.divResults);
                 this.locatorAOIPlacenameScrollbar.createScrollBar();
                 topic.publish("resizeAOIPanel");
+                locatorParams.textAddress.focus();
                 // Reset scrollbar for Draw tool search
             } else {
                 topic.publish("deactivateToolbar");
@@ -755,6 +635,7 @@ define([
                 this.locatorAOIScrollbar.setContent(locatorParams.divResults);
                 this.locatorAOIScrollbar.createScrollBar();
                 topic.publish("resizeAOIPanel");
+                locatorParams.textAddress.focus();
             }
 
             if (resultLength > 0) {
@@ -899,7 +780,6 @@ define([
             }
             candidateAddress.onclick = function () {
                 topic.publish("showProgressIndicator");
-                domStyle.set(dojo.query('.esriCTClearAOIButton')[0], "display", "none");
                 if (_this.map.infoWindow) {
                     _this.map.infoWindow.hide();
                 }
@@ -914,14 +794,14 @@ define([
                 }
                 if (candidate.attributes.location) {
                     _this.mapPoint = new Point(domAttr.get(this, "x"), domAttr.get(this, "y"), _this.map.spatialReference);
-                    _this._locateAddressOnMap(_this.mapPoint, locatorParams);
                     normalizedVal = webMercatorUtils.xyToLngLat(_this.mapPoint.x, _this.mapPoint.y);
                     if (locatorParams.isAOIBearingSearch) {
                         topic.publish("setStartPoint", normalizedVal, _this.mapPoint);
                         geometryCollection = [];
                         geometryCollection.push(candidate.attributes.location);
-                        topic.publish("createBuffer", geometryCollection, null);
+                        dojo.isCoordinateTab = true;
                     }
+                    _this._locateAddressOnMap(_this.mapPoint, locatorParams);
                 } else {
                     if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
                         if (candidateArray[domAttr.get(candidateAddress, "index", index)]) {
@@ -933,37 +813,33 @@ define([
                             }
                         }
                     } else {
-                        if (candidate.attributes.location.type === "point") {
-                            if (locatorParams.isAOIBearingSearch) {
-                                normalizedVal = webMercatorUtils.xyToLngLat(candidate.attributes.location.x, candidate.attributes.location.y);
-                                topic.publish("setStartPoint", normalizedVal, null);
-                                topic.publish("hideProgressIndicator");
-                            } else {
-                                _this.map.centerAt(candidate.attributes.location);
-                                highlightSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_CIRCLE, 15,
-                                    new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
-                                        new Color([
-                                            parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[0], 10),
-                                            parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[1], 10),
-                                            parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[2], 10),
-                                            parseFloat(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolTransparency.split(",")[0], 10)
-                                        ]), 2),
+                        _this.map.getLayer("esriGraphicsLayerMapSettings").clear();
+                        if (candidate.geometry.type === "point") {
+                            _this.map.centerAt(candidate.geometry);
+                            highlightSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_CIRCLE, 15,
+                                new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
                                     new Color([
-                                        parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[0], 10),
-                                        parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[1], 10),
-                                        parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10),
-                                        parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)
-                                    ]));
-                                highlightGraphic = new Graphic(candidate.attributes.location, highlightSymbol);
-                                _this.map.getLayer("esriGraphicsLayerMapSettings").add(highlightGraphic);
-                                topic.publish("hideProgressIndicator");
+                                        parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[0], 10),
+                                        parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[1], 10),
+                                        parseInt(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolColor.split(",")[2], 10),
+                                        parseFloat(dojo.configData.HighlightFeaturesSymbology.MarkerSymbolTransparency.split(",")[0], 10)
+                                    ]), 2),
+                                new Color([
+                                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[0], 10),
+                                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[1], 10),
+                                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10),
+                                    parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)
+                                ]));
+                            if (locatorParams.isAOIBearingSearch) {
+                                normalizedVal = webMercatorUtils.xyToLngLat(candidate.geometry.x, candidate.geometry.y);
+                                topic.publish("setStartPoint", normalizedVal, candidate.geometry);
+                            } else {
                                 geometryCollection = [];
-                                geometryCollection.push(candidate.attributes.location);
+                                geometryCollection.push(candidate.geometry);
                                 topic.publish("createBuffer", geometryCollection, null);
                             }
                         } else {
-                            _this.map.setExtent(candidate.attributes.location.getExtent());
-                            _this.map.getLayer("esriGraphicsLayerMapSettings").clear();
+                            _this.map.setExtent(candidate.geometry.getExtent());
                             highlightSymbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
                                 new SimpleLineSymbol(
                                     SimpleLineSymbol.STYLE_SOLID,
@@ -971,22 +847,24 @@ define([
                                         parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[0], 10),
                                         parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[1], 10),
                                         parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[2], 10),
-                                        parseFloat(dojo.configData.HighlightFeaturesSymbology.LineSymbolTransparency.split(",")[0], 10)]),
+                                        parseFloat(dojo.configData.HighlightFeaturesSymbology.LineSymbolTransparency.split(",")[0], 10)
+                                    ]),
                                     2
                                 ),
                                 new Color([
                                     parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[0], 10),
                                     parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[1], 10),
                                     parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10),
-                                    parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)])
+                                    parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)
+                                ])
                                 );
-                            highlightGraphic = new Graphic(candidate.attributes.location, highlightSymbol);
-                            _this.map.getLayer("esriGraphicsLayerMapSettings").add(highlightGraphic);
-                            topic.publish("hideProgressIndicator");
                             geometryCollection = [];
-                            geometryCollection.push(candidate.attributes.location);
+                            geometryCollection.push(candidate.geometry);
                             topic.publish("createBuffer", geometryCollection, null);
                         }
+                        highlightGraphic = new Graphic(candidate.geometry, highlightSymbol);
+                        _this.map.getLayer("esriGraphicsLayerMapSettings").add(highlightGraphic);
+                        topic.publish("hideProgressIndicator");
                     }
                 }
             };
@@ -996,116 +874,163 @@ define([
             domStyle.set(this.imgSearchLoader, "display", "block");
             domStyle.set(this.close, "display", "none");
             this.txtAddress.value = candidate.name;
-            this._createInfoWindowContent(candidateArray[index].geometry, candidateArray[index].attributes, candidateArray[index].fields, infoIndex, null, null, true);
+            this._createInfoWindowContent(null, candidateArray[index].geometry, candidateArray[index].attributes, candidateArray[index].fields, infoIndex, null, null, true);
         },
 
-        _createInfoWindowContent: function (geometry, attributes, fields, infoIndex, featureArray, count, zoomToFeature) {
-            var infoPopupFieldsCollection, infoPopupHeight, infoPopupWidth,
-                divInfoDetailsTab, key, divInfoRow, i, fieldNames, link, divLink, j, infoTitle, mapPoint, utcMilliseconds;
+        _createInfoWindowContent: function (anchorPoint, geometry, attributes, fields, infoIndex, featureArray, count, zoomToFeature) {
+            try {
+                var infoPopupFieldsCollection, infoPopupHeight, infoPopupWidth,
+                    divInfoDetailsTab, key, divInfoRow, i, fieldNames, link, divLink, j, infoTitle, mapPoint, utcMilliseconds, layer, attribute, k, domain, l;
 
-            this.map.infoWindow.hide();
-            mapPoint = this._getMapPoint(geometry);
-            if (featureArray) {
-                if (featureArray.length > 1 && count !== featureArray.length - 1) {
-                    domClass.add(query(".esriCTInfoWindowRightArrow")[0], "esriCTShowInfoRightArrow");
-                    domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", count);
+                this.map.infoWindow.hide();
+                //mapPoint = anchorPoint ? anchorPoint : this._getMapPoint(geometry);
+                mapPoint = anchorPoint || this._getMapPoint(geometry);
+                if (featureArray) {
+                    if (featureArray.length > 1 && count !== featureArray.length - 1) {
+                        domClass.add(query(".esriCTInfoWindowRightArrow")[0], "esriCTShowInfoRightArrow");
+                        domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", count);
+                    } else {
+                        domClass.remove(query(".esriCTInfoWindowRightArrow")[0], "esriCTShowInfoRightArrow");
+                        domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", "");
+                    }
+                    if (count > 0 && count < featureArray.length) {
+                        domClass.add(query(".esriCTInfoWindowLeftArrow")[0], "esriCTShowInfoLeftArrow");
+                        domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", count + 1);
+                    } else {
+                        domClass.remove(query(".esriCTInfoWindowLeftArrow")[0], "esriCTShowInfoLeftArrow");
+                        domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", count + 1);
+                    }
                 } else {
                     domClass.remove(query(".esriCTInfoWindowRightArrow")[0], "esriCTShowInfoRightArrow");
-                    domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", "");
-                }
-                if (count > 0 && count < featureArray.length) {
-                    domClass.add(query(".esriCTInfoWindowLeftArrow")[0], "esriCTShowInfoLeftArrow");
-                    domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", count + 1);
-                } else {
                     domClass.remove(query(".esriCTInfoWindowLeftArrow")[0], "esriCTShowInfoLeftArrow");
-                    domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", count + 1);
+                    domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", "");
+                    domAttr.set(query(".esriCTdivInfoTotalFeatureCount")[0], "innerHTML", "");
                 }
-            } else {
-                domClass.remove(query(".esriCTInfoWindowRightArrow")[0], "esriCTShowInfoRightArrow");
-                domClass.remove(query(".esriCTInfoWindowLeftArrow")[0], "esriCTShowInfoLeftArrow");
-                domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", "");
-                domAttr.set(query(".esriCTdivInfoTotalFeatureCount")[0], "innerHTML", "");
-            }
-            if (dojo.configData.SearchSettings[infoIndex].InfoWindowData) {
-                infoPopupFieldsCollection = dojo.configData.SearchSettings[infoIndex].InfoWindowData;
-                divInfoDetailsTab = domConstruct.create("div", {
-                    "class": "esriCTInfoDetailsTab"
-                }, null);
-                this.divInfoDetailsContainer = domConstruct.create("div", {
-                    "class": "esriCTInfoDetailsContainer"
-                }, divInfoDetailsTab);
-            } else {
-                divInfoDetailsTab = domConstruct.create("div", {
-                    "class": "esriCTInfoDetailsTab"
-                }, null);
-                this.divInfoDetailsContainer = domConstruct.create("div", {
-                    "class": "esriCTInfoDetailsContainerError",
-                    "innerHTML": sharedNls.errorMessages.emptyInfoWindowContent
-                }, divInfoDetailsTab);
-            }
-            infoPopupHeight = dojo.configData.InfoPopupHeight;
-            infoPopupWidth = dojo.configData.InfoPopupWidth;
-            if (infoPopupFieldsCollection) {
-                for (key = 0; key < infoPopupFieldsCollection.length; key++) {
-                    divInfoRow = domConstruct.create("div", {
-                        "className": "esriCTDisplayRow"
-                    }, this.divInfoDetailsContainer);
-                    // Create the row's label
-                    this.divInfoDisplayField = domConstruct.create("div", {
-                        "className": "esriCTDisplayField",
-                        "innerHTML": infoPopupFieldsCollection[key].DisplayText
-                    }, divInfoRow);
-                    this.divInfoFieldValue = domConstruct.create("div", {
-                        "className": "esriCTValueField"
-                    }, divInfoRow);
+                if (dojo.configData.SearchSettings[infoIndex].InfoWindowData) {
+                    infoPopupFieldsCollection = dojo.configData.SearchSettings[infoIndex].InfoWindowData;
+                    divInfoDetailsTab = domConstruct.create("div", {
+                        "class": "esriCTInfoDetailsTab"
+                    }, null);
+                    this.divInfoDetailsContainer = domConstruct.create("div", {
+                        "class": "esriCTInfoDetailsContainer"
+                    }, divInfoDetailsTab);
+                } else {
+                    divInfoDetailsTab = domConstruct.create("div", {
+                        "class": "esriCTInfoDetailsTab"
+                    }, null);
+                    this.divInfoDetailsContainer = domConstruct.create("div", {
+                        "class": "esriCTInfoDetailsContainerError",
+                        "innerHTML": sharedNls.errorMessages.emptyInfoWindowContent
+                    }, divInfoDetailsTab);
+                }
+                infoPopupHeight = dojo.configData.InfoPopupHeight;
+                infoPopupWidth = dojo.configData.InfoPopupWidth;
+                if (infoPopupFieldsCollection) {
+                    for (key = 0; key < infoPopupFieldsCollection.length; key++) {
+                        divInfoRow = domConstruct.create("div", {
+                            "className": "esriCTDisplayRow"
+                        }, this.divInfoDetailsContainer);
+                        // Create the row's label
+                        this.divInfoDisplayField = domConstruct.create("div", {
+                            "className": "esriCTDisplayField",
+                            "innerHTML": infoPopupFieldsCollection[key].DisplayText
+                        }, divInfoRow);
+                        this.divInfoFieldValue = domConstruct.create("div", {
+                            "className": "esriCTValueField"
+                        }, divInfoRow);
 
-                    for (i = 0; i < this.codedValueArr.length; i++) {
-                        if (attributes.FCode === this.codedValueArr[i].code) {
-                            attributes.FCode = this.codedValueArr[i].name;
-                        }
-                    }
-
-                    for (i in attributes) {
-                        if (attributes.hasOwnProperty(i)) {
-                            if (!attributes[i]) {
-                                attributes[i] = sharedNls.showNullValue;
-                            }
-                        }
-                    }
-                    for (j = 0; j < fields.length; j++) {
-                        if (fields[j].type === "esriFieldTypeDate") {
-                            if (attributes[fields[j].name]) {
-                                if (Number(attributes[fields[j].name])) {
-                                    utcMilliseconds = Number(attributes[fields[j].name]);
-                                    attributes[fields[j].name] = dojo.date.locale.format(this.utcTimestampFromMs(utcMilliseconds), {
-                                        datePattern: dojo.configData.DatePattern,
-                                        selector: "date"
-                                    });
+                        for (layer in this.map._layers) {
+                            if (this.map._layers.hasOwnProperty(layer)) {
+                                if (dojo.configData.SearchSettings[infoIndex].QueryURL === this.map._layers[layer].url) {
+                                    for (attribute in attributes) {
+                                        if (attributes.hasOwnProperty(attribute)) {
+                                            if (!attributes[attribute]) {
+                                                attributes[attribute] = sharedNls.showNullValue;
+                                            } else {
+                                                for (i = 0; i < this.map._layers[layer].fields.length; i++) {
+                                                    if (this.map._layers[layer].fields[i].name === attribute) {
+                                                        if (this.map._layers[layer].fields[i].domain) {
+                                                            if (this.map._layers[layer].fields[i].domain.codedValues) {
+                                                                for (j = 0; j < this.map._layers[layer].fields[i].domain.codedValues.length; j++) {
+                                                                    if (attributes[attribute] === this.map._layers[layer].fields[i].domain.codedValues[j].code) {
+                                                                        attributes[attribute] = this.map._layers[layer].fields[i].domain.codedValues[j].name;
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (attributes[this.map._layers[layer].typeIdField]) {
+                                        for (k = 0; k < this.map._layers[layer].types.length; k++) {
+                                            if (attributes[this.map._layers[layer].typeIdField] === this.map._layers[layer].types[k].id) {
+                                                attributes[this.map._layers[layer].typeIdField] = this.map._layers[layer].types[k].name;
+                                                if (this.map._layers[layer].types[k].domains) {
+                                                    for (domain in this.map._layers[layer].types[k].domains) {
+                                                        if (this.map._layers[layer].types[k].domains.hasOwnProperty(domain)) {
+                                                            if (attributes[domain]) {
+                                                                if (this.map._layers[layer].types[k].domains[domain].codedValues) {
+                                                                    for (l = 0; l < this.map._layers[layer].types[k].domains[domain].codedValues.length; l++) {
+                                                                        if (attributes[domain] === this.map._layers[layer].types[k].domains[domain].codedValues[l].code) {
+                                                                            attributes[domain] = this.map._layers[layer].types[k].domains[domain].codedValues[l].name;
+                                                                            break;
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    break;
                                 }
                             }
                         }
+
+                        for (j = 0; j < fields.length; j++) {
+                            if (fields[j].type === "esriFieldTypeDate") {
+                                if (attributes[fields[j].name]) {
+                                    if (Number(attributes[fields[j].name])) {
+                                        utcMilliseconds = Number(attributes[fields[j].name]);
+                                        attributes[fields[j].name] = dojo.date.locale.format(this.utcTimestampFromMs(utcMilliseconds), {
+                                            datePattern: dojo.configData.DatePattern,
+                                            selector: "date"
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                        fieldNames = string.substitute(infoPopupFieldsCollection[key].FieldName, attributes);
+                        if (string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("http:") || string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("https:")) {
+                            link = fieldNames;
+                            divLink = domConstruct.create("div", {
+                                "class": "esriCTLink",
+                                "link": link,
+                                "innerHTML": sharedNls.buttons.link
+                            }, this.divInfoFieldValue);
+                            on(divLink, "click", this._openDetailWindow);
+                        } else {
+                            this.divInfoFieldValue.innerHTML = fieldNames;
+                        }
                     }
-                    fieldNames = string.substitute(infoPopupFieldsCollection[key].FieldName, attributes);
-                    if (string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("http:") || string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("https:")) {
-                        link = fieldNames;
-                        divLink = domConstruct.create("div", {
-                            "class": "esriCTLink",
-                            "link": link,
-                            "innerHTML": sharedNls.buttons.link
-                        }, this.divInfoFieldValue);
-                        on(divLink, "click", this._openDetailWindow);
-                    } else {
-                        this.divInfoFieldValue.innerHTML = fieldNames;
-                    }
+                    infoTitle = string.substitute(dojo.configData.SearchSettings[infoIndex].InfoWindowHeaderField, attributes);
+                    dojo.selectedMapPoint = mapPoint;
+                    this._setInfoWindowZoomLevel(mapPoint, infoTitle, divInfoDetailsTab, infoPopupWidth, infoPopupHeight, count, zoomToFeature);
+                } else {
+                    infoTitle = sharedNls.errorMessages.emptyInfoWindowTitle;
+                    dojo.selectedMapPoint = mapPoint;
+                    this._setInfoWindowZoomLevel(mapPoint, infoTitle, divInfoDetailsTab, infoPopupWidth, infoPopupHeight, count, zoomToFeature);
+                    topic.publish("hideProgressIndicator");
                 }
-                infoTitle = string.substitute(dojo.configData.SearchSettings[infoIndex].InfoWindowHeaderField, attributes);
-                dojo.selectedMapPoint = mapPoint;
-                this._setInfoWindowZoomLevel(mapPoint, infoTitle, divInfoDetailsTab, infoPopupWidth, infoPopupHeight, count, zoomToFeature);
-            } else {
-                infoTitle = sharedNls.errorMessages.emptyInfoWindowTitle;
-                dojo.selectedMapPoint = mapPoint;
-                this._setInfoWindowZoomLevel(mapPoint, infoTitle, divInfoDetailsTab, infoPopupWidth, infoPopupHeight, count, zoomToFeature);
-                topic.publish("hideProgressIndicator");
+            } catch (err) {
+                alert(err.message);
             }
         },
 
@@ -1188,28 +1113,31 @@ define([
 
         _locateAddressOnMap: function (mapPoint, locatorParams) {
             var geoLocationPushpin, locatorMarkupSymbol, graphic, geometryCollection = [];
+            topic.publish("clearAllGraphics");
             this.map.setLevel(dojo.configData.ZoomLevel);
             this.map.centerAt(mapPoint);
             geoLocationPushpin = dojoConfig.baseURL + dojo.configData.LocatorSettings.DefaultLocatorSymbol;
             locatorMarkupSymbol = new esri.symbol.PictureMarkerSymbol(geoLocationPushpin, dojo.configData.LocatorSettings.MarkupSymbolSize.width, dojo.configData.LocatorSettings.MarkupSymbolSize.height);
             graphic = new esri.Graphic(mapPoint, locatorMarkupSymbol, {}, null);
-            if (locatorParams.isAOISearch) {
-                graphic.attributes.sourcename = "aoiSearch";
-                topic.publish("clearAllGraphics");
-            } else if (locatorParams.isAOIBearingSearch || locatorParams.isPlacenameSearch) {
+            if (locatorParams.isPlacenameSearch) {
                 geometryCollection.push(mapPoint);
-                topic.publish("createBuffer", geometryCollection, null);
-            } else {
-                graphic.attributes.sourcename = "aoiSearch";
-                this.map.getLayer("tempBufferLayer").clear();
-                geometryCollection.push(mapPoint);
+                graphic.attributes.sourcename = "placenameSearch";
                 topic.publish("createBuffer", geometryCollection, this.sliderUnitValue);
+            } else if (!locatorParams.isAOISearch && !locatorParams.isAOIBearingSearch && !locatorParams.isPlacenameSearch) {
+                this.map.getLayer("tempBufferLayer").clear();
+                graphic.attributes.sourcename = "locatorSearch";
+                geometryCollection.push(mapPoint);
+                topic.publish("shareLocatorAddress", geometryCollection, false);
+            } else if (locatorParams.isAOIBearingSearch || locatorParams.isAOISearch) {
+                this.map.getLayer("tempBufferLayer").clear();
+                graphic.attributes.sourcename = "aOISearch";
+                geometryCollection.push(mapPoint);
+                topic.publish("shareLocatorAddress", geometryCollection, false);
             }
-            dojo.hasPushPin = true;
             this.map.getLayer("esriGraphicsLayerMapSettings").clear();
-            this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
             this.map.getLayer("tempBufferLayer").clear();
-            this.map.getLayer("tempBufferLayer").add(graphic);
+            this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+            domStyle.set(dojo.query('.esriCTClearAOIButton')[0], "display", "block");
             topic.publish("hideProgressIndicator");
         },
 
@@ -1255,40 +1183,7 @@ define([
             target.value = '';
             locatorParams.textAddress.value = "";
             domAttr.set(locatorParams.textAddress, "defaultAddress", locatorParams.textAddress.value);
-        },
-
-        /**
-        * set default value to search textbox
-        * @param {object} evt Blur event
-        * @memberOf widgets/locator/locator
-        */
-        _replaceDefaultText: function (evt, locatorParams) {
-            var target = window.event ? window.event.srcElement : evt ? evt.target : null;
-            if (!target) {
-                return;
-            }
-            this._resetTargetValue(target, "defaultAddress", locatorParams);
-        },
-
-        /**
-        * set default value to search textbox
-        * @param {object} target Textbox dom element
-        * @param {string} title Default value
-        * @param {string} color Background color of search textbox
-        * @memberOf widgets/locator/locator
-        */
-        _resetTargetValue: function (target, title, locatorParams) {
-            if (target.value === '' && domAttr.get(target, title)) {
-                target.value = target.title;
-                if (target.title === "") {
-                    target.value = domAttr.get(target, title);
-                }
-            }
-            if (domClass.contains(target, "esriCTColorChange")) {
-                domClass.remove(target, "esriCTColorChange");
-            }
-            domClass.add(target, "esriCTBlurColorChange");
-            this.lastSearchString = lang.trim(locatorParams.textAddress.value);
         }
+
     });
 });

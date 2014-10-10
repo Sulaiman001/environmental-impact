@@ -75,7 +75,7 @@ define([
         */
         postCreate: function () {
             this._createLegendContainerUI();
-            var currentExtentLegend, legendDefaultExtent, graphicDetails, geometryService, params, pointGeometry, polyline, polygon, extent, LegendWidthChange;
+            var currentExtentLegend, legendDefaultExtent, LegendWidthChange;
             this.logoContainer = query(".esriControlsBR")[0];
             if (!this.logoContainer) {
                 this.logoContainer = (query(".map .logo-sm") && query(".map .logo-sm")[0]) || (query(".map .logo-med") && query(".map .logo-med")[0]);
@@ -93,7 +93,6 @@ define([
                 this.shareLegendExtent = true;
                 currentExtentLegend = this._getQueryString('extent');
                 legendDefaultExtent = currentExtentLegend.split(',');
-                graphicDetails = currentExtentLegend.split('|');
                 legendDefaultExtent = new GeometryExtent({
                     "xmin": parseFloat(legendDefaultExtent[0]),
                     "ymin": parseFloat(legendDefaultExtent[1]),
@@ -103,84 +102,6 @@ define([
                         "wkid": this.map.spatialReference.wkid
                     }
                 });
-
-                if (graphicDetails.length > 0) {
-                    if (graphicDetails[1] === "point") {
-                        geometryService = new GeometryService(dojo.configData.GeometryService);
-                        params = new BufferParameters();
-                        params.distances = [graphicDetails[4]];
-                        params.bufferSpatialReference = new esri.SpatialReference({
-                            "wkid": this.map.spatialReference.wkid
-                        });
-                        params.outSpatialReference = this.map.spatialReference;
-                        params.unit = GeometryService[graphicDetails[5]];
-                        pointGeometry = new Point(graphicDetails[2], graphicDetails[3], new esri.SpatialReference({
-                            "wkid": this.map.spatialReference.wkid
-                        }));
-                        params.geometries = [pointGeometry];
-                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
-                            this.showBuffer(geometries);
-                        }));
-                    } else if (graphicDetails[1] === "polyline") {
-                        geometryService = new GeometryService(dojo.configData.GeometryService);
-                        params = new BufferParameters();
-                        params.distances = [graphicDetails[3]];
-                        params.bufferSpatialReference = new esri.SpatialReference({
-                            "wkid": this.map.spatialReference.wkid
-                        });
-                        params.outSpatialReference = this.map.spatialReference;
-                        params.unit = GeometryService[graphicDetails[4]];
-                        polyline = new Polyline();
-                        polyline.paths = JSON.parse(graphicDetails[2]);
-                        polyline.spatialReference = new esri.SpatialReference({
-                            "wkid": this.map.spatialReference.wkid
-                        });
-                        params.geometries = [polyline];
-                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
-                            this.showBuffer(geometries);
-                        }));
-                    } else if (graphicDetails[1] === "extent") {
-                        geometryService = new GeometryService(dojo.configData.GeometryService);
-                        params = new BufferParameters();
-                        params.distances = [graphicDetails[6]];
-                        params.bufferSpatialReference = new esri.SpatialReference({
-                            "wkid": this.map.spatialReference.wkid
-                        });
-                        params.outSpatialReference = this.map.spatialReference;
-                        params.unit = GeometryService[graphicDetails[7]];
-                        extent = new esri.geometry.Extent({
-                            "xmin": graphicDetails[2],
-                            "ymin": graphicDetails[3],
-                            "xmax": graphicDetails[4],
-                            "ymax": graphicDetails[5],
-                            "spatialReference": {
-                                "wkid": this.map.spatialReference.wkid
-                            }
-                        });
-                        params.geometries = [extent];
-                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
-                            this.showBuffer(geometries);
-                        }));
-                    } else if (graphicDetails[1] === "polygon") {
-                        geometryService = new GeometryService(dojo.configData.GeometryService);
-                        params = new BufferParameters();
-                        params.distances = [graphicDetails[3]];
-                        params.bufferSpatialReference = new esri.SpatialReference({
-                            "wkid": this.map.spatialReference.wkid
-                        });
-                        params.outSpatialReference = this.map.spatialReference;
-                        params.unit = GeometryService[graphicDetails[4]];
-                        polygon = new Polygon();
-                        polygon.rings = JSON.parse(graphicDetails[2]);
-                        polygon.spatialReference = new esri.SpatialReference({
-                            "wkid": this.map.spatialReference.wkid
-                        });
-                        params.geometries = [polygon];
-                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
-                            this.showBuffer(geometries);
-                        }));
-                    }
-                }
             }
 
             if (this.isExtentBasedLegend) {
@@ -189,30 +110,10 @@ define([
                 }));
             }
             if (dojo.query('.esriCTdivLegendbox').length > 0 && dojo.query('.esriCTHeaderReportContainer').length > 0) {
-                LegendWidthChange = window.innerWidth - parseInt(dojo.query('.esriCTHeaderReportContainer')[0].clientWidth, 10);
+                LegendWidthChange = document.body.clientWidth - parseInt(dojo.query('.esriCTHeaderReportContainer')[0].clientWidth, 10);
                 domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (LegendWidthChange + 2) + 'px');
             }
         },
-
-        showBuffer: function (bufferedGeometries) {
-            var _self, symbol, graphic;
-            _self = this;
-            symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
-                new SimpleLineSymbol(
-                    SimpleLineSymbol.STYLE_SOLID,
-                    new Color([parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[0], 10), parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[1], 10), parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.BufferSymbology.LineSymbolTransparency.split(",")[0], 10)]),
-                    2
-                ),
-                new Color([parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[0], 10), parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[1], 10), parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.BufferSymbology.FillSymbolTransparency.split(",")[0], 10)])
-                );
-            array.forEach(bufferedGeometries, function (geometry) {
-                graphic = new Graphic(geometry, symbol);
-                _self.map.getLayer("tempBufferLayer").clear();
-                _self.map.getLayer("tempBufferLayer").add(graphic);
-                _self.map.setExtent(graphic.geometry.getExtent().expand(1.6));
-            });
-        },
-
 
         _updateLegend: function (geometry) {
             var defQueryArray = [], queryResult, resultListArray = [], queryDefList, i;

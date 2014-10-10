@@ -68,7 +68,6 @@ define([], function () {
         // Header Widget Settings
         //------------------------------------------------------------------------------------------------------------------------
         // Set widgets settings such as widget title, widgetPath, mapInstanceRequired to be displayed in header panel
-        // Title: Name of the widget, will displayed as title of widget in header panel
         // WidgetPath: path of the widget respective to the widgets package.
         // MapInstanceRequired: true if widget is dependent on the map instance.
 
@@ -373,57 +372,24 @@ define([], function () {
         // Set geometry service URL
         GeometryService: "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer",
 
-        // Set GP service for generating report after uploading shapefile
-        ShapefileTOAOI: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/EnvironmentalImpact/GPServer/ShapefileToAOI",
+        // Set GP service for creating AOI from shapefile and uploading shapefile for analysis
+        ShapefileTools: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3/EnvironmentalImpactTools/GPServer/ShapefileTools",
 
-        // Set GP service for uploading shapefile for analysis
-        AnalyseShapefile: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/EnvironmentalImpact/GPServer/AnalyseShapefile",
-
-        // Set GP service for generating report
-        GenerateReport: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpact/Generate_Report/GPServer/GenerateReport",
-
-        //LayerJson for Detailed Report
-        LayerJson: [{
-            "mxd_path": "C:\\GISData\\Environmental Impact\\Data For Tesing\\EnvImpact.mxd",
-            "layerID": 0,
-            "fields": [{
-                "name": "ACCESS"
-            }, {
-                "name": "COUNTY"
-            }, {
-                "name": "AGNCY_NAME"
-            }]
-        }, {
-            "mxd_path": "C:\\GISData\\Environmental Impact\\Data For Tesing\\EnvImpact.mxd",
-            "layerID": 1,
-            "fields": [{
-                "name": "StreamName"
-            }, {
-                "name": "SiteName"
-            }, {
-                "name": "SiteType"
-            }, {
-                "name": "Protocol"
-            }, {
-                "name": "AssessedBy"
-            }, {
-                "name": "StructOwne"
-            }, {
-                "name": "Watershed"
-            }, {
-                "name": "County"
-            }, {
-                "name": "WebLegend"
-            }]
-        }, {
-            "mxd_path": "C:\\GISData\\Environmental Impact\\Data For Tesing\\EnvImpact.mxd",
-            "layerID": 2,
-            "fields": [{
-                "name": "NAME"
-            }, {
-                "name": "FTYPE"
-            }]
-        }],
+        // ReportDownloadSettings: Settings for downloading quick and detailed summary reports in PDF format
+        // GPServiceURL: url to geoprocessing service
+        ReportDownloadSettings: {
+            GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3/EnvironmentalImpactTools/GPServer/GeneratePDFReport",
+            ReportSettings: [
+                {
+                    Type: "Quick",
+                    Label: "Quick Summary"
+                },
+                {
+                    Type: "Detailed",
+                    Label: "Detailed Summary"
+                }
+            ]
+        },
 
         // SETTINGS FOR MAP SHARING
         // ------------------------------------------------------------------------------------------------------------------------
@@ -443,19 +409,31 @@ define([], function () {
         // Set Report Tab Text
         ReportTabText: "Report",
 
-        // Set download report type
-        downloadReportType: {
-            QuickSummary: "Quick Report",
-            DetailedSummary:  "Detailed Report"
-        },
-
-        // Set download report format
-        downloadReportFormat: {
-            PDF: "PDF",
-            Excel:  "CSV Format",
-            FileGDB: "File GDB",
-            Shapefile: "ESRI Shapefile"
-        }
+        // Supported formats for downloading the report
+        // Enabled: Allowed values are true, false
+        // Label: Specify label to displayed in the application for this data format
+        // Format: Allowed values are Excel, File Geodatabase - GDB - .gdb, Shapefile - SHP - .shp or any other as supported by the clip zip and ship service
+        // GPServiceURL: Specify url to geoprocessing service
+        DataDownloadSettings: [
+            {
+                Enabled: true,
+                Label: "Excel",
+                Format: "Excel",
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3/EnvironmentalImpactTools/GPServer/ClipToExcel"
+            },
+            {
+                Enabled: true,
+                Label: "File GDB",
+                Format: "File Geodatabase - GDB - .gdb",
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+            },
+            {
+                Enabled: true,
+                Label: "Shapefile",
+                Format: "Shapefile - SHP - .shp",
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+            }
+        ]
 
     };
 });

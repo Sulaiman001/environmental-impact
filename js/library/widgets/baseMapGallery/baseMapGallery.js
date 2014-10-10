@@ -29,8 +29,9 @@ define([
     "dijit/_TemplatedMixin",
     "dijit/_WidgetsInTemplateMixin",
     "esri/layers/ArcGISTiledMapServiceLayer",
-    "esri/layers/OpenStreetMapLayer"
-], function (declare, domConstruct, array, lang, on, dom, query, template, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, ArcGISTiledMapServiceLayer, OpenStreetMapLayer) {
+    "esri/layers/OpenStreetMapLayer",
+    "dojo/topic"
+], function (declare, domConstruct, array, lang, on, dom, query, template, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, ArcGISTiledMapServiceLayer, OpenStreetMapLayer, topic) {
 
     //========================================================================================================================//
 
@@ -44,6 +45,19 @@ define([
         * @name widgets/baseMapGallery/baseMapGallery
         */
         postCreate: function () {
+
+            topic.subscribe("setBaseMap", lang.hitch(this, function (preLayerIndex, selectedBaseMapIndex, presentThumbNail) {
+                var thumbnailPath;
+                dojo.selectedBasemapIndex = selectedBaseMapIndex;
+                this._changeBaseMap(preLayerIndex);
+                if (dojo.configData.BaseMapLayers[presentThumbNail].length) {
+                    thumbnailPath = dojo.configData.BaseMapLayers[presentThumbNail][0].ThumbnailSource;
+                } else {
+                    thumbnailPath = dojo.configData.BaseMapLayers[presentThumbNail].ThumbnailSource;
+                }
+                query('.basemapThumbnail')[0].src = thumbnailPath;
+            }));
+
             if (dojo.configData.BaseMapLayers) {
                 dom.byId("esriCTParentDivContainer").appendChild(this.esriCTDivLayerContainer);
                 this.layerList.appendChild(this._createBaseMapElement());
@@ -84,7 +98,8 @@ define([
         * change basemap layer
         * @memberOf widgets/baseMapGallery/baseMapGallery
         */
-        _changeBaseMap: function (preLayerIndex) {
+        _changeBaseMap: function (preLayerIndex, presentThumbNail) {
+            topic.publish("baseMapIndex", preLayerIndex, dojo.selectedBasemapIndex, presentThumbNail);
             var basemap, basemapLayers, basemapLayerId = "defaultBasemap";
             basemapLayers = dojo.configData.BaseMapLayers[preLayerIndex];
             this.enableToggling = false;
@@ -160,7 +175,6 @@ define([
             var baseMapURLCount, presentThumbNail, preLayerIndex, thumbnailPath;
             baseMapURLCount = dojo.configData.BaseMapLayers.length;
             preLayerIndex = dojo.selectedBasemapIndex - 1;
-
             if (dojo.selectedBasemapIndex === baseMapURLCount) {
                 dojo.selectedBasemapIndex = 0;
             }
@@ -174,7 +188,7 @@ define([
             if (preIndex) {
                 preLayerIndex = preIndex;
             }
-            this._changeBaseMap(preLayerIndex);
+            this._changeBaseMap(preLayerIndex, presentThumbNail);
             if (dojo.configData.BaseMapLayers[presentThumbNail].length) {
                 thumbnailPath = dojo.configData.BaseMapLayers[presentThumbNail][0].ThumbnailSource;
             } else {
@@ -183,7 +197,5 @@ define([
             }
             query('.basemapThumbnail')[0].src = thumbnailPath;
         }
-
-
     });
 });

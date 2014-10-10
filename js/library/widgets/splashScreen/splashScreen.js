@@ -48,7 +48,7 @@ define([
             this.own(on(this.customButton, "click", lang.hitch(this, function () {
                 this._hideSplashScreenDialog();
             })));
-            this.domNode = domConstruct.create("div", { "class": "esriGovtLoadSpashScreen" }, dojo.body());
+            this.domNode = domConstruct.create("div", { "class": "esriGovtLoadSpashScreen", "id": "esriGovtLoadSpashScreen" }, dojo.body());
             this.domNode.appendChild(this.splashScreenScrollBarOuterContainer);
             domConstruct.create("div", { "class": "esriCTLoadingIndicator", "id": "splashscreenlodingIndicator" }, this.splashScreenScrollBarOuterContainer);
         },
@@ -65,10 +65,12 @@ define([
             }
             this.splashScreenScrollbar.setContent(splashScreenContent);
             this.splashScreenScrollbar.createScrollBar();
+            dojo.isSplashScreenOn = true;
         },
 
         _hideSplashScreenDialog: function () {
             domStyle.set(this.domNode, "display", "none");
+            dojo.isSplashScreenOn = false;
         }
     });
 });
