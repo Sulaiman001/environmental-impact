@@ -1,4 +1,4 @@
-/*global define,dojo,dojoConfig,Modernizr,alert */
+/*global define,dojo,dojoConfig,Modernizr,alert,esri */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4 */
 /*
  | Copyright 2013 Esri
@@ -44,6 +44,8 @@ define([
     return declare([_WidgetBase], {
         sharedNls: sharedNls,
         graphicValues: null,
+        emailSharedData: null,
+        emailSharingData: null,
 
         /**
         * create geolocation widget
@@ -52,30 +54,29 @@ define([
         * @name widgets/geoLocation/geoLocation
         */
         postCreate: function () {
-
-            /**
-            * Modernizr.geolocation checks for support for geolocation on client browser
-            * if browser is not supported, geolocation widget is not created
-            */
-            if (Modernizr.geolocation) {
-                topic.subscribe("geoLocationBufferDetails", lang.hitch(this, function (geoLocationBufferDetails) {
-                    this.graphicValues = geoLocationBufferDetails;
-                }));
-                this.domNode = domConstruct.create("div", {
-                    "title": sharedNls.tooltips.locate,
-                    "class": "esriCTTdGeolocation"
-                }, null);
-                this.own(on(this.domNode, "click", lang.hitch(this, function () {
-                    /**
-                    * minimize other open header panel widgets and call geolocation service
-                    */
-                    topic.publish("toggleWidget", "geolocation");
-                    topic.publish("closeDialogBox");
-                    topic.publish("setMaxLegendLength");
-                    this._showCurrentLocation();
-                })));
+            try {
+                /**
+                * Modernizr.geolocation checks for support for geolocation on client browser
+                * if browser is not supported, geolocation widget is not created
+                */
+                if (Modernizr.geolocation) {
+                    this.domNode = domConstruct.create("div", {
+                        "title": sharedNls.tooltips.locate,
+                        "class": "esriCTTdGeolocation"
+                    }, null);
+                    this.own(on(this.domNode, "click", lang.hitch(this, function () {
+                        /**
+                        * minimize other open header panel widgets and call geolocation service
+                        */
+                        topic.publish("toggleWidget", "geolocation");
+                        topic.publish("closeDialogBox");
+                        topic.publish("setMaxLegendLength");
+                        this._showCurrentLocation();
+                    })));
+                }
+            } catch (err) {
+                alert(err.message);
             }
-            dojo.isGeoLocationEnabled = false;
         },
 
         /**
@@ -118,22 +119,11 @@ define([
                     mapPoint = newPoint[0];
                     self.map.centerAndZoom(mapPoint, dojo.configData.ZoomLevel);
                     self._addGraphic(mapPoint);
-
-                    if (this.graphicValues !== null) {
-                        var params;
-                        geometryService = new GeometryService(dojo.configData.GeometryService);
-                        params = new BufferParameters();
-                        params.distances = [this.graphicValues.split('|')[0]];
-                        params.bufferSpatialReference = new esri.SpatialReference({
-                            "wkid": this.map.spatialReference.wkid
-                        });
-                        params.outSpatialReference = this.map.spatialReference;
-                        params.unit = GeometryService[this.graphicValues.split('|')[1]];
-                        params.geometries = [mapPoint];
-                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
-
-                            this.showBuffer(geometries);
-                        }));
+                    try {
+                        this.emailSharingData = "TAB:" + "geolocation" + "$" + "X:" + mapPoint.x + "$" + "Y:" + mapPoint.y + "$" + "SD:" + null + "$" + "UV:" + null + "$" + "SB:" + false;
+                        topic.publish("shareDataThroughEmail", this.emailSharingData);
+                    } catch (err) {
+                        alert(err.message);
                     }
                 }), function () {
                     alert(sharedNls.errorMessages.invalidProjection);
@@ -181,8 +171,13 @@ define([
             geoLocationPushpin = dojoConfig.baseURL + dojo.configData.LocatorSettings.DefaultLocatorSymbol;
             locatorMarkupSymbol = new PictureMarkerSymbol(geoLocationPushpin, "35", "35");
             graphic = new Graphic(mapPoint, locatorMarkupSymbol, null, null);
-            this.map.getLayer("esriGraphicsLayerMapSettings").clear();
+            if (!graphic.attributes) {
+                graphic.attributes = {};
+            }
+            graphic.attributes.sourcename = "geoLocationSearch";
+            topic.publish("clearAllGraphics");
             this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+            domStyle.set(dojo.query('.esriCTClearAOIButton')[0], "display", "block");
             dojo.isGeoLocationEnabled = true;
         }
 

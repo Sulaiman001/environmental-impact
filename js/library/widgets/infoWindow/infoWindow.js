@@ -32,8 +32,9 @@ define([
     "dijit/_TemplatedMixin",
     "dojo/query",
     "dojo/i18n!application/js/library/nls/localizedStrings",
-    "dijit/_WidgetsInTemplateMixin"
-], function (declare, domConstruct, domStyle, lang, on, ScrollBar, dom, domClass, domUtils, InfoWindowBase, template, _WidgetBase, _TemplatedMixin, query, sharedNls, _WidgetsInTemplateMixin) {
+    "dijit/_WidgetsInTemplateMixin",
+    "dojo/topic"
+], function (declare, domConstruct, domStyle, lang, on, ScrollBar, dom, domClass, domUtils, InfoWindowBase, template, _WidgetBase, _TemplatedMixin, query, sharedNls, _WidgetsInTemplateMixin, topic) {
     return declare([InfoWindowBase, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
         templateString: template,
         sharedNls: sharedNls,
@@ -46,6 +47,7 @@ define([
             domUtils.hide(this.domNode);
 
             this.own(on(this.divClose, "click", lang.hitch(this, function () {
+                topic.publish("infoWindowVisibilityStatus", false);
                 if (query(".map .logo-sm")) {
                     this.InfoShow = true;
                 } else {

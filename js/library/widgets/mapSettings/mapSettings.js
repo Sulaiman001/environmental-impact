@@ -65,6 +65,9 @@ define([
         sharedNls: sharedNls,
         infoWindowPanel: null,
         prevOrientation: window.orientation,
+        operationalLayers: [],
+        setExtent : false,
+
         /**
         * initialize map object
         *
@@ -93,6 +96,9 @@ define([
                     ignorePopups: true
                 });
                 mapDeferred.then(lang.hitch(this, function (response) {
+                    topic.subscribe("getWebMapResponse", lang.hitch(this, function () {
+                        topic.publish("webMapResponse", response);
+                    }));
                     clearTimeout(this.stagedSearch);
                     this.map = response.map;
                     dojo.selectedBasemapIndex = null;
@@ -119,6 +125,15 @@ define([
                 this.map = esriMap("esriCTParentDivContainer", {
                     showAttribution: true
                 });
+
+                this.map.on("load", lang.hitch(this, function () {
+                    this._mapOnLoad();
+                    if (dojo.configData.ShowLegend) {
+                        setTimeout(lang.hitch(this, function () {
+                            this._addLayerLegend();
+                        }), 2000);
+                    }
+                }));
                 dojo.selectedBasemapIndex = 0;
                 if (!dojo.configData.BaseMapLayers[0].length) {
                     if (dojo.configData.BaseMapLayers[0].layerType === "OpenStreetMap") {
@@ -133,14 +148,6 @@ define([
                         this.map.addLayer(layer, i);
                     }
                 }
-                this.map.on("load", lang.hitch(this, function () {
-                    this._mapOnLoad();
-                    if (dojo.configData.ShowLegend) {
-                        setTimeout(lang.hitch(this, function () {
-                            this._addLayerLegend();
-                        }), 2000);
-                    }
-                }));
                 this._mapEvents();
             }
 
@@ -148,7 +155,7 @@ define([
                 on(window, "orientationchange", lang.hitch(this, function () {
                     if (this.prevOrientation !== window.orientation) {
                         this.prevOrientation = window.orientation;
-                        topic.publish("resizeAOIPanel");
+                        topic.publish("resizeAOIPanel", 500);
                         topic.publish("resizeReportsPanel");
                         topic.publish("resizeDialogBox");
 
@@ -167,7 +174,7 @@ define([
                 on(window, "resize", lang.hitch(this, function () {
                     if (this.prevOrientation !== window.orientation || window.orientation === undefined || window.orientation === null) {
                         this.prevOrientation = window.orientation;
-                        topic.publish("resizeAOIPanel");
+                        topic.publish("resizeAOIPanel", 500);
                         topic.publish("resizeReportsPanel");
                         topic.publish("resizeDialogBox");
 
@@ -186,6 +193,17 @@ define([
                     }
                 }));
             }
+
+            topic.subscribe("displayInfoWindow", lang.hitch(this, function (evt) {
+                this.setExtent = true;
+                this._displayInfoWindow(evt);
+            }));
+
+            window.onkeydown = function (e) {
+                if ((e.keyCode === 9 || e.which === 9) && dojo.isSplashScreenOn) {
+                    return false;
+                }
+            };
         },
 
         _createWebmapLegendLayerList: function (layers) {
@@ -237,13 +255,13 @@ define([
 
         },
         _fetchWebMapData: function (response) {
-            var searchSettings, i, j, k, l, p, str, field, index, webMapDetails, operationalLayers, serviceTitle, operationalLayerId, lastIndex, layerInfo;
+            var searchSettings, i, j, k, l, p, str, field, index, webMapDetails, operationalLayers = [], serviceTitle, operationalLayerId, lastIndex, layerInfo;
             searchSettings = dojo.configData.SearchSettings;
             webMapDetails = response.itemInfo.itemData;
             dojo.configData.OperationalLayers = [];
-            operationalLayers = dojo.configData.OperationalLayers;
             serviceTitle = [];
             p = 0;
+            this.operationalLayers = [];
             for (i = 0; i < webMapDetails.operationalLayers.length; i++) {
                 operationalLayerId = lang.trim(webMapDetails.operationalLayers[i].title);
                 str = webMapDetails.operationalLayers[i].url.split('/');
@@ -264,6 +282,7 @@ define([
                     searchSettings[index].QueryURL = serviceTitle[searchSettings[index].Title] + searchSettings[index].QueryLayerId;
                     for (j = 0; j < webMapDetails.operationalLayers.length; j++) {
                         if (webMapDetails.operationalLayers[j].title && serviceTitle[webMapDetails.operationalLayers[j].title] && (webMapDetails.operationalLayers[j].title === searchSettings[index].Title)) {
+                            this.operationalLayers.push(webMapDetails.operationalLayers[j]);
                             if (webMapDetails.operationalLayers[j].layers) {
                                 //Fetching infopopup data in case the layers are added as dynamic layers in the webmap
                                 for (k = 0; k < webMapDetails.operationalLayers[j].layers.length; k++) {
@@ -341,10 +360,21 @@ define([
                 this._onSetMapTipPosition(dojo.selectedMapPoint, this.map, this.infoWindowPanel);
             }));
             this.map.on("click", lang.hitch(this, function (evt) {
-                if (!dojo.activatedDrawTool && !dojo.initialCoordinates && !dojo.selectFeatureEnabled) {
-                    this._showInfoWindowOnMap(evt.mapPoint);
-                }
+                this._displayInfoWindow(evt);
             }));
+        },
+
+        // This function is used to display info window
+        _displayInfoWindow: function (evt) {
+            try {
+                if (!dojo.activatedDrawTool && !dojo.isCoordinateTab && !dojo.selectFeatureEnabled) {
+                    this._showInfoWindowOnMap(evt.mapPoint);
+                    topic.publish("infoWindowData", evt.mapPoint);
+                    topic.publish("infoWindowVisibilityStatus", true);
+                }
+            } catch (err) {
+                alert(err.message);
+            }
         },
 
         _mapOnLoad: function () {
@@ -478,6 +508,10 @@ define([
             this.infoWindowPanel.hide();
             this.infoWindowPanel.setTitle(infoTitle);
             this.infoWindowPanel.show(divInfoDetailsTab, screenPoint);
+            if (this.setExtent) {
+                this.setExtent = false;
+                topic.publish("setMapExtent");
+            }
         },
 
         _showInfoWindowOnMap: function (mapPoint) {
@@ -487,7 +521,9 @@ define([
 
             this.counter = 0;
             for (index = 0; index < dojo.configData.SearchSettings.length; index++) {
-                this._executeQueryTask(index, mapPoint, onMapFeaturArray);
+                if (dojo.configData.SearchSettings[index].InfoWindowData) {
+                    this._executeQueryTask(index, mapPoint, onMapFeaturArray);
+                }
             }
             deferredListResult = new DeferredList(onMapFeaturArray);
             deferredListResult.then(lang.hitch(this, function (result) {
@@ -500,14 +536,14 @@ define([
                                 for (i = 0; i < result[j][1].features.length; i++) {
                                     featureArray.push({
                                         attr: result[j][1].features[i],
-                                        layerId: j,
+                                        layerId: result[j][1].layerIndex,
                                         fields: result[j][1].fields
                                     });
                                 }
                             }
                         }
                     }
-                    this._fetchQueryResults(featureArray);
+                    this._fetchQueryResults(mapPoint, featureArray);
                 }
             }), function (err) {
                 alert(err.message);
@@ -515,22 +551,33 @@ define([
         },
 
         _executeQueryTask: function (index, mapPoint, onMapFeaturArray) {
-            var queryTask, queryParams, queryOnRouteTask;
-
+            var queryTask, queryParams, layerIndex = index, isLayerVisible, currentTime = new Date().getTime() + index.toString(),
+                deferred = new Deferred();
             queryTask = new esri.tasks.QueryTask(dojo.configData.SearchSettings[index].QueryURL);
             queryParams = new esri.tasks.Query();
             queryParams.outSpatialReference = this.map.spatialReference;
             queryParams.returnGeometry = true;
             queryParams.geometry = this._extentFromPoint(mapPoint);
             queryParams.outFields = ["*"];
-            queryOnRouteTask = queryTask.execute(queryParams, lang.hitch(this, function (results) {
-                var deferred = new Deferred();
+
+            if (this.operationalLayers[index].layerObject) {
+                isLayerVisible = this.operationalLayers[index].layerObject.visibleAtMapScale;
+            } else {
+                isLayerVisible = this.operationalLayers[index].visibleAtMapScale;
+            }
+            if (isLayerVisible) {
+                queryParams.where = currentTime + "=" + currentTime;
+            } else {
+                queryParams.where = "1=2";
+            }
+
+            queryTask.execute(queryParams, lang.hitch(this, function (results) {
+                results.layerIndex = layerIndex;
                 deferred.resolve(results);
-                return deferred.promise;
             }), function (err) {
-                alert(err.message);
+                deferred.reject();
             });
-            onMapFeaturArray.push(queryOnRouteTask);
+            onMapFeaturArray.push(deferred);
         },
 
         _extentFromPoint: function (point) {
@@ -544,23 +591,23 @@ define([
             return new esri.geometry.Extent(mapPoint1.x, mapPoint1.y, mapPoint2.x, mapPoint2.y, this.map.spatialReference);
         },
 
-        _fetchQueryResults: function (featureArray) {
+        _fetchQueryResults: function (mapPoint, featureArray) {
             var _this = this;
 
             if (featureArray.length > 0) {
                 if (featureArray.length === 1) {
                     domClass.remove(query(".esriCTInfoWindowRightArrow")[0], "esriCTShowInfoRightArrow");
-                    topic.publish("createInfoWindowContent", featureArray[0].attr.geometry, featureArray[0].attr.attributes, featureArray[0].fields, featureArray[0].layerId, null, null, false);
+                    topic.publish("createInfoWindowContent", mapPoint, featureArray[0].attr.geometry, featureArray[0].attr.attributes, featureArray[0].fields, featureArray[0].layerId, null, null, false);
                 } else {
                     this.count = 0;
                     domAttr.set(query(".esriCTdivInfoTotalFeatureCount")[0], "innerHTML", '/' + featureArray.length);
-                    topic.publish("createInfoWindowContent", featureArray[0].attr.geometry, featureArray[0].attr.attributes, featureArray[0].fields, featureArray[0].layerId, featureArray, this.count, false);
+                    topic.publish("createInfoWindowContent", mapPoint, featureArray[0].attr.geometry, featureArray[0].attr.attributes, featureArray[0].fields, featureArray[0].layerId, featureArray, this.count, false);
                     topic.publish("hideProgressIndicator");
                     query(".esriCTInfoWindowRightArrow")[0].onclick = function () {
-                        _this._nextInfoContent(featureArray);
+                        _this._nextInfoContent(mapPoint, featureArray);
                     };
                     query(".esriCTInfoWindowLeftArrow")[0].onclick = function () {
-                        _this._previousInfoContent(featureArray);
+                        _this._previousInfoContent(mapPoint, featureArray);
                     };
                 }
             } else {
@@ -568,21 +615,21 @@ define([
             }
         },
 
-        _nextInfoContent: function (featureArray) {
+        _nextInfoContent: function (mapPoint, featureArray) {
             if (this.count < featureArray.length) {
                 this.count++;
             }
             if (featureArray[this.count]) {
-                topic.publish("createInfoWindowContent", featureArray[0].attr.geometry, featureArray[this.count].attr.attributes, featureArray[this.count].fields, featureArray[this.count].layerId, featureArray, this.count, false);
+                topic.publish("createInfoWindowContent", mapPoint, featureArray[0].attr.geometry, featureArray[this.count].attr.attributes, featureArray[this.count].fields, featureArray[this.count].layerId, featureArray, this.count, false);
             }
         },
 
-        _previousInfoContent: function (featureArray) {
+        _previousInfoContent: function (mapPoint, featureArray) {
             if (this.count !== 0 && this.count < featureArray.length) {
                 this.count--;
             }
             if (featureArray[this.count]) {
-                topic.publish("createInfoWindowContent", featureArray[0].attr.geometry, featureArray[this.count].attr.attributes, featureArray[this.count].fields, featureArray[this.count].layerId, featureArray, this.count, false);
+                topic.publish("createInfoWindowContent", mapPoint, featureArray[0].attr.geometry, featureArray[this.count].attr.attributes, featureArray[this.count].fields, featureArray[this.count].layerId, featureArray, this.count, false);
             }
         },
 
@@ -712,32 +759,14 @@ define([
         },
 
         _createFeatureServiceLayer: function (index, layerInfo, layerURL) {
-            var layerMode = null, featureLayer;
-            /**
-            * set layerMode of the operational layer if it's type is feature
-            */
-            switch (layerInfo.LoadAsServiceType.toLowerCase()) {
-            case "ondemand":
-                layerMode = FeatureLayer.MODE_ONDEMAND;
-                break;
-            case "selection":
-                layerMode = FeatureLayer.MODE_SELECTION;
-                break;
-            default:
-                layerMode = FeatureLayer.MODE_SNAPSHOT;
-                break;
-            }
-
-            /**
-            * load operational layer if it's type is feature along with its layer mode
-            */
-            featureLayer = new FeatureLayer(layerURL, {
+            var featureLayer = new FeatureLayer(layerURL, {
                 id: index,
-                mode: layerMode,
+                mode: FeatureLayer.MODE_ONDEMAND,
                 outFields: ["*"],
                 displayOnPan: false
             });
             this.map.addLayer(featureLayer);
+            this.operationalLayers.push(featureLayer);
         },
 
         //Add hosted services to the map
@@ -765,6 +794,8 @@ define([
                 visible: true
             });
             this.map.addLayer(dynamicMapService);
+            this.operationalLayers.push(dynamicMapService);
+
         },
 
         _addLayerLegend: function () {

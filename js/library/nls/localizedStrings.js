@@ -42,7 +42,8 @@ define({
             selectInitialCoordinates: "Select Initial Coordinates",
             loadingText: "Loading...",
             settingsIconTitle: "Choose fields to view in summary report",
-            selectFeature: "Press double click to finish the opertaion",
+            selectFeature: "Click on a feature to select",
+            completeFeatureSelection: "Press double click to finish the opertaion",
             selectCoordinates: "Please select the point",
             clearAOI: "clear AOI"
         },
@@ -57,10 +58,10 @@ define({
             polygonToolText: "Polygon",
             selectFeatureText: "Select features",
             areaStandardUnit: "Acres",
+            lengthStandardUnit: "Miles",
+            lengthMetricUnit: "Kilometer",
             areaMetricUnit: "Sq.Km.",
-            lineMetricdUnit: "Km",
-            lineStandardUnit: "Miles",
-            lineMetricUnit: "Kilometer",
+            lengthMetricUnitLabel: "Km",
             standardUnitLabel: "Standard Units",
             standardReportUnit: "Standard",
             metricUnitLabel: "Show areas in ",
@@ -143,7 +144,10 @@ define({
             inValideNumericErrorMessage: "Please enter valid input",
             inValideZipFile: "Incorrect File extension\n Should be zip.",
             portalUrlNotFound: "Portal URL cannot be empty",
-            searchTextErrorMessage: "Please enter inputs to search"
+            searchTextErrorMessage: "Please enter inputs to search",
+            queryRequestStringExceeded : "The length of the query string for this request exceeds the configured maxQueryStringLength value.",
+            defineStartPointMessage : "Please define start point",
+            unableToShareURL : "Application could not be shared with current data"
         },
         // End of shared nls
 

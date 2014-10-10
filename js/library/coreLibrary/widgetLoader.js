@@ -115,7 +115,6 @@ define([
                     * create application header
                     */
                     this._createApplicationHeader(widgets);
-                    topic.publish("update511InfoOnLoad", mapInstance.extent);
                 } catch (ex) {
                     alert(sharedNls.errorMessages.widgetNotLoaded);
                 }
@@ -272,7 +271,7 @@ define([
         _filterRedundantBasemap: function (bmLayers, baseMapArray, isWorkFlowBasemap) {
             var i, bmLayerData, multiBasemap = [];
             bmLayerData = bmLayers.itemData.baseMap.baseMapLayers;
-            if (bmLayerData[0].layerType === "OpenStreetMap") {
+            if (bmLayerData[0].layerType === "OpenStreetMap" || bmLayerData[0].type === "OpenStreetMap") {
                 bmLayerData[0].url = bmLayerData[0].id;
             }
             if (this._isUniqueBasemap(baseMapArray, bmLayerData, isWorkFlowBasemap)) {
@@ -358,15 +357,20 @@ define([
         * @memberOf coreLibrary/widgetLoader
         */
         _storeUniqueBasemap: function (bmLayer, baseMapArray) {
-            var thumbnailSrc;
-            if (bmLayer.url) {
+            var thumbnailSrc, layerType;
+            if (bmLayer.url || (bmLayer.layerType === "OpenStreetMap" || bmLayer.type === "OpenStreetMap")) {
                 thumbnailSrc = (bmLayer.thumbnail === null) ? dojo.configData.NoThumbnail : dojo.configData.PortalAPIURL + "content/items/" + bmLayer.id + "/info/" + bmLayer.thumbnail;
+                if (bmLayer.layerType) {
+                    layerType = bmLayer.layerType;
+                } else {
+                    layerType = bmLayer.type;
+                }
                 baseMapArray.push({
                     ThumbnailSource: thumbnailSrc,
                     Name: bmLayer.title,
                     MapURL: bmLayer.url,
                     isWorkFlowBasemap: bmLayer.isWorkFlowBasemap,
-                    layerType: bmLayer.layerType
+                    layerType: layerType
                 });
             }
         },
