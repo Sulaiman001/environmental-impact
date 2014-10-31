@@ -98,11 +98,11 @@ define([
             var widgets = {}, deferredArray = [];
 
             array.forEach(dojo.configData.AppHeaderWidgets, function (widgetConfig) {
-                var deferred = new Deferred();
+                var widgetId, deferred = new Deferred();
                 widgets[widgetConfig.WidgetPath] = null;
                 require([widgetConfig.WidgetPath], function (Widget) {
-
-                    widgets[widgetConfig.WidgetPath] = new Widget({ map: widgetConfig.MapInstanceRequired ? mapInstance : null });
+                    widgetId = widgetConfig.WidgetPath.split('/')[widgetConfig.WidgetPath.split('/').length - 1];
+                    widgets[widgetConfig.WidgetPath] = new Widget({ id: widgetId, map: widgetConfig.MapInstanceRequired ? mapInstance : null });
 
                     deferred.resolve(widgetConfig.WidgetPath);
                 });
@@ -111,6 +111,7 @@ define([
 
             all(deferredArray).then(lang.hitch(this, function () {
                 try {
+                    topic.publish("widgetInitialized");
                     /**
                     * create application header
                     */

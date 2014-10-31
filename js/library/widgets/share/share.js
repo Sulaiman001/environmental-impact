@@ -185,7 +185,6 @@ define(["dojo/_base/declare",
                         if (graphicDetails.BMI) {
                             topic.publish("setBaseMap", graphicDetails.BMI, graphicDetails.SBI, graphicDetails.PTI);
                         }
-
                         if (graphicDetails.SHOWINFO === "true") {
                             var evt, pointGeometry;
                             evt = {};
@@ -356,6 +355,7 @@ define(["dojo/_base/declare",
         },
         // This function is used to highlight tab
         _highlightTab: function (tabName, address) {
+            var searchAddr;
             try {
                 if (dojo.query(".esriCTAOILinkSelect")[0]) {
                     domClass.remove(dojo.query(".esriCTAOILinkSelect")[0], "esriCTAOILinkSelect");
@@ -365,7 +365,8 @@ define(["dojo/_base/declare",
                     domClass.add(dom.byId("divLinkplaceName"), "esriCTAOILinkSelect");
                     this._hideContainer("placeNameSearch");
                     dom.byId("placeNameSearch").style.display = "block";
-                    dom.byId("txtplaceName").value = unescape(address);
+                    searchAddr = address === "undefined" ? dojo.configData.LocatorSettings.LocatorDefaultPlaceNameSearchAddress : address;
+                    dojo.query(".esriCTTxtAddress")[1].value = unescape(searchAddr);
                     break;
                 case "Shapefile":
                     domClass.add(dom.byId("divLinkUpload"), "esriCTAOILinkSelect");
@@ -375,12 +376,14 @@ define(["dojo/_base/declare",
                 case "Draw":
                     domClass.add(dom.byId("divLinkDrawTool"), "esriCTAOILinkSelect");
                     topic.publish("showDrawPanel");
-                    dom.byId("txtAOIAddress").value = unescape(address);
+                    searchAddr = address === "undefined" ? dojo.configData.LocatorSettings.LocatorDefaultAOIAddress : address;
+                    dojo.query(".esriCTTxtAddress")[2].value = unescape(searchAddr);
                     break;
                 case "Coordinates":
                     domClass.add(dom.byId("divLinkCoordinates"), "esriCTAOILinkSelect");
                     topic.publish("showCoordinatesPanel", false);
-                    dom.byId("txtAOIBearingAddress").value = unescape(address);
+                    searchAddr = address === "undefined" ? dojo.configData.LocatorSettings.LocatorDefaultAOIBearingAddress : address;
+                    dojo.query(".esriCTTxtAddress")[2].value = unescape(searchAddr);
                     break;
                 }
             } catch (err) {
@@ -435,6 +438,7 @@ define(["dojo/_base/declare",
                             ]));
                         graphic = new Graphic(pointGeometry, symbol);
                         this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+                        topic.publish("showClearGraphicsIcon");
                     } else {
                         this._addGraphic(pointGeometry, graphicDetails);
                     }
@@ -583,7 +587,7 @@ define(["dojo/_base/declare",
         // This function is used to display polygon data
         _displayPolygonData: function (graphicDetails) {
             try {
-                var geometryService, params, polygon, symbol, graphic, simplifyRequestArray, deferredListSimplifyResult, polygonBufferCollection, deferredListBufferResult, bufferRequestArray, unionBufferArray, k, m, unionResultArray;
+                var k, m, symbol, graphic, geometryService, params, polygon, simplifyRequestArray, deferredListBufferResult, deferredListSimplifyResult, polygonBufferCollection, bufferRequestArray, unionBufferArray, unionResultArray;
                 simplifyRequestArray = [];
                 bufferRequestArray = [];
                 unionBufferArray = [];
@@ -674,13 +678,34 @@ define(["dojo/_base/declare",
                     domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
                     domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
                     this._removeHighlightedUnit();
+                    if (graphicDetails.STYLE === "solid") {
+                        symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
+                            new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
+                                new Color([
+                                    parseInt(graphicDetails.OUTLINE.split(",")[0], 10),
+                                    parseInt(graphicDetails.OUTLINE.split(",")[1], 10),
+                                    parseInt(graphicDetails.OUTLINE.split(",")[2], 10),
+                                    parseFloat(graphicDetails.OUTLINE.split(",")[3], 10)
+                                ]), graphicDetails.OUTLINE.split(",")[4]),
+                            new Color([
+                                parseInt(graphicDetails.COLOR.split(",")[0], 10),
+                                parseInt(graphicDetails.COLOR.split(",")[1], 10),
+                                parseInt(graphicDetails.COLOR.split(",")[2], 10),
+                                parseFloat(graphicDetails.COLOR.split(",")[3], 10)
+                            ]));
+                        graphic = new Graphic(polygon, symbol);
+                        this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+                        topic.publish("showClearGraphicsIcon");
+                    } else {
+                        this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+                        topic.publish("showClearGraphicsIcon");
+                    }
                     this._highlightUnit(graphicDetails);
                     topic.publish("setSliderValue", graphicDetails.UV);
                     if (graphicDetails.SD > 0) {
                         topic.publish("sharedUrlBufferStatus", false);
                         dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
                     }
-                    this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
                 }
                 this._setEmailSharingMapExtent();
                 this._replicateSharedData(null);
@@ -741,11 +766,13 @@ define(["dojo/_base/declare",
                             ]), dojo.configData.AOISymbology.LineSymbolWidth);
                         graphic = new Graphic(polyline, symbol);
                         this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+                        topic.publish("showClearGraphicsIcon");
                         topic.publish("setPolyline", polyline);
                     } else {
                         symbol = this._createFeatureSymbol(polyline.type);
                         graphic = new Graphic(polyline, symbol);
                         this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+                        topic.publish("showClearGraphicsIcon");
                     }
                     if ((graphicDetails.LAT) && (graphicDetails.LONG)) {
                         dom.byId("addLatitudeValue").value = parseFloat(graphicDetails.LAT);
@@ -869,6 +896,7 @@ define(["dojo/_base/declare",
                     dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
                 }
                 this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+                topic.publish("showClearGraphicsIcon");
                 this._setEmailSharingMapExtent();
                 this._replicateSharedData(null);
             } catch (err) {
@@ -911,7 +939,9 @@ define(["dojo/_base/declare",
                 } else {
                     topic.publish("toggleWidget", "locator");
                 }
-                this._addGraphic(pointGeometry, graphicDetails);
+                if (!graphicDetails.SHOWINFO) {
+                    this._addGraphic(pointGeometry, graphicDetails);
+                }
                 this._setEmailSharingMapExtent();
                 this._replicateSharedData(null);
             } catch (err) {
@@ -963,13 +993,11 @@ define(["dojo/_base/declare",
                     case "geoLocationSearch":
                         attr.sourcename = "geoLocationSearch";
                         break;
-                    case "locatorSearch":
-                        attr.sourcename = "locatorSearch";
-                        break;
                     }
                     graphic.attributes = attr;
                 }
                 this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+                topic.publish("showClearGraphicsIcon");
             } catch (err) {
                 alert(err.message);
             }
@@ -984,6 +1012,7 @@ define(["dojo/_base/declare",
                     graphic = new Graphic(geometry, symbol);
                     _self.map.getLayer("tempBufferLayer").clear();
                     _self.map.getLayer("tempBufferLayer").add(graphic);
+                    topic.publish("showClearGraphicsIcon");
                 });
                 this._setEmailSharingMapExtent();
                 this._replicateSharedData(null);
@@ -1163,14 +1192,14 @@ define(["dojo/_base/declare",
         _setEmailSharingMapExtent: function () {
             try {
                 var mapDefaultExtent = new GeometryExtent({
-                        "xmin": parseFloat(this.extentPoints[0]),
-                        "ymin": parseFloat(this.extentPoints[1]),
-                        "xmax": parseFloat(this.extentPoints[2]),
-                        "ymax": parseFloat(this.extentPoints[3]),
-                        "spatialReference": {
-                            "wkid": this.map.spatialReference.wkid
-                        }
-                    });
+                    "xmin": parseFloat(this.extentPoints[0]),
+                    "ymin": parseFloat(this.extentPoints[1]),
+                    "xmax": parseFloat(this.extentPoints[2]),
+                    "ymax": parseFloat(this.extentPoints[3]),
+                    "spatialReference": {
+                        "wkid": this.map.spatialReference.wkid
+                    }
+                });
                 this.map.setExtent(mapDefaultExtent);
             } catch (err) {
                 alert(err.message);
@@ -1184,7 +1213,6 @@ define(["dojo/_base/declare",
         * @memberOf widgets/share/share
         */
         _shareOptions: function (site, url) {
-
             switch (site) {
             case "facebook":
                 window.open(string.substitute(dojo.configData.MapSharingOptions.FacebookShareURL, [url]));

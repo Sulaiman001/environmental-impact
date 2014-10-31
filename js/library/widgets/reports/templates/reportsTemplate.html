@@ -23,29 +23,6 @@
                         ${sharedNls.messages.placeNameSearchText}</div>
                     <div class="esriCTFullWidth">
                         <div data-dojo-attach-point="divplaceNameSearch" class="esriCTCursorDefault" align="left">
-                            <div data-dojo-attach-point="divplaceNamePlaceHolder" class="">
-                                <div style="float: left; width: 253px;">
-                                    <input type="text" data-dojo-attach-point="txtplaceName" class="esriCTTxtAddressReport"
-                                        id="txtplaceName" value="PlaceName" onfocus="if(this.setSelectionRange)this.setSelectionRange(this.value.length, this.value.length);" /></div>
-                                <div class="esriCTSearchClose" data-dojo-attach-point="clearhideplaceName">
-                                    <span class="esriCTClearInput" title="${sharedNls.tooltips.clearEntry}" data-dojo-attach-point="clearplaceNameSearchTextbox">
-                                    </span><span>
-                                        <img data-dojo-attach-point="imgplaceName" class="esriCTSearchLoader" /></span>
-                                </div>
-                            </div>
-                            <div class="esriCTSearch" data-dojo-attach-point="divplaceName">
-                                <span class="esriCTSearchIcon" title="${sharedNls.tooltips.search}" data-dojo-attach-point="esriCTimgLocate">
-                                </span>
-                            </div>
-                            <div data-dojo-attach-point="divplaceNameList" class="esriCTAddressList">
-                                <div data-dojo-attach-point="divplaceNameScrollContainer" class="esriCTAddressScrollContainerReport"
-                                    align="left">
-                                    <div data-dojo-attach-point="divplaceNameScrollContent" style="display: none" class="esriCTAOIAddressScrollContent">
-                                        <div data-dojo-attach-point="divplaceNameResults" class="esriCTFullWidth">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -57,30 +34,7 @@
                         <div class="esriCTNavigateHeader">
                             ${sharedNls.titles.drawingToolUnifiedSearchTitle}</div>
                         <div class="esriCTFullWidth">
-                            <div data-dojo-attach-point="divAddressSearch" class="esriCTCursorDefault" align="left">
-                                <div data-dojo-attach-point="divAddressPlaceHolder" class="">
-                                    <div style="float: left; width: 253px;">
-                                        <input type="text" data-dojo-attach-point="txtAOIAddress" class="esriCTTxtAddressReport"
-                                            id="txtAOIAddress" value="" onfocus="if(this.setSelectionRange)this.setSelectionRange(this.value.length, this.value.length);" /></div>
-                                    <div class="esriCTSearchClose" data-dojo-attach-point="clearhide">
-                                        <span class="esriCTClearInput" title="${sharedNls.tooltips.clearEntry}" data-dojo-attach-point="clearAOITextbox">
-                                        </span><span>
-                                            <img data-dojo-attach-point="imgAOISearchLoader" class="esriCTSearchLoader" alt="imgAOISearchLoader" /></span>
-                                    </div>
-                                </div>
-                                <div class="esriCTSearch" data-dojo-attach-point="divAOISearch">
-                                    <span class="esriCTSearchIcon" title="${sharedNls.tooltips.search}" data-dojo-attach-point="esriCTimgLocate">
-                                    </span>
-                                </div>
-                                <div data-dojo-attach-point="divAddressList" class="esriCTAddressList">
-                                    <div data-dojo-attach-point="divAddressScrollContainer" class="esriCTAddressScrollContainerReport"
-                                        align="left">
-                                        <div data-dojo-attach-point="divAOIAddressScrollContent" style="display: none" class="esriCTAOIAddressScrollContent">
-                                            <div data-dojo-attach-point="divAOIAddressResults" class="esriCTFullWidth">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div data-dojo-attach-point="divDrawAddressSearch" class="esriCTCursorDefault" align="left">
                             </div>
                         </div>
                     </div>
@@ -136,32 +90,7 @@
                     <div data-dojo-attach-point="divAOIBearingAddressContent" class="esriCTAOIAddressContent">
                         <div data-dojo-attach-point="divAddressResultContainer" class="esriCTAddressResultContainerReport">
                             <div class="esriCTFullWidth">
-                                <div data-dojo-attach-point="divAddressSearch" class="esriCTCursorDefault" align="left">
-                                    <div data-dojo-attach-point="divAddressPlaceHolder" class="">
-                                        <div style="float: left; width: 253px;">
-                                            <input type="text" data-dojo-attach-point="txtAOIBearingAddress" class="esriCTTxtAddressReport"
-                                                id="txtAOIBearingAddress" onfocus="if(this.setSelectionRange)this.setSelectionRange(this.value.length, this.value.length);" /></div>
-                                        <div class="esriCTSearchClose" data-dojo-attach-point="clearhide">
-                                            <span class="esriCTClearInput" title="${sharedNls.tooltips.clearEntry}" data-dojo-attach-point="clearAOIBearingTextbox">
-                                            </span><span>
-                                                <img data-dojo-attach-point="imgAOIBearingSearchLoader" class="esriCTSearchLoader"
-                                                    alt="imgAOIBearingSearchLoader" /></span>
-                                        </div>
-                                    </div>
-                                    <div class="esriCTSearch" data-dojo-attach-point="divAOIBearingSearch">
-                                        <span class="esriCTSearchIcon" title="${sharedNls.tooltips.search}" data-dojo-attach-point="esriCTimgLocate">
-                                        </span>
-                                    </div>
-                                    <div data-dojo-attach-point="divAddressList" class="esriCTAddressList">
-                                        <div data-dojo-attach-point="divAddressScrollContainer" class="esriCTAddressScrollContainerReport"
-                                            align="left">
-                                            <div data-dojo-attach-point="divAOIBearingAddressScrollContent" style="display: none"
-                                                class="esriCTAOIAddressBearingScrollContent">
-                                                <div data-dojo-attach-point="divAOIBearingAddressResults" class="esriCTFullWidth">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div data-dojo-attach-point="divBearingAddressSearch" class="esriCTCursorDefault" align="left">
                                 </div>
                             </div>
                         </div>

@@ -266,7 +266,7 @@ define([
         * @return returnVal
         */
         _checkLayerVisibility: function (layerUrl) {
-            var layer, layerUrlIndex = layerUrl.split('/'),
+            var layer, lastChar, mapLayerUrl, layerUrlIndex = layerUrl.split('/'),
                 returnVal = false;
             layerUrlIndex = layerUrlIndex[layerUrlIndex.length - 1];
             for (layer in this.map._layers) {
@@ -276,12 +276,23 @@ define([
                             returnVal = true;
                             break;
                         }
-                    } else if (this.map._layers[layer].visibleLayers && (this.map._layers[layer].url + "/" + layerUrlIndex === layerUrl)) {
-                        if (this.map._layers[layer].visibleAtMapScale) {
-                            returnVal = true;
-                            break;
-                        }
+                    } else if (this.map._layers[layer].visibleLayers) {
 
+                        lastChar = this.map._layers[layer].url[this.map._layers[layer].url.length - 1];
+                        if (lastChar === "/") {
+                            mapLayerUrl = this.map._layers[layer].url + layerUrlIndex;
+                        } else {
+                            mapLayerUrl = this.map._layers[layer].url + "/" + layerUrlIndex;
+                        }
+                        if (mapLayerUrl === layerUrl) {
+                            if (this.map._layers[layer].visibleLayers.indexOf(parseInt(layerUrlIndex, 10)) !== -1) {
+                                if (this.map._layers[layer].visibleAtMapScale && this.map.__LOD.scale < this.map._layers[layer].dynamicLayerInfos[parseInt(layerUrlIndex, 10)].minScale) {
+                                    returnVal = true;
+                                    break;
+                                }
+                            }
+
+                        }
                     }
                 }
             }
@@ -492,13 +503,19 @@ define([
                 }
                 mapServerURL = layerArray[index].split("/");
                 layerIndex = mapServerURL[mapServerURL.length - 1];
-                mapServerURL.pop();
-                mapServerURL = mapServerURL.join("/");
-                if (!this.indexesForLayer[mapServerURL]) {
-                    this.indexesForLayer[mapServerURL] = [];
+                if (isNaN(layerIndex)) {
+                    mapServerURL = mapServerURL.join("/");
+                    this.mapServerArray.push({ "url": mapServerURL, "featureLayerUrl": featureLayerUrl });
+                    this.indexesForLayer.push("all");
+                } else {
+                    mapServerURL.pop();
+                    mapServerURL = mapServerURL.join("/");
+                    if (!this.indexesForLayer[mapServerURL]) {
+                        this.indexesForLayer[mapServerURL] = [];
+                    }
+                    this.indexesForLayer[mapServerURL].push(layerIndex);
+                    this.mapServerArray.push({ "url": mapServerURL, "featureLayerUrl": featureLayerUrl });
                 }
-                this.indexesForLayer[mapServerURL].push(layerIndex);
-                this.mapServerArray.push({ "url": mapServerURL, "featureLayerUrl": featureLayerUrl });
             }
 
             this.mapServerArray = this._removeDuplicate(this.mapServerArray);
@@ -530,24 +547,9 @@ define([
                     this._addFieldValue(this._layerCollection);
                 }
             }));
-            this._displayWebmapRenderer();
+            this._addFieldValue(this.webmapUpdatedRenderer);
             this._addlegendListWidth(this.legendListWidth);
 
-        },
-
-        /*
-        * display webmap generated renderers
-        * @memberOf widgets/legends/legends
-        */
-        _displayWebmapRenderer: function () {
-            var layer;
-            for (layer in this.webmapUpdatedRenderer) {
-                if (this.webmapUpdatedRenderer.hasOwnProperty(layer)) {
-                    this._setFieldValue(this.webmapUpdatedRenderer[layer].layerDefinition.drawingInfo, this.webmapUpdatedRenderer[layer]);
-                    this._appendFieldType(this.webmapUpdatedRenderer[layer], this.webmapUpdatedRenderer[layer].layerObject);
-                }
-            }
-            this._updateLegend(this.map.extent);
         },
 
         /*
@@ -562,6 +564,7 @@ define([
                     this._appendFieldType(this.hostedLayersJSON[layer], null);
                 }
             }
+
             this._updateLegend(this.map.extent);
         },
 
@@ -723,27 +726,33 @@ define([
             var defArray = [], layerTempArray = [], params, layer, layersRequest, deferredList, i;
             for (layer in layerCollectionArray) {
                 if (layerCollectionArray.hasOwnProperty(layer)) {
-                    if (layerCollectionArray[layer].legend && layerCollectionArray[layer].legend.length > 1) {
-                        layerTempArray.push(layer);
-                        params = {
-                            url: layer,
-                            content: {
-                                f: "json"
-                            },
-                            handleAs: "json",
-                            callbackParamName: "callback"
-                        };
-                        layersRequest = esriRequest(params);
-                        this._getLayerDetail(layersRequest, defArray);
-                    }
+                    layerTempArray.push(layer);
+                    params = {
+                        url: layer,
+                        content: {
+                            f: "json"
+                        },
+                        handleAs: "json",
+                        callbackParamName: "callback"
+                    };
+                    layersRequest = esriRequest(params);
+                    this._getLayerDetail(layersRequest, defArray);
                 }
             }
             deferredList = new DeferredList(defArray);
             deferredList.then(lang.hitch(this, function (result) {
                 for (i = 0; i < result.length; i++) {
                     if (result[i][0]) {
-                        this._setFieldValue(result[i][1].drawingInfo, layerCollectionArray[layerTempArray[i]]);
+                        if (layerCollectionArray[layerTempArray[i]].layerDefinition && layerCollectionArray[layerTempArray[i]].layerDefinition.drawingInfo) {
+                            this._setFieldValue(layerCollectionArray[layerTempArray[i]].layerDefinition.drawingInfo, layerCollectionArray[layerTempArray[i]]);
+                            if (!layerCollectionArray[layerTempArray[i]].title) {
+                                layerCollectionArray[layerTempArray[i]].title = layerCollectionArray[layerTempArray[i]].name;
+                            }
+                        } else {
+                            this._setFieldValue(result[i][1].drawingInfo, layerCollectionArray[layerTempArray[i]]);
+                        }
                         this._appendFieldType(layerCollectionArray[layerTempArray[i]], result[i][1]);
+
                     }
                 }
                 this._updateLegend(this.map.extent);
@@ -758,7 +767,7 @@ define([
             }
             if (layerCollection.fieldName) {
                 for (i = 0; i < layerObject.fields.length; i++) {
-                    if (layerObject.fields[i].name === layerCollection.fieldName) {
+                    if (layerObject.fields && layerObject.fields[i].name === layerCollection.fieldName) {
                         layerCollection.fieldType = layerObject.fields[i].type;
                         break;
                     }
@@ -798,11 +807,10 @@ define([
         */
         _createLegendList: function (layerList, mapServerUrl) {
             var layerURL, i, j, isLegendCreated = false, layerUrl;
-
             if (layerList && layerList.layers && layerList.layers.length > 0) {
                 for (i = 0; i < layerList.layers.length; i++) {
                     layerList.layers[i].featureLayerUrl = mapServerUrl.featureLayerUrl;
-                    if (array.indexOf(this.indexesForLayer[mapServerUrl.url], layerList.layers[i].layerId) !== -1) {
+                    if (array.indexOf(this.indexesForLayer[mapServerUrl.url], layerList.layers[i].layerId) !== -1 || array.indexOf(this.indexesForLayer, "all") !== -1) {
                         isLegendCreated = true;
                         layerURL = mapServerUrl.url + '/' + layerList.layers[i].layerId;
                         this._layerCollection[layerURL] = layerList.layers[i];

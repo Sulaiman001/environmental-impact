@@ -29,9 +29,18 @@ from reportlab.lib import colors
 from reportlab.lib.colors import Color
 from reportlab.lib.units import inch, cm
 from reportlab.lib.utils import ImageReader
-from PIL import Image as PILImage
+#from PIL import Image as PILImage
 from cStringIO import StringIO
 from reportlab.pdfgen import canvas
+
+try:
+    from PIL import Image as PILImage, ImageFile
+except:
+    try:
+        import PIL.Image as PILImage, PIL.ImageFile as ImageFile
+    except:
+        arcpy.AddError("Could not find PIL module. \
+                       Please install it by executing pip install pillow")
 
 arcpy.env.overwriteOutput = True
 
@@ -71,6 +80,9 @@ STYLES.add(ParagraphStyle(name='dateStyle', alignment=TA_RIGHT, fontSize=10,
 STYLES.add(ParagraphStyle(name='areaStyle', alignment=TA_LEFT, fontSize=13,
                           fontName='Helvetica'))
 
+STYLES.add(ParagraphStyle(name='noDataaStyle', alignment=TA_LEFT,
+                          fontSize=10, fontName='Helvetica'))
+
 STYLEH2 = STYLES['Heading2']
 
 STYLE = ParagraphStyle(name='Normal', fontName='Helvetica', fontSize=8)
@@ -82,6 +94,11 @@ PAGE_WIDTH = defaultPageSize[0]
 #   Report format
 DETAIL_REPORT_TYPE = "Detailed"
 QUICK_REPORT_TYPE = "Quick"
+
+#   Image layout sizes
+PORTRAIT_SIZE = [620, 820]
+LANDSCAPE_SIZE = [620, 450]
+
 REPORT_FORMAT = arcpy.GetParameterAsText(2)
 
 #   Specify logo image path
@@ -124,10 +141,10 @@ def calculate_area(area_of_interest, report_units):
     """
     try:
         #   Check the Report units type and set the Output Units
-        if report_units == "Standard":
-            area_unit = ["esriAcres", "Acres"]
+        if report_units.upper() == "Metric".upper():
+            area_unit = ["esriAcres", "SqKm"]
         else:
-            area_unit = ["esriSquareKilometers", "SqKm"]
+            area_unit = ["esriSquareKilometers", "Acres"]
 
         aoi_fesatureset = arcpy.FeatureSet()
         aoi_fesatureset.load(area_of_interest)
@@ -155,8 +172,8 @@ def calculate_area(area_of_interest, report_units):
         request = urllib2.Request(GEOMTRY_SERVICE_URL, data)
         aoi_area = json.loads(urllib2.urlopen(request).read())
         arcpy.AddMessage("Area of AOI calculated successfully.")
-        area = "{0} {1}".format('%.1f' % aoi_area['areas'][0], area_unit[1])
-        return area
+        #area = "{0} {1}".format('%.1f' % aoi_area['areas'][0], area_unit[1])
+        return aoi_area, area_unit[1]
 
     except arcpy.ExecuteError as error:
         arcpy.AddError("Error occured during calculate_area:" + str(error))
@@ -184,7 +201,7 @@ def convert(data):
         return data
 
 
-def create_image_to_print(web_map_as_json):
+def create_image_to_print(web_map_as_json, image_size):
     """
     This function helps to create PNG format Image which will be inserted into
     PDF report
@@ -192,14 +209,14 @@ def create_image_to_print(web_map_as_json):
     try:
         arcpy.AddMessage("Printing Image..")
         # Setting parametrs for Export web map server
-        output_file = SCRATCH  + os.sep + "image.png"
+        output_file = SCRATCH  + os.sep + "image1.png"
         image_format = "PNG32"
 
         raw_string = web_map_as_json.encode("unicode-escape")
         web_map_as_json = json.loads(raw_string)
 
         #   Change output size of image to 620 X 820
-        web_map_as_json['exportOptions']['outputSize'] = [620, 820]
+        web_map_as_json['exportOptions']['outputSize'] = image_size
 
         converted_web_json = convert(web_map_as_json)
 
@@ -234,14 +251,32 @@ def validate_detailed_report(web_map_as_json, area_of_interest, uploaded_zip,
     zip_dir_path = ""
 
     #   Calculate area of provided AOI
-    area = calculate_area(area_of_interest, report_units)
+    aoi_area, area_unit = calculate_area(area_of_interest, report_units)
+    area = "{0} {1}".format('%.1f' % aoi_area['areas'][0], area_unit)
+    if ((report_units.upper() == "standard".upper() and
+         aoi_area['areas'][0] >= 300) or
+        (report_units.upper() == "metric".upper() and
+         aoi_area['areas'][0] > 1.21406)):
+        image_size = PORTRAIT_SIZE
+
+    elif ((report_units.upper() == "standard".upper() and
+           aoi_area['areas'][0] < 300) or
+          (report_units.upper() == "metric".upper() and
+           aoi_area['areas'][0] < 1.21406)):
+        image_size = LANDSCAPE_SIZE
+##    elif :
+##        image_size = [620, 820]
+##    elif :
+##        image_size = [620, 450]
+
+    #arcpy.AddMessage(image_size)
     if not area:
         arcpy.AddWarning("Failed to calculate web map area." +
                          " It will not be shown on report.")
 
     #   If WebMapJSON is provided, include image in the PDF Report
     if web_map_as_json != "":
-        image = create_image_to_print(web_map_as_json)
+        image = create_image_to_print(web_map_as_json, image_size)
         if not image:
             arcpy.AddWarning("Failed to get image from web map." +
                              " It will not be drawn on report.")
@@ -371,10 +406,11 @@ def intersect_layers(field_json, area_of_interest, report_units, zip_dir_path):
                 out_feature.load(zip_dir_path + os.path.sep + shape_file)
                 desc = arcpy.Describe(out_feature)
                 fields = desc.fields
-                not_include_field = ["AREA", "LENGTH", "ID", "OID", "OBJECTID"]
+                not_include_field = ["AREA", "LENGTH", "ID", "OID", "OBJECTID",
+                                     "OBJECTID_1"]
                 lyr_fields = []
                 for fld in fields:
-                    if (not fld.name in not_include_field and
+                    if (not fld.name.upper() in not_include_field and
                             not (str(fld.name).upper()).startswith(("SHAPE",
                                                                     "FID"))):
                         lyr_fields.append(str(fld.name))
@@ -453,21 +489,24 @@ def intersect(*args):
         for row in search_cursor:
             impact_value = impact_value + row[-2]
 
-        #   If layer has Impact, get the details for each of the required field
-        all_fields_data = append_data(out_feature, layer_intersect,
-                                      area_unit, length_unit, is_zip)
-        all_layer_fields_data.append(all_fields_data)
-
     elif int(arcpy.GetCount_management(layer_intersect)[0]) == 0:
         impact_status = "No Known Impact"
         impact_value = 0
 
+    #   If layer has Impact, get the details for each of the required field
+    all_fields_data = append_data(out_feature, layer_intersect, lyr_fields,
+                                  area_unit, length_unit, is_zip)
+    all_layer_fields_data.append(all_fields_data)
     #   Include Imapct status in layer details table
     layer_data.append(impact_status)
 
     #   If layer is of point type, insert value in COUNT column of table
     if feature_type.upper() == "POINT":
-        para = Paragraph(str(format(impact_value, '8,d')), STYLES['Right'])
+        if impact_value == 0:
+            count = ""
+        else:
+            count = str(format(impact_value, '8,d'))
+        para = Paragraph(count, STYLES['Right'])
         layer_data.append(para)
         layer_data.append("")
         layer_data.append("")
@@ -499,7 +538,7 @@ def intersect(*args):
 
     return  layer_data, all_layer_fields_data
 
-def append_data(out_feature, layer_intersect, area_unit,
+def append_data(out_feature, layer_intersect, lyr_fields, area_unit,
                 length_unit, is_zip):
     """
     This function helps to append data on created lists in this fucntion to
@@ -516,88 +555,109 @@ def append_data(out_feature, layer_intersect, area_unit,
 
         all_fields_data.append([layer_name, "", ""])
 
-        #   Add detailes of each of layer in table
-        for fld in arcpy.ListFields(layer_intersect):
-            field_values = []
-            #   Consider only required fields
-            exclude_list = ["OBJECTID", "FID", "AREA", "LENGTH", "PNT_COUNT",
-                            "PERCENTAGE", "FID_", "OID", "OBJECTID_1"]
-            if fld.name not in exclude_list:
+        #   Appending empty list of fields in the main layer list which dont
+        #   impact in the provided AOI. Latre while building pdf the string will
+        #   be shown below the layer name describing " No known Impact "
+        if int(arcpy.GetCount_management(layer_intersect)[0]) == 0:
 
-                #   Take value of field from attribute table
-                with arcpy.da.SearchCursor(layer_intersect, [fld.name]) \
-                        as search_cursor:
-                    for row in search_cursor:
-                        field_values.append(row[0])
+            all_fields_data.append(["No known impact."])
 
-                feature_type = desc.shapeType
-                #   Set field table header baced on Geometry type of layer
-                if feature_type.upper() == "POINT":
-                    sum_field = "PNT_COUNT"
-                    field_header = ["No.", fld.name,
-                                    Paragraph("COUNT", STYLES["header_right"])]
-                elif feature_type.upper() == "POLYGON":
-                    sum_field = "AREA"
-                    field_header = ["No.", fld.name, area_unit]
-                elif feature_type.upper() == "POLYLINE":
-                    sum_field = "LENGTH"
-                    field_header = ["No.", fld.name, length_unit]
-##                    field_header = ["No.", fld.name,
-##                                    Paragraph(length_unit,
-##                                              STYLES["header_right"])]
+        elif int(arcpy.GetCount_management(layer_intersect)[0]) != 0:
+            valid_fields = 0
+            #   Add detailes of each of layer in table
+            for fld in arcpy.ListFields(layer_intersect):
+                #   Consider only required fields
+                exclude_list = ["OBJECTID", "FID", "AREA", "LENGTH", "PNT_COUNT",
+                                "PERCENTAGE", "FID_", "OID", "OBJECTID_1"]
+                if fld.name.upper() not in exclude_list:
+                    valid_fields += 1
+                    field_values = []
+                    #   Take value of field from attribute table
+                    with arcpy.da.SearchCursor(layer_intersect, [fld.name]) \
+                            as search_cursor:
+                        for row in search_cursor:
+                            field_values.append(row[0])
 
-                field_data = []
-                #   Add Header to field data table
-                field_data.append(field_header)
+                    feature_type = desc.shapeType
+                    #   Set field table header baced on Geometry type of layer
+                    if feature_type.upper() == "POINT":
+                        sum_field = "PNT_COUNT"
+                        field_header = ["No.", fld.name,
+                                        Paragraph("COUNT",
+                                                  STYLES["header_right"])]
+                    elif feature_type.upper() == "POLYGON":
+                        sum_field = "AREA"
+                        field_header = ["No.", fld.name, area_unit]
+                    elif feature_type.upper() == "POLYLINE":
+                        sum_field = "LENGTH"
+                        field_header = ["No.", fld.name, length_unit]
+    ##                    field_header = ["No.", fld.name,
+    ##                                    Paragraph(length_unit,
+    ##                                              STYLES["header_right"])]
 
-                unique_fieldvalue = list(set(field_values))
-                unique_fieldvalue.sort()
-                count = 0
+                    field_data = []
+                    #   Add Header to field data table
+                    field_data.append(field_header)
 
-                #   Add each unique value details into field data table
-                for value in unique_fieldvalue:
-                    total_count = 0
-                    values = []
-                    count += 1
-                    para_count = (Paragraph(str(count), STYLES['sr_center']))
-                    #   Insert value in field data table
-                    values.append(para_count)
-                    values.append(value)
-                    sum_val = 0
-                    #   If Point type, insert the count,
-                    #   if Polygon type, insert area
-                    #   if polyline type, insert length
-                    with arcpy.da.SearchCursor(layer_intersect,
-                                               [fld.name, sum_field]) as cursor:
-                        for row in cursor:
-                            row_value = row[1]
-                            total_count = total_count + row_value
-                            if row[0] == value:
-                                sum_val = (sum_val + row_value)
+                    unique_fieldvalue = list(set(field_values))
+                    unique_fieldvalue.sort()
+                    count = 0
+
+                    #   Add each unique value details into field data table
+                    for value in unique_fieldvalue:
+                        total_count = 0
+                        values = []
+                        count += 1
+                        para_count = (Paragraph(str(count),
+                                      STYLES['sr_center']))
+                        #   Insert value in field data table
+                        values.append(para_count)
+                        values.append(value)
+                        sum_val = 0
+                        #   If Point type, insert the count,
+                        #   if Polygon type, insert area
+                        #   if polyline type, insert length
+                        with arcpy.da.SearchCursor(layer_intersect,
+                                                   [fld.name, sum_field]) \
+                                                   as cursor:
+                            for row in cursor:
+                                row_value = row[1]
+                                total_count = total_count + row_value
+                                if row[0] == value:
+                                    sum_val = (sum_val + row_value)
+                                    if feature_type.upper() == "POINT":
+                                        val = format(sum_val, '8,d')
+                                    else:
+                                        val = "{:,}".format(round(sum_val, 2))
                                 if feature_type.upper() == "POINT":
-                                    val = format(sum_val, '8,d')
+                                    total = total_count
                                 else:
-                                    val = "{:,}".format(round(sum_val, 2))
-                            if feature_type.upper() == "POINT":
-                                total = total_count
-                            else:
-                                total = "{:,}".format(round(total_count, 2))
-                            para_val = (Paragraph(str(val), STYLES['Right']))
-                        values.append(para_val)
+                                    total = "{:,}".format(round(total_count, 2))
+                            para_val = (Paragraph(str(val),
+                                                      STYLES['Right']))
+                            values.append(para_val)
 
-                        field_data.append(values)
-                #   Add row having "Total" fieldin field data table
-                total_str_para = Paragraph(
-                    "Total", style=ParagraphStyle(name='total_bold',
-                                                  alignment=TA_LEFT,
-                                                  fontName='Helvetica-Bold'))
-                #   Insert total of all values for field in total section of
-                #   field data table
-                total_para = Paragraph(str(total), STYLES["header_right"])
-                field_data.append(["", total_str_para, total_para])
-                #   insert each field data in all fields details
-                all_fields_data.append(field_data)
+                            field_data.append(values)
+                    #   Add row having "Total" fieldin field data table
+                    total_str_para = Paragraph(
+                        "Total", style=ParagraphStyle(name='total_bold',
+                                                      alignment=TA_LEFT,
+                                                      fontName='Helvetica-Bold')
+                                               )
+                    #   Insert total of all values for field in total section of
+                    #   field data table
+                    total_para = Paragraph(str(total), STYLES["header_right"])
+                    field_data.append(["", total_str_para, total_para])
+                    #   insert each field data in all fields details
+                    all_fields_data.append(field_data)
+
+            if valid_fields == 0:
+                no_fields_msg = ("There is known impact, but no fields are" +
+                                 " provided to summarize.")
+                all_fields_data.append([no_fields_msg])
+
         return all_fields_data
+
 
     except arcpy.ExecuteError as error:
         arcpy.AddError("Error occured during append_data:" + str(error))
@@ -621,10 +681,6 @@ def generate_pdf(image, all_layers_data, fields_data, area, quick_summary_json):
         elif REPORT_FORMAT == DETAIL_REPORT_TYPE:
             pdf_name = (SCRATCH + os.sep +
                         "Environmental Impact Analysis Report.pdf")
-
-        #   Specify height and width for Layout
-        height = 7.5 * inch
-        width = 6.35 * inch
 
         #   Create PDF Doc at specified path
         doc = SimpleDocTemplate(pdf_name)
@@ -660,10 +716,23 @@ def generate_pdf(image, all_layers_data, fields_data, area, quick_summary_json):
                 parts.append(Paragraph("Image can not be displayed.",
                                        STYLES['error-left']))
             else:
-                img = Image(str(image), width, height)
-                img.hAlign = TA_CENTER
-                parts.append(img)
-            parts.append(PageBreak())
+                im = PILImage.open(str(image))
+                arcpy.AddMessage(im.size)
+                #   Specify height and width for image
+                width = 6.35 * inch
+                if im.size[1] == LANDSCAPE_SIZE[1]:
+                    height = 350
+                    img = Image(str(image), width, height)
+                    img.hAlign = TA_CENTER
+                    parts.append(img)
+                    parts.append(Spacer(0.40, 0.40 * inch))
+
+                elif im.size[1] == PORTRAIT_SIZE[1]:
+                    height = 7.5 * inch
+                    img = Image(str(image), width, height)
+                    img.hAlign = TA_CENTER
+                    parts.append(img)
+                    parts.append(PageBreak())
 
         if REPORT_FORMAT == DETAIL_REPORT_TYPE:
             #   Build Detailed PDF Reoprt if report type is Detailed
@@ -691,17 +760,24 @@ def generate_pdf(image, all_layers_data, fields_data, area, quick_summary_json):
                     parts.append(Paragraph(lyr_name, STYLES["Left"]))
                     parts.append(Spacer(0.20, 0.20 * inch))
 
-                    for j in xrange(1, len(fields_data[i][0])):
-                        field_value_table = Table(
-                            fields_data[i][0][j],
-                            style=[('GRID', (0, 0), (-1, -1), 0.5,
-                                    colors.black),
-                                   ('LEFTPADDING', (0, 0), (2, 0), 6),
-                                   ('FONT', (0, 0), (2, 0), 'Helvetica-Bold',
-                                    10)],
-                            colWidths=(0.4*inch, 4.2*inch, 1*inch))
-                        parts.append(Spacer(0.20, 0.20 * inch))
-                        parts.append(field_value_table)
+                    if isinstance(fields_data[i][0][1][0], str):
+                        no_impact_para = Paragraph(fields_data[i][0][1][0],
+                                                   STYLES['noDataaStyle'])
+                        parts.append(no_impact_para)
+                    else:
+                        for j in xrange(1, len(fields_data[i][0])):
+                            field_value_table = Table(
+                                fields_data[i][0][j],
+                                style=[('GRID', (0, 0), (-1, -1), 0.5,
+                                        colors.black),
+                                       ('LEFTPADDING', (0, 0), (2, 0), 6),
+                                       ('FONT', (0, 0), (2, 0),
+                                        'Helvetica-Bold',
+                                        10)],
+                                colWidths=(0.4*inch, 4.2*inch, 1*inch))
+                            parts.append(Spacer(0.20, 0.20 * inch))
+                            parts.append(field_value_table)
+
 
         if REPORT_FORMAT == QUICK_REPORT_TYPE:
             #   Build Quick PDF Reoprt if report type is Quick
@@ -732,46 +808,71 @@ def get_quick_report_data(parts, quick_summary_json):
                                "count" : "Count"},
                  "metric" : {"area": "Area(SqKm)",
                              "length" : "Length(Meter)",
-                             "count" : "Count"}}
+                             "count" : "Count"},
+                 "" : {"area" : "Area(acres)",
+                               "length" : "Length(Miles)",
+                               "count" : "Count"}}
     #   Insert details of each layer
     try:
         for i in xrange(len(quick_summary_json)):
             #   Insert Layer name header
-            lyr_name = quick_summary_json[i]["layerName"]
+            lyr_name = quick_summary_json[i]["layerName"] + " - Impact Information"
+            arcpy.AddMessage("Processing : " + lyr_name)
             parts.append(Spacer(0.20, 0.20 * inch))
             parts.append(Paragraph(lyr_name, STYLES["Left"]))
             parts.append(Spacer(0.10, 0.10 * inch))
             #   Insert fields data in table
-            for fields in quick_summary_json[i]["summaryFields"]:
-                unit_type = quick_summary_json[i]['summaryUnits'].lower()
-                unit = quick_summary_json[i]['summaryType'].lower()
-                field_header_unit = unit_dict[unit_type][unit]
-                field_header = ["No.", fields['fieldName'],
-                                Paragraph(field_header_unit,
-                                          STYLES["header_right"])]
-                field_data = []
-                #   Insert header in field table
-                field_data.append(field_header)
-                fields['fieldValues'].sort()
-                #   Insert values of each field
-                for j in xrange(len(fields['fieldValues'])):
-                    for the_key, the_value in fields['fieldValues'][j].\
-                                                    iteritems():
-                        val = float(the_value)
-                        val_param = format(int(round(val)), '8,d')
-                        para_val = (Paragraph(str(val_param),
-                                              STYLES['Right']))
-                        value = [j + 1, the_key, para_val]
-                    field_data.append(value)
-                field_value_table = Table(
-                    field_data,
-                    style=[('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-                           ('LEFTPADDING', (0, 0), (2, 0), 6),
-                           ('FONT', (0, 0), (2, 0), 'Helvetica-Bold', 10)],
-                    colWidths=(0.4*inch, 4.2*inch, 1.1*inch))
-                parts.append(Spacer(0.20, 0.20 * inch))
-                #   Insert field value table for each field in mai PDF doc
-                parts.append(field_value_table)
+
+            if (quick_summary_json[i]["summaryType"] != "" ):
+
+                if len(quick_summary_json[i]["summaryFields"]) > 0:
+                    for fields in quick_summary_json[i]["summaryFields"]:
+                        u_type = quick_summary_json[i]['summaryUnits'].lower()
+                        unit = quick_summary_json[i]['summaryType'].lower()
+                        field_header_unit = unit_dict[u_type][unit]
+                        field_header = ["No.", fields['fieldName'],
+                                        Paragraph(field_header_unit,
+                                                  STYLES["header_right"])]
+                        field_data = []
+                        #   Insert header in field table
+                        field_data.append(field_header)
+
+                        fields['fieldValues'].sort()
+                        #   Insert values of each field
+                        for j in xrange(len(fields['fieldValues'])):
+                            for the_key, the_value in fields['fieldValues'][j].\
+                                                            iteritems():
+                                val = float(the_value)
+                                val_param = format(int(round(val)), '8,d')
+                                para_val = (Paragraph(str(val_param),
+                                                      STYLES['Right']))
+                                value = [j + 1, the_key, para_val]
+                            field_data.append(value)
+                        field_value_table = Table(
+                            field_data,
+                            style=[('GRID', (0, 0), (-1, -1), 0.5,
+                                    colors.black),
+                                   ('LEFTPADDING', (0, 0), (2, 0), 6),
+                                   ('FONT', (0, 0), (2, 0), 'Helvetica-Bold',
+                                    10)],
+                            colWidths=(0.4*inch, 4.2*inch, 1.1*inch))
+                        parts.append(Spacer(0.20, 0.20 * inch))
+                        #   Insert field value table for each field in mai PDF
+                        parts.append(field_value_table)
+                elif len(quick_summary_json[i]["summaryFields"]) == 0:
+                    no_field_msg = "No fields specified for analysis"
+                    no_fields_para = Paragraph(no_field_msg,
+                                               STYLES['noDataaStyle'])
+                    parts.append(Spacer(0.10, 0.10 * inch))
+                    parts.append(no_fields_para)
+
+            elif (quick_summary_json[i]["summaryType"] == "" and
+                    quick_summary_json[i]["summaryUnits"] == ""):
+                no_impact_para = Paragraph("No known Impact",
+                                           STYLES['noDataaStyle'])
+                parts.append(Spacer(0.10, 0.10 * inch))
+                parts.append(no_impact_para)
+
         return parts
     except Exception as error:
         arcpy.AddError(error)
@@ -902,21 +1003,38 @@ def validate_quick_report(web_map_as_json, quick_summary_json,
         quick_summary_json = json.loads(raw_string)
         area = ""
         image = ""
+        unit_type = check_summary_units(quick_summary_json)
 
-        #   Check for units provided in quick layer json
-        unit_type = quick_summary_json[0]['summaryUnits'].lower()
-        arcpy.AddMessage(("Units provided in Quick Summary JSON : {0}")
-                         .format(unit_type))
+##        #   Check for units provided in quick layer json
+##        unit_type = quick_summary_json[0]['summaryUnits'].lower()
+##        arcpy.AddMessage(("Units provided in Quick Summary JSON : {0}")
+##                         .format(unit_type))
 
         #   Calculate area of AOI
-        area = calculate_area(area_of_interest, unit_type)
+        aoi_area, area_unit = calculate_area(area_of_interest, unit_type)
+        area = "{0} {1}".format('%.1f' % aoi_area['areas'][0], area_unit)
+
+
+        if ((unit_type.upper() in ["standard".upper(), ""] and
+             aoi_area['areas'][0] >= 300) or
+            (unit_type.upper() == "metric".upper() and
+             aoi_area['areas'][0] > 1.21406)):
+            image_size = PORTRAIT_SIZE
+
+        elif ((unit_type.upper() in ["standard".upper(), ""] and
+                aoi_area['areas'][0] < 300) or
+                (unit_type.upper() == "metric".upper() and
+                aoi_area['areas'][0] < 1.21406)):
+            image_size = LANDSCAPE_SIZE
+
+
         if not area:
             arcpy.AddWarning("Failed to calculate web map area." +
                              " It will not be shown on report.")
 
         #   If WebMapJSON is provided, include image in the PDF Report
         if web_map_as_json != "":
-            image = create_image_to_print(web_map_as_json)
+            image = create_image_to_print(web_map_as_json, image_size)
             if not image:
                 arcpy.AddWarning("Failed to get image from web map." +
                                  " It will not be drawn on report.")
@@ -935,6 +1053,20 @@ def validate_quick_report(web_map_as_json, quick_summary_json,
                        str(error))
         sys.exit()
 
+def check_summary_units(quick_summary_json):
+    try:
+        unit_found = False
+        for layer in quick_summary_json:
+            if layer["summaryUnits"] != "":
+                unit_found = True
+                return layer["summaryUnits"]
+
+        if not unit_found:
+            return "standard"
+
+    except Exception as error:
+        arcpy.AddError(str(error))
+
 
 def main():
     """ Main Function """
@@ -952,7 +1084,9 @@ def main():
     aoi_featset = arcpy.FeatureSet()
     aoi_featset.load(area_of_interest)
     aoi_feat_count = int(arcpy.GetCount_management(aoi_featset)[0])
+    #features_num = len(area_of_interest['features'])
 
+    #if aoi_feat_count == 0 or features_num == 0:
     if aoi_feat_count == 0:
         arcpy.AddError("Provided AOI has no polygon features." +
                        " Please provide valid AOI for analysis.")
