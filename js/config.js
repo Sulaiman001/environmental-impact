@@ -125,7 +125,7 @@ define([], function () {
             ServiceURL: "http://54.193.222.183:6080/arcgis/rest/services/EIAPoly/MapServer/0",
             LoadAsServiceType: "feature"
         }, {
-            ServiceURL: "http://54.193.222.183:6080/arcgis/rest/services/EIAPoly/MapServer/8",
+            ServiceURL: "http://54.193.222.183:6080/arcgis/rest/services/EIAPoly/MapServer/7",
             LoadAsServiceType: "feature"
         }],
 
@@ -157,7 +157,7 @@ define([], function () {
             UnifiedSearch: "true"
         }, {
             Title: "EIAPoly",
-            QueryLayerId: "8",
+            QueryLayerId: "7",
             SearchDisplayTitle: "Florida Managed Areas",
             SearchDisplayFields: "${MANAME}",
             SearchExpression: "UPPER(MANAME) LIKE UPPER('%${0}%')",
@@ -272,7 +272,7 @@ define([], function () {
             }]
         }, {
             Title: "EIAPoly",
-            QueryLayerId: "8",
+            QueryLayerId: "7",
             InfoWindowHeaderField: "${MANAME}",
             InfoWindowData: [{
                 DisplayText: "Name:",
@@ -361,10 +361,6 @@ define([], function () {
         // Max limit for setting the bearing distance
         BearingDistanceMaxLimit: 10000,
 
-        // Supported formats for downloading the report
-        DownloadReportFormat: {
-            Format: "File GDB, Esri Shapefile, CSV Format"
-        },
         // ------------------------------------------------------------------------------------------------------------------------
         // GEOMETRY SERVICE SETTINGS
         // ------------------------------------------------------------------------------------------------------------------------
@@ -373,12 +369,12 @@ define([], function () {
         GeometryService: "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer",
 
         // Set GP service for creating AOI from shapefile and uploading shapefile for analysis
-        ShapefileTools: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3/EnvironmentalImpactTools/GPServer/ShapefileTools",
+        ShapefileTools: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_1/EnvironmentalImpactTools/GPServer/ShapefileTools",
 
         // ReportDownloadSettings: Settings for downloading quick and detailed summary reports in PDF format
         // GPServiceURL: url to geoprocessing service
         ReportDownloadSettings: {
-            GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3/EnvironmentalImpactTools/GPServer/GeneratePDFReport",
+            GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_1/EnvironmentalImpactTools/GPServer/GeneratePDFReport",
             ReportSettings: [
                 {
                     Type: "Quick",
@@ -391,9 +387,35 @@ define([], function () {
             ]
         },
 
+        // Supported formats for downloading the report
+        // Enabled: Allowed values are true, false
+        // Label: Specify label to displayed in the application for this data format
+        // Format: Allowed values are Excel, File Geodatabase - GDB - .gdb, Shapefile - SHP - .shp or any other as supported by the clip zip and ship service
+        // GPServiceURL: Specify url to geoprocessing service
+        DataDownloadSettings: [
+            {
+                Enabled: true,
+                Label: "Excel",
+                Format: "Excel",
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_1/EnvironmentalImpactTools/GPServer/ClipToExcel"
+            },
+            {
+                Enabled: true,
+                Label: "File GDB",
+                Format: "File Geodatabase - GDB - .gdb",
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_1/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+            },
+            {
+                Enabled: true,
+                Label: "Shapefile",
+                Format: "Shapefile - SHP - .shp",
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_1/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+            }
+        ],
+
+        // ------------------------------------------------------------------------------------------------------------------------
         // SETTINGS FOR MAP SHARING
         // ------------------------------------------------------------------------------------------------------------------------
-
         // Set URL for TinyURL service, and URLs for social media
         MapSharingOptions: {
             TinyURLServiceURL: "http://api.bit.ly/v3/shorten?login=esri&apiKey=R_65fd9891cd882e2a96b99d4bda1be00e&uri=${0}&format=json",
@@ -407,33 +429,7 @@ define([], function () {
         AOITabText: "Area of Interest",
 
         // Set Report Tab Text
-        ReportTabText: "Report",
-
-        // Supported formats for downloading the report
-        // Enabled: Allowed values are true, false
-        // Label: Specify label to displayed in the application for this data format
-        // Format: Allowed values are Excel, File Geodatabase - GDB - .gdb, Shapefile - SHP - .shp or any other as supported by the clip zip and ship service
-        // GPServiceURL: Specify url to geoprocessing service
-        DataDownloadSettings: [
-            {
-                Enabled: true,
-                Label: "Excel",
-                Format: "Excel",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3/EnvironmentalImpactTools/GPServer/ClipToExcel"
-            },
-            {
-                Enabled: true,
-                Label: "File GDB",
-                Format: "File Geodatabase - GDB - .gdb",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3/EnvironmentalImpactTools/GPServer/ClipZipandShip"
-            },
-            {
-                Enabled: true,
-                Label: "Shapefile",
-                Format: "Shapefile - SHP - .shp",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3/EnvironmentalImpactTools/GPServer/ClipZipandShip"
-            }
-        ]
+        ReportTabText: "Report"
 
     };
 });
