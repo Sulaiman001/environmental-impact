@@ -135,7 +135,7 @@ define({
         defineAOI: "@fr@ Please define AOI to generate the report.",
         invalidGeometry: "@fr@ Invalid geometry.",
         noFeaturesFound: "@fr@ Features not found.",
-        browseFile: "@fr@ Please browse a file.",
+        browseFile: "@fr@ Please browse to a file.",
         noFeaturesInAOI: "@fr@ No features found in AOI.",
         noFieldsSelected: "@fr@ No fields selected.",
         reportFormat: "@fr@ Please Select the Report Format",

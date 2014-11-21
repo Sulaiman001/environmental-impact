@@ -59,6 +59,7 @@ define([
         isShowDefaultPushPin: true,
         selectedGraphic: null,
         graphicsLayerId: null,
+        configSearchSettings: null,
 
 
         /**
@@ -96,8 +97,6 @@ define([
                     topic.publish("toggleWidget", "locator");
                     this._showHideLocateContainer();
                 })));
-
-                this.configSearchSettings = dojo.configData.SearchSettings;
                 this.locatorSettings = dojo.configData.LocatorSettings;
                 this.defaultAddress = this.locatorSettings.LocatorDefaultAddress;
                 domConstruct.place(this.divAddressContainer, this.parentDomNode);
@@ -120,6 +119,47 @@ define([
             this._attachLocatorEvents();
             topic.subscribe("setDefaultTextboxValue", this._setDefaultTextboxValue);
             topic.subscribe("clearLocatorGraphicsLayer", this._clearGraphics);
+        },
+
+        /**
+        * set the searchSettings as per the layers availavle on map
+        * @memberOf widgets/locator/locator
+        */
+        _setSearchSettings: function () {
+            var i;
+            this.configSearchSettings = [];
+            for (i = 0; i < dojo.configData.SearchSettings.length; i++) {
+                if (this._checkLayerAvailability(dojo.configData.SearchSettings[i].QueryURL)) {
+                    this.configSearchSettings.push(dojo.configData.SearchSettings[i]);
+                }
+            }
+        },
+
+        /**
+        * checks if the layer is available on Map
+        * @method widgets/locator/locator
+        * @param {} queryURL
+        */
+        _checkLayerAvailability: function (queryURL) {
+            var layerId, lastIndex, layerIndex, layerURLwithSlash, layerURL, isLayerAvailable = false;
+            lastIndex = queryURL.lastIndexOf('/');
+            layerIndex = queryURL.substr(lastIndex + 1);
+            layerURLwithSlash = queryURL.substring(0, lastIndex + 1);
+            layerURL = queryURL.substring(0, lastIndex);
+            for (layerId in this.map._layers) {
+                if (this.map._layers.hasOwnProperty(layerId)) {
+                    if (this.map._layers[layerId].url) {
+                        if (queryURL === this.map._layers[layerId].url) {
+                            isLayerAvailable = true;
+                            break;
+                        } else if ((layerURL === this.map._layers[layerId].url || layerURLwithSlash === this.map._layers[layerId].url) && Array.indexOf(this.map._layers[layerId].visibleLayers, parseInt(layerIndex, 10)) > -1) {
+                            isLayerAvailable = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            return isLayerAvailable;
         },
 
         /**
@@ -318,13 +358,10 @@ define([
         * @method _searchLocation
         */
         _searchLocation: function () {
-            var nameArray, locatorSettings, locator, searchFieldName, addressField, baseMapExtent,
+            var nameArray = {}, locatorSettings, locator, searchFieldName, addressField, baseMapExtent,
                 options, searchFields, addressFieldValues, s, deferredArray,
                 locatorDef, deferred, resultLength, deferredListResult, index, resultAttributes, key, order;
-
-            nameArray = {
-                Address: []
-            };
+            nameArray[this.locatorSettings.DisplayText] = [];
             this._toggleTexBoxControls(true);
             domAttr.set(this.txtAddress, "defaultAddress", this.txtAddress.value);
 
@@ -360,6 +397,9 @@ define([
             * @param {object} candidates Contains results from locator service
             */
             deferredArray = [];
+            if (!this.configSearchSettings || !this.preLoaded) {
+                this._setSearchSettings();
+            }
             for (index = 0; index < this.configSearchSettings.length; index++) {
                 this._layerSearchResults(deferredArray, this.configSearchSettings[index]);
             }
@@ -465,8 +505,8 @@ define([
                     for (j in searchFields) {
                         if (searchFields.hasOwnProperty(j)) {
                             if (candidates[order].attributes[this.locatorSettings.FilterFieldName] === searchFields[j]) {
-                                if (nameArray.Address.length < this.locatorSettings.MaxResults) {
-                                    nameArray.Address.push({
+                                if (nameArray[this.locatorSettings.DisplayText].length < this.locatorSettings.MaxResults) {
+                                    nameArray[this.locatorSettings.DisplayText].push({
                                         name: string.substitute(this.locatorSettings.DisplayField, candidates[order].attributes),
                                         attributes: candidates[order]
                                     });

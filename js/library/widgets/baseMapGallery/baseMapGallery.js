@@ -49,7 +49,7 @@ define([
             topic.subscribe("setBaseMap", lang.hitch(this, function (preLayerIndex, selectedBaseMapIndex, presentThumbNail) {
                 var thumbnailPath;
                 dojo.selectedBasemapIndex = selectedBaseMapIndex;
-                this._changeBaseMap(preLayerIndex);
+                this._changeBaseMap(preLayerIndex, presentThumbNail);
                 if (dojo.configData.BaseMapLayers[presentThumbNail].length) {
                     thumbnailPath = dojo.configData.BaseMapLayers[presentThumbNail][0].ThumbnailSource;
                 } else {

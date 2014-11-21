@@ -62,7 +62,7 @@ define([
         logoContainer: null,
         _layerCollection: {},
         rendererArray: [],
-        isExtentBasedLegend: true,
+        isExtentBasedLegend: false,
         hostedLayersJSON: null,
         webmapUpdatedRenderer: null,
         newLeft: 0,
@@ -268,11 +268,12 @@ define([
         _checkLayerVisibility: function (layerUrl) {
             var layer, lastChar, mapLayerUrl, layerUrlIndex = layerUrl.split('/'),
                 returnVal = false;
+            // if (this.isExtentBasedLegend) {
             layerUrlIndex = layerUrlIndex[layerUrlIndex.length - 1];
             for (layer in this.map._layers) {
                 if (this.map._layers.hasOwnProperty(layer)) {
                     if (this.map._layers[layer].url === layerUrl) {
-                        if (this.map._layers[layer].visibleAtMapScale) {
+                        if (this.map._layers[layer].visibleAtMapScale || !this.isExtentBasedLegend) {
                             returnVal = true;
                             break;
                         }
@@ -286,7 +287,18 @@ define([
                         }
                         if (mapLayerUrl === layerUrl) {
                             if (this.map._layers[layer].visibleLayers.indexOf(parseInt(layerUrlIndex, 10)) !== -1) {
-                                if (this.map._layers[layer].visibleAtMapScale && this.map.__LOD.scale < this.map._layers[layer].dynamicLayerInfos[parseInt(layerUrlIndex, 10)].minScale) {
+
+                                if (this.isExtentBasedLegend && this.map._layers[layer].visibleAtMapScale) {
+                                    if (this.map._layers[layer].dynamicLayerInfos) {
+                                        if (this.map.__LOD.scale < this.map._layers[layer].dynamicLayerInfos[parseInt(layerUrlIndex, 10)].minScale) {
+                                            returnVal = true;
+                                            break;
+                                        }
+                                    } else {
+                                        returnVal = true;
+                                        break;
+                                    }
+                                } else {
                                     returnVal = true;
                                     break;
                                 }
@@ -427,9 +439,11 @@ define([
         _fireQueryOnExtentChange: function (currentExtent) {
             var queryParams = new Query();
             queryParams.outFields = ["*"];
-            queryParams.geometry = currentExtent;
-            queryParams.spatialRelationship = "esriSpatialRelIntersects";
-            queryParams.returnGeometry = false;
+            if (this.isExtentBasedLegend) {
+                queryParams.geometry = currentExtent;
+                queryParams.spatialRelationship = "esriSpatialRelIntersects";
+                queryParams.returnGeometry = false;
+            }
             return queryParams;
         },
 
@@ -442,6 +456,9 @@ define([
             queryTask = new QueryTask(layer);
             defResult.hasDrawingInfo = hasDrawingInfo;
             defResult.count = 0;
+            if (!this.isExtentBasedLegend) {
+                queryParams.where = "1=1";
+            }
             queryTask.executeForCount(queryParams, lang.hitch(this, function (count) {
                 defResult.count = count;
                 queryDeferred.resolve(defResult);
@@ -503,10 +520,10 @@ define([
                 }
                 mapServerURL = layerArray[index].split("/");
                 layerIndex = mapServerURL[mapServerURL.length - 1];
-                if (isNaN(layerIndex)) {
+                if (isNaN(layerIndex) || layerIndex === "") {
                     mapServerURL = mapServerURL.join("/");
-                    this.mapServerArray.push({ "url": mapServerURL, "featureLayerUrl": featureLayerUrl });
-                    this.indexesForLayer.push("all");
+                    this.mapServerArray.push({ "url": mapServerURL, "featureLayerUrl": featureLayerUrl, "all": true });
+                    //this.indexesForLayer.push("all");
                 } else {
                     mapServerURL.pop();
                     mapServerURL = mapServerURL.join("/");
@@ -547,9 +564,10 @@ define([
                     this._addFieldValue(this._layerCollection);
                 }
             }));
-            this._addFieldValue(this.webmapUpdatedRenderer);
-            this._addlegendListWidth(this.legendListWidth);
-
+            if (this.webmapUpdatedRenderer) {
+                this._addFieldValue(this.webmapUpdatedRenderer);
+                this._addlegendListWidth(this.legendListWidth);
+            }
         },
 
         /*
@@ -810,7 +828,7 @@ define([
             if (layerList && layerList.layers && layerList.layers.length > 0) {
                 for (i = 0; i < layerList.layers.length; i++) {
                     layerList.layers[i].featureLayerUrl = mapServerUrl.featureLayerUrl;
-                    if (array.indexOf(this.indexesForLayer[mapServerUrl.url], layerList.layers[i].layerId) !== -1 || array.indexOf(this.indexesForLayer, "all") !== -1) {
+                    if (mapServerUrl.all || array.indexOf(this.indexesForLayer[mapServerUrl.url], layerList.layers[i].layerId) !== -1) {
                         isLegendCreated = true;
                         layerURL = mapServerUrl.url + '/' + layerList.layers[i].layerId;
                         this._layerCollection[layerURL] = layerList.layers[i];

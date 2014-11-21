@@ -1,4 +1,4 @@
-/*global define */
+﻿/*global define */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4  */
 /*
  | Copyright 2013 Esri
@@ -26,13 +26,12 @@ define([], function () {
         // 3.  Set path for application favicon              - [ Tag(s) to look for: ApplicationFavicon ]
         // 4.  Set URL for help page                         - [ Tag(s) to look for: HelpURL ]
         // 5.  Specify header widget settings                - [ Tag(s) to look for: AppHeaderWidgets ]
-        // 6.  Specify URLs for base maps                    - [ Tag(s) to look for: BaseMapLayers ]
-        // 7.  Set initial map extent                        - [ Tag(s) to look for: DefaultExtent ]
-        // 8.  Specify URLs for operational layers           - [ Tag(s) to look for: OperationalLayers]
-        // 9.  Customize zoom level for address search       - [ Tag(s) to look for: ZoomLevel ]
-        // 10. Customize address search settings             - [ Tag(s) to look for: LocatorSettings]
-        // 11. Set URL for geometry service                  - [ Tag(s) to look for: GeometryService ]
-        // 12. Specify URLs for map sharing                  - [ Tag(s) to look for: MapSharingOptions,TinyURLServiceURL, TinyURLResponseAttribute, FacebookShareURL, TwitterShareURL, ShareByMailLink ]
+        // 6.  Set initial map extent                        - [ Tag(s) to look for: DefaultExtent ]
+        // 7.  Specify URLs for operational layers           - [ Tag(s) to look for: OperationalLayers]
+        // 8.  Customize zoom level for address search       - [ Tag(s) to look for: ZoomLevel ]
+        // 9. Customize address search settings             - [ Tag(s) to look for: LocatorSettings]
+        // 10. Set URL for geometry service                  - [ Tag(s) to look for: GeometryService ]
+        // 11. Specify URLs for map sharing                  - [ Tag(s) to look for: MapSharingOptions,TinyURLServiceURL, TinyURLResponseAttribute, FacebookShareURL, TwitterShareURL, ShareByMailLink ]
 
         // ------------------------------------------------------------------------------------------------------------------------
         // GENERAL SETTINGS
@@ -177,7 +176,7 @@ define([], function () {
         InfoPopupWidth: 300,
 
         // Configure graphic color to be set for uploaded shapefile
-        RendererColor: "#1C86EE",
+        RendererColor: "28,134,238",
 
         // Configure graphic color to be set for buffer around AOI
         BufferSymbology: {
@@ -369,12 +368,12 @@ define([], function () {
         GeometryService: "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer",
 
         // Set GP service for creating AOI from shapefile and uploading shapefile for analysis
-        ShapefileTools: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_1/EnvironmentalImpactTools/GPServer/ShapefileTools",
+        ShapefileTools: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_2/EnvironmentalImpactTools/GPServer/ShapefileTools",
 
         // ReportDownloadSettings: Settings for downloading quick and detailed summary reports in PDF format
         // GPServiceURL: url to geoprocessing service
         ReportDownloadSettings: {
-            GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_1/EnvironmentalImpactTools/GPServer/GeneratePDFReport",
+            GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_2/EnvironmentalImpactTools/GPServer/GeneratePDFReport",
             ReportSettings: [
                 {
                     Type: "Quick",
@@ -397,19 +396,19 @@ define([], function () {
                 Enabled: true,
                 Label: "Excel",
                 Format: "Excel",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_1/EnvironmentalImpactTools/GPServer/ClipToExcel"
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_2/EnvironmentalImpactTools/GPServer/ClipToExcel"
             },
             {
                 Enabled: true,
                 Label: "File GDB",
                 Format: "File Geodatabase - GDB - .gdb",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_1/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_2/EnvironmentalImpactTools/GPServer/ClipZipandShip"
             },
             {
                 Enabled: true,
                 Label: "Shapefile",
                 Format: "Shapefile - SHP - .shp",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_1/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_2/EnvironmentalImpactTools/GPServer/ClipZipandShip"
             }
         ],
 
@@ -418,7 +417,7 @@ define([], function () {
         // ------------------------------------------------------------------------------------------------------------------------
         // Set URL for TinyURL service, and URLs for social media
         MapSharingOptions: {
-            TinyURLServiceURL: "http://api.bit.ly/v3/shorten?login=esri&apiKey=R_65fd9891cd882e2a96b99d4bda1be00e&uri=${0}&format=json",
+            TinyURLServiceURL: "https://api-ssl.bitly.com/v3/shorten?longUrl=${0}",
             TinyURLResponseAttribute: "data.url",
             FacebookShareURL: "http://www.facebook.com/sharer.php?u=${0}&t=Environmental%20Impact",
             TwitterShareURL: "http://mobile.twitter.com/compose/tweet?status=Environmental%20Impact ${0}",

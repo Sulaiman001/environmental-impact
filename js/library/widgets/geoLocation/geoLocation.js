@@ -177,6 +177,7 @@ define([
             graphic.attributes.sourcename = "geoLocationSearch";
             topic.publish("clearAllGraphics");
             this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+            topic.publish("resetAOITab");
             domStyle.set(dojo.query('.esriCTClearAOIButton')[0], "display", "block");
             dojo.isGeoLocationEnabled = true;
         }
