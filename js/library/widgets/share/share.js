@@ -65,9 +65,12 @@ define(["dojo/_base/declare",
         _infoX: "",
         _infoY: "",
         _infoWindowVisibility: "",
+        _infoWindowObjID: "",
+        _infoWindowLayerID: "",
         extentPoints: [],
         _actualData: "",
         _isDataValid: true,
+        _setExtentOnLoad: true,
 
         /**
         * create share widget
@@ -135,6 +138,9 @@ define(["dojo/_base/declare",
                         this._actualData = graphicDetails[1];
                         this._replicateSharedData(graphicDetails);
                         this._fetchData(graphicDetails);
+                        if (!graphicDetails.TAB) {
+                            topic.publish("disableDefaultSharingExtent");
+                        }
                     }), 6000);
                 }
 
@@ -145,8 +151,17 @@ define(["dojo/_base/declare",
                 }));
 
                 topic.subscribe("infoWindowData", lang.hitch(this, function (mapPoint) {
-                    this._infoX = mapPoint.x;
-                    this._infoY = mapPoint.y;
+                    if (mapPoint.attributes) {
+                        this._infoX = mapPoint.geometry.x;
+                        this._infoY = mapPoint.geometry.y;
+                        this._infoWindowObjID = mapPoint.attributes.OBJECTID;
+                        this._infoWindowLayerID = mapPoint.layer.QueryLayerId;
+                    } else {
+                        this._infoX = mapPoint.x;
+                        this._infoY = mapPoint.y;
+                        this._infoWindowObjID = "";
+                        this._infoWindowLayerID = "";
+                    }
                 }));
 
                 topic.subscribe("infoWindowVisibilityStatus", lang.hitch(this, function (value) {
@@ -192,7 +207,11 @@ define(["dojo/_base/declare",
                                 "wkid": this.map.spatialReference.wkid
                             }));
                             evt.mapPoint = pointGeometry;
-                            topic.publish("displayInfoWindow", evt);
+                            if (graphicDetails.INFOFEATUREID && graphicDetails.INFOLAYERID) {
+                                topic.publish("showInfoWindowOnMap", pointGeometry, [graphicDetails.INFOFEATUREID, graphicDetails.INFOLAYERID]);
+                            } else {
+                                topic.publish("displayInfoWindow", evt);
+                            }
                         }
 
                         switch (graphicDetails.TAB) {
@@ -276,39 +295,23 @@ define(["dojo/_base/declare",
             }
         },
         _displaySelectedFeature: function (graphicDetails) {
-            var i, pointExtent;
             try {
-                setTimeout(lang.hitch(this, function () {
-                    for (i = 0; i < graphicDetails.Geom.split(",").length; i = i + 4) {
-                        pointExtent = new esri.geometry.Extent({
-                            "xmax": parseFloat(unescape(graphicDetails.Geom.split(",")[i])),
-                            "xmin": parseFloat(unescape(graphicDetails.Geom.split(",")[i + 1])),
-                            "ymax": parseFloat(unescape(graphicDetails.Geom.split(",")[i + 2])),
-                            "ymin": parseFloat(unescape(graphicDetails.Geom.split(",")[i + 3])),
-                            "spatialReference": this.map.spatialReference
-                        });
-                        topic.publish("displaySelectedFeature", pointExtent);
-                    }
-                    this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
-                    setTimeout(lang.hitch(this, function () {
-                        if (graphicDetails.SD > 0) {
-                            topic.publish("setSliderDistanceAndUnit", graphicDetails.SD, graphicDetails.UV);
-                            topic.publish("displayBufferedSelectedFeature");
-                        }
-                        this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
-                        domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
-                        domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
-                        this._removeHighlightedUnit();
-                        this._highlightUnit(graphicDetails);
-                        topic.publish("setSliderValue", graphicDetails.UV);
-                        if (graphicDetails.SD > 0) {
-                            topic.publish("sharedUrlBufferStatus", false);
-                            dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
-                        }
-                        this._setEmailSharingMapExtent();
-                        this._replicateSharedData(null);
-                    }), 15000);
-                }), 15000);
+                this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
+                topic.publish("displaySelectedFeature", graphicDetails.Geom);
+                if (graphicDetails.SD > 0) {
+                    topic.publish("setSliderDistanceAndUnit", graphicDetails.SD, graphicDetails.UV);
+                    dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
+                } else {
+                    topic.publish("disableDefaultSharingExtent");
+                    this._setEmailSharingMapExtent();
+                }
+                this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
+                domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
+                domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
+                this._removeHighlightedUnit();
+                this._highlightUnit(graphicDetails);
+                topic.publish("setSliderValue", graphicDetails.UV);
+                //this._replicateSharedData(null);
             } catch (err) {
                 alert(err.message);
             }
@@ -355,7 +358,6 @@ define(["dojo/_base/declare",
         },
         // This function is used to highlight tab
         _highlightTab: function (tabName, address) {
-            var searchAddr;
             try {
                 if (dojo.query(".esriCTAOILinkSelect")[0]) {
                     domClass.remove(dojo.query(".esriCTAOILinkSelect")[0], "esriCTAOILinkSelect");
@@ -365,8 +367,7 @@ define(["dojo/_base/declare",
                     domClass.add(dom.byId("divLinkplaceName"), "esriCTAOILinkSelect");
                     this._hideContainer("placeNameSearch");
                     dom.byId("placeNameSearch").style.display = "block";
-                    searchAddr = address === "undefined" ? dojo.configData.LocatorSettings.LocatorDefaultPlaceNameSearchAddress : address;
-                    dojo.query(".esriCTTxtAddress")[1].value = unescape(searchAddr);
+                    dojo.query(".esriCTTxtAddress")[1].value = (address === "") ? dojo.configData.LocatorSettings.LocatorDefaultPlaceNameSearchAddress : unescape(address);
                     break;
                 case "Shapefile":
                     domClass.add(dom.byId("divLinkUpload"), "esriCTAOILinkSelect");
@@ -376,14 +377,12 @@ define(["dojo/_base/declare",
                 case "Draw":
                     domClass.add(dom.byId("divLinkDrawTool"), "esriCTAOILinkSelect");
                     topic.publish("showDrawPanel");
-                    searchAddr = address === "undefined" ? dojo.configData.LocatorSettings.LocatorDefaultAOIAddress : address;
-                    dojo.query(".esriCTTxtAddress")[2].value = unescape(searchAddr);
+                    dojo.query(".esriCTTxtAddress")[2].value = (address === "") ? dojo.configData.LocatorSettings.LocatorDefaultAOIAddress : unescape(address);
                     break;
                 case "Coordinates":
                     domClass.add(dom.byId("divLinkCoordinates"), "esriCTAOILinkSelect");
-                    topic.publish("showCoordinatesPanel", false);
-                    searchAddr = address === "undefined" ? dojo.configData.LocatorSettings.LocatorDefaultAOIBearingAddress : address;
-                    dojo.query(".esriCTTxtAddress")[2].value = unescape(searchAddr);
+                    topic.publish("showCoordinatesPanel");
+                    dojo.query(".esriCTTxtAddress")[2].value = (address === "") ? dojo.configData.LocatorSettings.LocatorDefaultAOIBearingAddress : unescape(address);
                     break;
                 }
             } catch (err) {
@@ -404,71 +403,47 @@ define(["dojo/_base/declare",
         // This function is used to display point data
         _displayPointData: function (graphicDetails) {
             try {
-                if ((graphicDetails.BEARING) && ((graphicDetails.TAB === "Coordinates"))) {
-                    this._displayPolylineData(graphicDetails);
+                var geometryService, params, pointGeometry;
+                this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
+                pointGeometry = new Point(graphicDetails.X, graphicDetails.Y, new esri.SpatialReference({
+                    "wkid": this.map.spatialReference.wkid
+                }));
+                if (graphicDetails.STYLE === "queryFeature") {
+                    topic.publish("showFeatureResultsOnMap", pointGeometry);
                 } else {
-                    var geometryService, params, pointGeometry, symbol, graphic;
-                    geometryService = new GeometryService(dojo.configData.GeometryService);
-                    params = new BufferParameters();
-                    params.distances = [graphicDetails.SD];
-                    params.bufferSpatialReference = new esri.SpatialReference({
-                        "wkid": this.map.spatialReference.wkid
-                    });
-                    params.outSpatialReference = this.map.spatialReference;
-                    params.unit = GeometryService[graphicDetails.UV];
-                    pointGeometry = new Point(graphicDetails.X, graphicDetails.Y, new esri.SpatialReference({
-                        "wkid": this.map.spatialReference.wkid
-                    }));
-                    params.geometries = [pointGeometry];
-                    this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
-                    if (graphicDetails.STYLE === "circle") {
-                        symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_CIRCLE, graphicDetails.SIZE,
-                            new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
-                                new Color([
-                                    parseInt(graphicDetails.OUTLINE.split(",")[0], 10),
-                                    parseInt(graphicDetails.OUTLINE.split(",")[1], 10),
-                                    parseInt(graphicDetails.OUTLINE.split(",")[2], 10),
-                                    parseFloat(graphicDetails.OUTLINE.split(",")[3], 10)
-                                ]), graphicDetails.OUTLINE.split(",")[4]),
-                            new Color([
-                                parseInt(graphicDetails.COLOR.split(",")[0], 10),
-                                parseInt(graphicDetails.COLOR.split(",")[1], 10),
-                                parseInt(graphicDetails.COLOR.split(",")[2], 10),
-                                parseFloat(graphicDetails.COLOR.split(",")[3], 10)
-                            ]));
-                        graphic = new Graphic(pointGeometry, symbol);
-                        this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
-                        topic.publish("showClearGraphicsIcon");
+                    if (graphicDetails.TAB === "Coordinates") {
+                        topic.publish("locateInitialPoint", pointGeometry);
                     } else {
                         this._addGraphic(pointGeometry, graphicDetails);
-                    }
-                    if ((graphicDetails.LAT) && (graphicDetails.LONG)) {
-                        dom.byId("addLatitudeValue").value = graphicDetails.LAT;
-                        dom.byId("addLongitudeValue").value = graphicDetails.LONG;
-                    }
-                    if (graphicDetails.SD > 0) {
-                        if (graphicDetails.SB === "true") {
+                        if (graphicDetails.TAB !== "Draw" && graphicDetails.SD > 0) {
+                            dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
+                            geometryService = new GeometryService(dojo.configData.GeometryService);
+                            params = new BufferParameters();
+                            params.distances = [graphicDetails.SD];
+                            params.bufferSpatialReference = new esri.SpatialReference({
+                                "wkid": this.map.spatialReference.wkid
+                            });
+                            params.outSpatialReference = this.map.spatialReference;
+                            params.unit = GeometryService[graphicDetails.UV];
+                            params.geometries = [pointGeometry];
                             geometryService.buffer(params, lang.hitch(this, function (geometries) {
                                 this.showBuffer(geometries);
                             }));
-                        } else {
-                            topic.publish("sharedUrlBufferStatus", false);
                         }
                     }
-                    this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
-                    domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
-                    domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
-                    this._removeHighlightedUnit();
-                    this._highlightUnit(graphicDetails);
-                    topic.publish("setSliderValue", graphicDetails.UV);
-                    if (graphicDetails.SD > 0) {
-                        topic.publish("sharedUrlBufferStatus", false);
-                        dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
-                    }
-                    this._setEmailSharingMapExtent();
-                    this._replicateSharedData(null);
                 }
-
+                this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
+                domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
+                domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
+                this._removeHighlightedUnit();
+                this._highlightUnit(graphicDetails);
+                topic.publish("setSliderValue", graphicDetails.UV);
+                topic.publish("showClearGraphicsIcon");
+                if (graphicDetails.SD === 0) {
+                    topic.publish("disableDefaultSharingExtent");
+                }
+                this._setEmailSharingMapExtent();
+                this._replicateSharedData(null);
             } catch (err) {
                 alert(err.message);
             }
@@ -587,12 +562,8 @@ define(["dojo/_base/declare",
         // This function is used to display polygon data
         _displayPolygonData: function (graphicDetails) {
             try {
-                var k, m, symbol, graphic, geometryService, params, polygon, simplifyRequestArray, deferredListBufferResult, deferredListSimplifyResult, polygonBufferCollection, bufferRequestArray, unionBufferArray, unionResultArray;
-                simplifyRequestArray = [];
-                bufferRequestArray = [];
-                unionBufferArray = [];
-                unionResultArray = [];
-                polygonBufferCollection = [];
+                var k, m, geometryService, graphic, params, polygon, deferredListSimplifyResult, symbol, bufferRequestArray = [],
+                    simplifyRequestArray = [], unionResultArray = [], unionBufferArray = [], polygonBufferCollection = [], deferredListBufferResult = [];
                 geometryService = new GeometryService(dojo.configData.GeometryService);
                 params = new BufferParameters();
                 params.distances = [graphicDetails.SD];
@@ -608,104 +579,50 @@ define(["dojo/_base/declare",
                 });
                 params.geometries = [polygon];
                 if (graphicDetails.TAB === "Shapefile") {
-                    topic.publish("displayShapeFile", polygon);
-                    if (graphicDetails.SD > 0) {
-                        simplifyRequestArray.push(geometryService.simplify([polygon]));
-                        deferredListSimplifyResult = new DeferredList(simplifyRequestArray);
-                        deferredListSimplifyResult.then(lang.hitch(this, function (result) {
-                            for (k = 0; k < result[0][1].length; k++) {
-                                switch (result[0][1][k].type) {
-                                case "polygon":
-                                    polygonBufferCollection.push(result[0][1][k]);
-                                    break;
-                                }
-                            }
-                            params.geometries = polygonBufferCollection;
-                            bufferRequestArray.push(geometryService.buffer(params));
-                            deferredListBufferResult = new DeferredList(bufferRequestArray);
-                            deferredListBufferResult.then(lang.hitch(this, function (result) {
-                                for (m = 0; m < result.length; m++) {
-                                    unionBufferArray.push(result[m][1][0]);
-                                }
-                                geometryService.union(unionBufferArray, lang.hitch(this, function (geometry) {
-                                    unionResultArray.push(geometry);
-                                    this.showBuffer(unionResultArray);
-                                }));
-                            }));
-                        }));
-                    }
                     this._highlightTab(graphicDetails.TAB, "");
-                    this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
-                    domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
-                    domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
-                    this._removeHighlightedUnit();
-                    this._highlightUnit(graphicDetails);
-                    topic.publish("setSliderValue", graphicDetails.UV);
-                    if (graphicDetails.SD > 0) {
-                        topic.publish("sharedUrlBufferStatus", false);
-                        dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
-                    }
+                    topic.publish("displayShapeFile", polygon);
                 } else {
-                    symbol = this._createFeatureSymbol(polygon.type);
-                    graphic = new Graphic(polygon, symbol);
-                    if (graphicDetails.SD > 0) {
-                        simplifyRequestArray.push(geometryService.simplify([polygon]));
-                        deferredListSimplifyResult = new DeferredList(simplifyRequestArray);
-                        deferredListSimplifyResult.then(lang.hitch(this, function (result) {
-                            for (k = 0; k < result[0][1].length; k++) {
-                                switch (result[0][1][k].type) {
-                                case "polygon":
-                                    polygonBufferCollection.push(result[0][1][k]);
-                                    break;
+                    this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
+                    if (graphicDetails.SN === "aOISearch" || graphicDetails.TAB === "Placename") {
+                        topic.publish("showFeatureResultsOnMap", polygon);
+                        if (graphicDetails.SD > 0 && graphicDetails.TAB === "Placename") {
+                            simplifyRequestArray.push(geometryService.simplify([polygon]));
+                            deferredListSimplifyResult = new DeferredList(simplifyRequestArray);
+                            deferredListSimplifyResult.then(lang.hitch(this, function (result) {
+                                for (k = 0; k < result[0][1].length; k++) {
+                                    if (result[0][1][k].type === "polygon") {
+                                        polygonBufferCollection.push(result[0][1][k]);
+                                    }
                                 }
-                            }
-                            params.geometries = polygonBufferCollection;
-                            bufferRequestArray.push(geometryService.buffer(params));
-                            deferredListBufferResult = new DeferredList(bufferRequestArray);
-                            deferredListBufferResult.then(lang.hitch(this, function (result) {
-                                for (m = 0; m < result.length; m++) {
-                                    unionBufferArray.push(result[m][1][0]);
-                                }
-                                geometryService.union(unionBufferArray, lang.hitch(this, function (geometry) {
-                                    unionResultArray.push(geometry);
-                                    this.showBuffer(unionResultArray);
+                                params.geometries = polygonBufferCollection;
+                                bufferRequestArray.push(geometryService.buffer(params));
+                                deferredListBufferResult = new DeferredList(bufferRequestArray);
+                                deferredListBufferResult.then(lang.hitch(this, function (result) {
+                                    for (m = 0; m < result.length; m++) {
+                                        unionBufferArray.push(result[m][1][0]);
+                                    }
+                                    geometryService.union(unionBufferArray, lang.hitch(this, function (geometry) {
+                                        unionResultArray.push(geometry);
+                                        this.showBuffer(unionResultArray);
+                                    }));
                                 }));
                             }));
-                        }));
-                    }
-                    this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
-                    this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
-                    domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
-                    domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
-                    this._removeHighlightedUnit();
-                    if (graphicDetails.STYLE === "solid") {
-                        symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
-                            new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
-                                new Color([
-                                    parseInt(graphicDetails.OUTLINE.split(",")[0], 10),
-                                    parseInt(graphicDetails.OUTLINE.split(",")[1], 10),
-                                    parseInt(graphicDetails.OUTLINE.split(",")[2], 10),
-                                    parseFloat(graphicDetails.OUTLINE.split(",")[3], 10)
-                                ]), graphicDetails.OUTLINE.split(",")[4]),
-                            new Color([
-                                parseInt(graphicDetails.COLOR.split(",")[0], 10),
-                                parseInt(graphicDetails.COLOR.split(",")[1], 10),
-                                parseInt(graphicDetails.COLOR.split(",")[2], 10),
-                                parseFloat(graphicDetails.COLOR.split(",")[3], 10)
-                            ]));
+                        }
+                    } else {
+                        symbol = this._createFeatureSymbol(polygon.type);
                         graphic = new Graphic(polygon, symbol);
                         this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
-                        topic.publish("showClearGraphicsIcon");
-                    } else {
-                        this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
-                        topic.publish("showClearGraphicsIcon");
                     }
-                    this._highlightUnit(graphicDetails);
-                    topic.publish("setSliderValue", graphicDetails.UV);
-                    if (graphicDetails.SD > 0) {
-                        topic.publish("sharedUrlBufferStatus", false);
-                        dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
-                    }
+                }
+                this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
+                domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
+                domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
+                this._removeHighlightedUnit();
+                this._highlightUnit(graphicDetails);
+                topic.publish("setSliderValue", graphicDetails.UV);
+                topic.publish("showClearGraphicsIcon");
+                if (graphicDetails.SD > 0) {
+                    dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
                 }
                 this._setEmailSharingMapExtent();
                 this._replicateSharedData(null);
@@ -716,7 +633,7 @@ define(["dojo/_base/declare",
         // This function is used to display polyline data
         _displayPolylineData: function (graphicDetails) {
             try {
-                var geometryService, params, polyline, pointGeometry, i, symbol, graphic;
+                var geometryService, params, polyline, pointGeometry, symbol, graphic;
                 geometryService = new GeometryService(dojo.configData.GeometryService);
                 params = new BufferParameters();
                 params.distances = [graphicDetails.SD];
@@ -726,18 +643,15 @@ define(["dojo/_base/declare",
                 params.outSpatialReference = this.map.spatialReference;
                 params.unit = GeometryService[graphicDetails.UV];
                 polyline = new Polyline();
-                polyline.paths = JSON.parse(unescape(graphicDetails.GEOM));
-                polyline.spatialReference = new esri.SpatialReference({
-                    "wkid": this.map.spatialReference.wkid
-                });
+                if (graphicDetails.GEOM && graphicDetails.GEOM !== "undefined") {
+                    polyline.paths = JSON.parse(unescape(graphicDetails.GEOM));
+                    polyline.spatialReference = new esri.SpatialReference({
+                        "wkid": this.map.spatialReference.wkid
+                    });
+                }
                 params.geometries = [polyline];
                 if (graphicDetails.TAB === "Shapefile") {
                     topic.publish("displayShapeFile", polyline);
-                    if (graphicDetails.SD > 0) {
-                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
-                            this.showBuffer(geometries);
-                        }));
-                    }
                     this._highlightTab(graphicDetails.TAB, "");
                     this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
                     domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
@@ -745,43 +659,27 @@ define(["dojo/_base/declare",
                     this._removeHighlightedUnit();
                     this._highlightUnit(graphicDetails);
                     topic.publish("setSliderValue", graphicDetails.UV);
-                    if (graphicDetails.SD > 0) {
-                        topic.publish("sharedUrlBufferStatus", false);
-                        dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
-                    }
                 } else {
                     this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
-                    if (graphicDetails.BEARING) {
+                    if (graphicDetails.TAB === "Coordinates") {
                         pointGeometry = new Point(graphicDetails.CX, graphicDetails.CY, new esri.SpatialReference({
                             "wkid": this.map.spatialReference.wkid
                         }));
-                        topic.publish("normalizeStartPoint", pointGeometry);
-                        for (i = 0; i < graphicDetails.BEARING.split(",").length; i = i + 2) {
-                            topic.publish("addBearings", graphicDetails.BEARING.split(",")[i] + "," + graphicDetails.BEARING.split(",")[i + 1], false);
+                        if ((graphicDetails.LAT) && (graphicDetails.LONG)) {
+                            dom.byId("addLatitudeValue").value = parseFloat(graphicDetails.LAT);
+                            dom.byId("addLongitudeValue").value = parseFloat(graphicDetails.LONG);
                         }
-                        this.map.getLayer("esriGraphicsLayerMapSettings").clear();
-                        symbol = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([parseInt(dojo.configData.AOISymbology.LineSymbolColor.split(",")[0], 10),
-                            parseInt(dojo.configData.AOISymbology.LineSymbolColor.split(",")[1], 10),
-                            parseInt(dojo.configData.AOISymbology.LineSymbolColor.split(",")[2], 10)
-                            ]), dojo.configData.AOISymbology.LineSymbolWidth);
-                        graphic = new Graphic(polyline, symbol);
-                        this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
-                        topic.publish("showClearGraphicsIcon");
-                        topic.publish("setPolyline", polyline);
+                        topic.publish("normalizeStartPoint", pointGeometry, graphicDetails.BEARING, graphicDetails.SN);
                     } else {
                         symbol = this._createFeatureSymbol(polyline.type);
                         graphic = new Graphic(polyline, symbol);
                         this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
                         topic.publish("showClearGraphicsIcon");
-                    }
-                    if ((graphicDetails.LAT) && (graphicDetails.LONG)) {
-                        dom.byId("addLatitudeValue").value = parseFloat(graphicDetails.LAT);
-                        dom.byId("addLongitudeValue").value = parseFloat(graphicDetails.LONG);
-                    }
-                    if (graphicDetails.SD > 0) {
-                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
-                            this.showBuffer(geometries);
-                        }));
+                        if (graphicDetails.SD > 0) {
+                            geometryService.buffer(params, lang.hitch(this, function (geometries) {
+                                this.showBuffer(geometries);
+                            }));
+                        }
                     }
                     this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
                     domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
@@ -789,12 +687,12 @@ define(["dojo/_base/declare",
                     this._removeHighlightedUnit();
                     this._highlightUnit(graphicDetails);
                     topic.publish("setSliderValue", graphicDetails.UV);
-                    if (graphicDetails.SD > 0) {
-                        topic.publish("sharedUrlBufferStatus", false);
-                        dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
-                    }
                 }
-                this._setEmailSharingMapExtent();
+                if (graphicDetails.SD > 0) {
+                    dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
+                } else {
+                    this._setEmailSharingMapExtent();
+                }
                 this._replicateSharedData(null);
             } catch (err) {
                 alert(err.message);
@@ -823,6 +721,7 @@ define(["dojo/_base/declare",
                     geometryService.buffer(params, lang.hitch(this, function (geometries) {
                         this.showBuffer(geometries);
                     }));
+                    dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
                 }
                 this._highlightTab(graphicDetails.TAB, "");
                 this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
@@ -831,11 +730,6 @@ define(["dojo/_base/declare",
                 this._removeHighlightedUnit();
                 this._highlightUnit(graphicDetails);
                 topic.publish("setSliderValue", graphicDetails.UV);
-                if (graphicDetails.SD > 0) {
-                    topic.publish("sharedUrlBufferStatus", false);
-                    dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
-                }
-                this._setEmailSharingMapExtent();
                 this._replicateSharedData(null);
             } catch (err) {
                 alert(err.message);
@@ -851,6 +745,7 @@ define(["dojo/_base/declare",
                 this._addGraphic(pointGeometry, graphicDetails);
                 topic.publish("toggleWidget", "locator");
                 this._setEmailSharingMapExtent();
+                topic.publish("disableDefaultSharingExtent");
                 this._replicateSharedData(null);
             } catch (err) {
                 alert(err.message);
@@ -885,6 +780,9 @@ define(["dojo/_base/declare",
                     geometryService.buffer(params, lang.hitch(this, function (geometries) {
                         this.showBuffer(geometries);
                     }));
+                    dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
+                } else {
+                    topic.publish("disableDefaultSharingExtent");
                 }
                 this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
                 domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
@@ -892,9 +790,6 @@ define(["dojo/_base/declare",
                 this._removeHighlightedUnit();
                 this._highlightUnit(graphicDetails);
                 topic.publish("setSliderValue", graphicDetails.UV);
-                if (graphicDetails.SD > 0) {
-                    dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
-                }
                 this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
                 topic.publish("showClearGraphicsIcon");
                 this._setEmailSharingMapExtent();
@@ -906,7 +801,7 @@ define(["dojo/_base/declare",
         // This function is used to display locator data.
         _displayLocatorData: function (graphicDetails) {
             try {
-                var geometryService, params, pointGeometry;
+                var pointGeometry, polygon;
                 pointGeometry = new Point(graphicDetails.X, graphicDetails.Y, new esri.SpatialReference({
                     "wkid": this.map.spatialReference.wkid
                 }));
@@ -917,30 +812,22 @@ define(["dojo/_base/declare",
                 this._highlightUnit(graphicDetails);
                 topic.publish("setSliderValue", graphicDetails.UV);
                 if (graphicDetails.SD > 0) {
-                    topic.publish("sharedUrlBufferStatus", false);
                     dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
+                } else {
+                    topic.publish("disableDefaultSharingExtent");
                 }
-                if (graphicDetails.DT === "true") {
-                    this._highlightTab("Draw", graphicDetails.ADDR);
-                    if (graphicDetails.SD > 0 && graphicDetails.SB === "true") {
-                        geometryService = new GeometryService(dojo.configData.GeometryService);
-                        params = new BufferParameters();
-                        params.distances = [graphicDetails.SD];
-                        params.bufferSpatialReference = new esri.SpatialReference({
-                            "wkid": this.map.spatialReference.wkid
-                        });
-                        params.outSpatialReference = this.map.spatialReference;
-                        params.unit = GeometryService[graphicDetails.UV];
-                        params.geometries = [pointGeometry];
-                        geometryService.buffer(params, lang.hitch(this, function (geometries) {
-                            this.showBuffer(geometries);
-                        }));
+                topic.publish("toggleWidget", "locator");
+                if (graphicDetails.GeomType !== "polygon") {
+                    if (graphicDetails.STYLE === "pushPinFeature") {
+                        this._addGraphic(pointGeometry, graphicDetails);
                     }
                 } else {
-                    topic.publish("toggleWidget", "locator");
-                }
-                if (!graphicDetails.SHOWINFO) {
-                    this._addGraphic(pointGeometry, graphicDetails);
+                    polygon = new Polygon();
+                    polygon.rings = JSON.parse(unescape(graphicDetails.GEOM));
+                    polygon.spatialReference = new esri.SpatialReference({
+                        "wkid": this.map.spatialReference.wkid
+                    });
+                    topic.publish("sharedLocatorFeature", polygon, graphicDetails.ADDR);
                 }
                 this._setEmailSharingMapExtent();
                 this._replicateSharedData(null);
@@ -951,9 +838,7 @@ define(["dojo/_base/declare",
         // This function is used to get query string
         _getQueryString: function (key) {
             try {
-                var extentValue = "",
-                    regex,
-                    qs;
+                var extentValue = "", regex, qs;
                 regex = new RegExp("[\\?&]" + key + "=([^&#]*)");
                 qs = regex.exec(window.location.href);
                 if (qs && qs.length > 0) {
@@ -973,30 +858,27 @@ define(["dojo/_base/declare",
                 if ((graphicDetails.TAB === "Coordinates") && (graphicDetails.CX) && (graphicDetails.CY)) {
                     locatorMarkupSymbol.setOffset(dojo.configData.LocatorSettings.MarkupSymbolSize.width / 4, dojo.configData.LocatorSettings.MarkupSymbolSize.height / 2);
                 }
+                if (graphicDetails.STYLE === "drawnFeature") {
+                    dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
+                    topic.publish("shareDrawPointFeature", mapPoint);
+                    return;
+                }
                 graphic = new Graphic(mapPoint, locatorMarkupSymbol, null, null);
                 this.map.getLayer("esriGraphicsLayerMapSettings").clear();
                 if (graphicDetails.SB === "false") {
                     attr = {};
-                    switch (graphicDetails.TAB) {
-                    case "Draw":
-                    case "Coordinates":
+                    if (graphicDetails.TAB === "Draw" || graphicDetails.TAB === "Coordinates" || graphicDetails.SN === "aOISearch") {
                         attr.sourcename = "aOISearch";
-                        break;
-                    case "geolocation":
+                    } else if (graphicDetails.TAB === "geolocation" || graphicDetails.SN === "geoLocationSearch") {
                         attr.sourcename = "geoLocationSearch";
-                        break;
-                    case "locator":
-                        attr.sourcename = "locatorSearch";
-                        break;
-                    }
-                    switch (graphicDetails.SN) {
-                    case "geoLocationSearch":
-                        attr.sourcename = "geoLocationSearch";
-                        break;
                     }
                     graphic.attributes = attr;
                 }
-                this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+                if (graphicDetails.TAB === "locator") {
+                    this.map.getLayer("locatorGraphicsLayer").add(graphic);
+                } else {
+                    this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+                }
                 topic.publish("showClearGraphicsIcon");
             } catch (err) {
                 alert(err.message);
@@ -1007,6 +889,7 @@ define(["dojo/_base/declare",
             try {
                 var _self, symbol, graphic;
                 _self = this;
+                topic.publish("disableDefaultSharingExtent");
                 symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID, new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[0], 10), parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[1], 10), parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.BufferSymbology.LineSymbolTransparency.split(",")[0], 10)]), 2), new Color([parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[0], 10), parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[1], 10), parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.BufferSymbology.FillSymbolTransparency.split(",")[0], 10)]));
                 array.forEach(bufferedGeometries, function (geometry) {
                     graphic = new Graphic(geometry, symbol);
@@ -1069,9 +952,9 @@ define(["dojo/_base/declare",
                 * call tinyurl service to generate share URL
                 */
                 if (this.emailSharedData === null) {
-                    urlStr = encodeURI(urlPath) + "?extent=" + mapExtent + "|" + "BMI:" + this._baseMapIndex + "$" + "SBI:" + this._selectedBaseMapIndex + "$" + "INFOX:" + this._infoX + "$" + "INFOY:" + this._infoY + "$" + "SHOWINFO:" + this._infoWindowVisibility + "$" + "PTI:" + this._presentThumbNail;
+                    urlStr = encodeURI(urlPath) + "?extent=" + mapExtent + "|" + "BMI:" + this._baseMapIndex + "$" + "SBI:" + this._selectedBaseMapIndex + "$" + "INFOX:" + this._infoX + "$" + "INFOY:" + this._infoY + "$" + "SHOWINFO:" + this._infoWindowVisibility + "$" + "INFOFEATUREID:" + this._infoWindowObjID + "$" + "INFOLAYERID:" + this._infoWindowLayerID + "$" + "PTI:" + this._presentThumbNail;
                 } else {
-                    urlStr = encodeURI(urlPath) + "?extent=" + mapExtent + "|" + this.emailSharedData + "$" + "BMI:" + this._baseMapIndex + "$" + "SBI:" + this._selectedBaseMapIndex + "$" + "INFOX:" + this._infoX + "$" + "INFOY:" + this._infoY + "$" + "SHOWINFO:" + this._infoWindowVisibility + "$" + "PTI:" + this._presentThumbNail;
+                    urlStr = encodeURI(urlPath) + "?extent=" + mapExtent + "|" + this.emailSharedData + "$" + "BMI:" + this._baseMapIndex + "$" + "SBI:" + this._selectedBaseMapIndex + "$" + "INFOX:" + this._infoX + "$" + "INFOY:" + this._infoY + "$" + "SHOWINFO:" + this._infoWindowVisibility + "$" + "INFOFEATUREID:" + this._infoWindowObjID + "$" + "INFOLAYERID:" + this._infoWindowLayerID + "$" + "PTI:" + this._presentThumbNail;
                 }
                 encodedUri = encodeURIComponent(urlStr);
                 url = string.substitute(dojo.configData.MapSharingOptions.TinyURLServiceURL, [encodedUri]);

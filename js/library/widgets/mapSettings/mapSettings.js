@@ -181,7 +181,7 @@ define([
                         topic.publish("resizeDialogBox");
 
                         setTimeout(lang.hitch(this, function () {
-                            var windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+                            windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
                             if (dojo.setLegnedWidth && dojo.query('.esriCTHeaderReportContainer').length > 0) {
                                 domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (windowWidth + 4) + 'px');
                             } else {
@@ -202,6 +202,16 @@ define([
                 this._displayInfoWindow(evt);
             }));
 
+            topic.subscribe("showInfoWindowOnMap", lang.hitch(this, function (mapPoint, featureID) {
+                this.setExtent = true;
+                if (!this.configSearchSettings) {
+                    this._setSearchSettings();
+                }
+                this._executeQueryForObjectID(mapPoint, featureID);
+            }));
+
+            topic.subscribe("sharedLocatorFeature", lang.hitch(this, this._addLocatorFeature));
+
             window.onkeydown = function (e) {
                 if ((e.keyCode === 9 || e.which === 9) && dojo.isSplashScreenOn) {
                     return false;
@@ -209,49 +219,81 @@ define([
             };
         },
 
+        /**
+        * set the searchSettings as per the layers availavle on map
+        * @memberOf widgets/locator/locator
+        */
+        _setSearchSettings: function () {
+            var i;
+            this.configSearchSettings = [];
+            for (i = 0; i < dojo.configData.SearchSettings.length; i++) {
+                if (this._checkLayerAvailability(dojo.configData.SearchSettings[i].QueryURL)) {
+                    this.configSearchSettings.push(dojo.configData.SearchSettings[i]);
+                }
+            }
+        },
+
         _setLoatorInstance: function () {
-            var highlightGraphic, highlightSymbol, locatorInstance;
+            var i, infoIndex, locatorInstance;
             locatorInstance = dijit.byId("locator");
+            dojo.locatorSelectFeature = false;
             locatorInstance.candidateClicked = lang.hitch(this, function (graphic) {
                 if (graphic.geometry) {
                     if (graphic.geometry.type === "point") {
-                        topic.publish("infoWindowData", graphic.geometry);
+                        topic.publish("infoWindowData", graphic);
                         topic.publish("infoWindowVisibilityStatus", true);
                         topic.publish("shareLocatorAddress", [graphic.geometry], false, graphic.name);
-                        this._createInfoWindowContent(null, graphic.geometry, graphic.attributes, graphic.fields, graphic.layer.QueryLayerId, null, null, false);
+                        if (!this.configSearchSettings) {
+                            this._setSearchSettings();
+                        }
+                        for (i = 0; i < this.configSearchSettings.length; i++) {
+                            if (graphic.layer.QueryLayerId === this.configSearchSettings[i].QueryLayerId && graphic.layer.Title === this.configSearchSettings[i].Title) {
+                                infoIndex = i;
+                                break;
+                            }
+                        }
+                        this._createInfoWindowContent(null, graphic.geometry, graphic.attributes, graphic.fields, infoIndex, null, null, false);
                     } else {
                         this.map.setExtent(graphic.geometry.getExtent());
-                        highlightSymbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
-                            new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
-                                new Color([
-                                    parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[0], 10),
-                                    parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[1], 10),
-                                    parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[2], 10),
-                                    parseFloat(dojo.configData.HighlightFeaturesSymbology.LineSymbolTransparency.split(",")[0], 10)
-                                ]), 2),
-                            new Color([
-                                parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[0], 10),
-                                parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[1], 10),
-                                parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10),
-                                parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)
-                            ]));
-                        highlightGraphic = new Graphic(graphic.geometry, highlightSymbol);
-                        this.map.getLayer("esriGraphicsLayerMapSettings").add(highlightGraphic);
-                        topic.publish("showClearGraphicsIcon");
+                        this._addLocatorFeature(graphic.geometry, graphic.name);
                     }
+                    topic.publish("resetAOITab");
                 } else {
                     topic.publish("shareLocatorAddress", [locatorInstance.mapPoint], false, graphic.name);
                 }
             });
             locatorInstance.onGraphicAdd = lang.hitch(this, function () {
                 topic.publish("showClearGraphicsIcon");
+                topic.publish("resetAOITab");
             });
             topic.subscribe("toggleWidget", lang.hitch(this, function (widget) {
                 if (widget === "locator" && locatorInstance.lastSearchString === "") {
                     topic.publish("setDefaultTextboxValue", locatorInstance.txtAddress, "defaultAddress", dojo.configData.LocatorSettings.LocatorDefaultAddress);
-                    //locatorInstance.txtAddress.value = dojo.configData.LocatorSettings.LocatorDefaultAddress;
                 }
             }));
+        },
+
+        _addLocatorFeature: function (geometry, addr) {
+            var highlightGraphic, highlightSymbol;
+            highlightSymbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
+                new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
+                    new Color([
+                        parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[0], 10),
+                        parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[1], 10),
+                        parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[2], 10),
+                        parseFloat(dojo.configData.HighlightFeaturesSymbology.LineSymbolTransparency.split(",")[0], 10)
+                    ]), 2),
+                new Color([
+                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[0], 10),
+                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[1], 10),
+                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10),
+                    parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)
+                ]));
+            highlightGraphic = new Graphic(geometry, highlightSymbol);
+            this.map.getLayer("esriGraphicsLayerMapSettings").add(highlightGraphic);
+            topic.publish("shareLocatorAddress", [geometry], false, addr);
+            topic.publish("showClearGraphicsIcon");
+            dojo.locatorSelectFeature = true;
         },
 
         _createWebmapLegendLayerList: function (layers) {
@@ -527,7 +569,7 @@ define([
             }
 
             if (dojo.configData.BaseMapLayers.length > 1) {
-                this._showBasMapGallery();
+                this._showBaseMapGallery();
             }
             graphicsLayer = new GraphicsLayer();
             graphicsLayer.id = this.tempGraphicsLayerId;
@@ -541,6 +583,9 @@ define([
                 topic.publish("showClearGraphicsIcon");
             }));
 
+            this.map.on("resize", lang.hitch(this, function (evt) {
+                topic.publish("resizeAOIPanel", 500);
+            }));
         },
 
         _onSetMapTipPosition: function (selectedPoint, map, infoWindow) {
@@ -568,8 +613,11 @@ define([
                 featureArray = [];
 
             this.counter = 0;
-            for (index = 0; index < dojo.configData.SearchSettings.length; index++) {
-                if (dojo.configData.SearchSettings[index].InfoWindowData) {
+            if (!this.configSearchSettings) {
+                this._setSearchSettings();
+            }
+            for (index = 0; index < this.configSearchSettings.length; index++) {
+                if (this.configSearchSettings[index].InfoWindowData) {
                     this._executeQueryTask(index, mapPoint, onMapFeaturArray);
                 }
             }
@@ -598,10 +646,37 @@ define([
             });
         },
 
+        /**
+        * checks if the layer is available on Map
+        * @method widgets/mapSettings/mapSettings
+        * @param {} queryURL
+        */
+        _checkLayerAvailability: function (queryURL) {
+            var layerId, lastIndex, layerIndex, layerURLwithSlash, layerURL, isLayerAvailable = false;
+            lastIndex = queryURL.lastIndexOf('/');
+            layerIndex = queryURL.substr(lastIndex + 1);
+            layerURLwithSlash = queryURL.substring(0, lastIndex + 1);
+            layerURL = queryURL.substring(0, lastIndex);
+            for (layerId in this.map._layers) {
+                if (this.map._layers.hasOwnProperty(layerId)) {
+                    if (this.map._layers[layerId].url) {
+                        if (queryURL === this.map._layers[layerId].url) {
+                            isLayerAvailable = true;
+                            break;
+                        } else if ((layerURL === this.map._layers[layerId].url || layerURLwithSlash === this.map._layers[layerId].url) && array.indexOf(this.map._layers[layerId].visibleLayers, parseInt(layerIndex, 10)) > -1) {
+                            isLayerAvailable = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            return isLayerAvailable;
+        },
+
         _executeQueryTask: function (index, mapPoint, onMapFeaturArray) {
             var queryTask, queryParams, layerIndex = index, isLayerVisible, currentTime = new Date().getTime() + index.toString(),
                 deferred = new Deferred();
-            queryTask = new esri.tasks.QueryTask(dojo.configData.SearchSettings[index].QueryURL);
+            queryTask = new esri.tasks.QueryTask(this.configSearchSettings[index].QueryURL);
             queryParams = new esri.tasks.Query();
             queryParams.outSpatialReference = this.map.spatialReference;
             queryParams.returnGeometry = true;
@@ -626,6 +701,39 @@ define([
                 deferred.reject();
             });
             onMapFeaturArray.push(deferred);
+        },
+
+        _executeQueryForObjectID: function (mapPoint, featureIDArray) {
+            var queryTask, queryParams, featureArray = [], isLayerVisible, currentTime = new Date().getTime() + featureIDArray[1].toString(),
+                deferred = new Deferred();
+            queryTask = new esri.tasks.QueryTask(this.configSearchSettings[featureIDArray[1]].QueryURL);
+            queryParams = new esri.tasks.Query();
+            queryParams.outSpatialReference = this.map.spatialReference;
+            queryParams.returnGeometry = true;
+            queryParams.geometry = mapPoint;
+            queryParams.outFields = ["*"];
+            if (this.operationalLayers[featureIDArray[1]].layerObject) {
+                isLayerVisible = this.operationalLayers[featureIDArray[1]].layerObject.visibleAtMapScale;
+            } else {
+                isLayerVisible = this.operationalLayers[featureIDArray[1]].visibleAtMapScale;
+            }
+            if (isLayerVisible) {
+                queryParams.where = currentTime + "=" + currentTime;
+            } else {
+                queryParams.where = "OBJECTID" + "=" + featureIDArray[0];
+            }
+
+            queryTask.execute(queryParams, lang.hitch(this, function (result) {
+                result.layerIndex = featureIDArray[1];
+                featureArray.push({
+                    attr: result.features[0],
+                    layerId: result.layerIndex,
+                    fields: result.fields
+                });
+                this._fetchQueryResults(mapPoint, featureArray);
+            }), function (err) {
+                deferred.reject();
+            });
         },
 
         _extentFromPoint: function (point) {
@@ -736,7 +844,7 @@ define([
             return home;
         },
 
-        _showBasMapGallery: function () {
+        _showBaseMapGallery: function () {
             var basMapGallery = new BaseMapGallery({
                 map: this.map
             }, domConstruct.create("div", {}, null));
@@ -777,7 +885,7 @@ define([
             }), 500);
         },
 
-        _addServiceLayers: function (layerId, layerURL) {
+        _addServiceLayers: function (layerTitle, layerURL) {
             var dynamicLayer, imageParams, lastIndex, dynamicLayerId;
 
             imageParams = new ImageParameters();
@@ -790,18 +898,18 @@ define([
                     dynamicLayer = layerURL;
                 }
                 if (layerURL.indexOf("/FeatureServer") >= 0) {
-                    this._addHostedServices(dynamicLayer, layerId);
+                    this._addHostedServices(dynamicLayer, layerTitle);
                 } else {
-                    this._createDynamicServiceLayer(dynamicLayer, imageParams, layerId);
+                    this._createDynamicServiceLayer(dynamicLayer, imageParams, layerTitle);
                 }
 
             } else {
                 imageParams.layerIds = [dynamicLayerId];
                 dynamicLayer = layerURL.substring(0, lastIndex + 1);
                 if (layerURL.indexOf("/FeatureServer") >= 0) {
-                    this._addHostedServices(dynamicLayer, layerId);
+                    this._addHostedServices(dynamicLayer, layerTitle);
                 } else {
-                    this._createDynamicServiceLayer(dynamicLayer, imageParams, layerId);
+                    this._createDynamicServiceLayer(dynamicLayer, imageParams, layerTitle, dynamicLayerId);
                 }
             }
         },
@@ -835,15 +943,21 @@ define([
             });
         },
 
-        _createDynamicServiceLayer: function (dynamicLayer, imageParams, layerId) {
+        _createDynamicServiceLayer: function (dynamicLayer, imageParams, layerTitle, layerId) {
+            layerId = layerId || "";
             var dynamicMapService = new ArcGISDynamicMapServiceLayer(dynamicLayer, {
                 imageParameters: imageParams,
-                id: layerId,
+                id: layerId !== "" ? layerTitle + '_' + layerId : layerTitle,
                 visible: true
             });
             this.map.addLayer(dynamicMapService);
             this.operationalLayers.push(dynamicMapService);
-
+            dynamicMapService.on("load", lang.hitch(this, function (evt) {
+                var idArray = evt.layer.id.split('_');
+                if (idArray && idArray.length > 0 && !isNaN(parseInt(idArray[1], 10))) {
+                    evt.layer.setVisibleLayers([parseInt(idArray[1], 10)]);
+                }
+            }));
         },
 
         _addLayerLegend: function () {
@@ -863,7 +977,7 @@ define([
         _addLegendBox: function () {
             this.legendObject = new Legends({
                 map: this.map,
-                isExtentBasedLegend: true
+                isExtentBasedLegend: false
             }, domConstruct.create("div", {}, null));
             return this.legendObject;
         },
@@ -905,8 +1019,8 @@ define([
 
         _createInfoWindowContent: function (anchorPoint, geometry, attributes, fields, infoIndex, featureArray, count, zoomToFeature) {
             try {
-                var infoPopupFieldsCollection, infoPopupHeight, infoPopupWidth,
-                    divInfoDetailsTab, key, divInfoRow, i, fieldNames, link, divLink, j, infoTitle, mapPoint, utcMilliseconds, layer, attribute, k, domain, l;
+                var infoPopupFieldsCollection, infoPopupHeight, infoPopupWidth, fieldInfos,
+                    divInfoDetailsTab, key, divInfoRow, i, fieldNames, link, divLink, j, infoTitle, mapPoint, utcMilliseconds, attribute, k, domain, l;
                 this.map.infoWindow.hide();
                 mapPoint = anchorPoint || this._getMapPoint(geometry);
                 if (featureArray) {
@@ -930,8 +1044,8 @@ define([
                     domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", "");
                     domAttr.set(query(".esriCTdivInfoTotalFeatureCount")[0], "innerHTML", "");
                 }
-                if (dojo.configData.SearchSettings[infoIndex].InfoWindowData) {
-                    infoPopupFieldsCollection = dojo.configData.SearchSettings[infoIndex].InfoWindowData;
+                if (this.configSearchSettings[infoIndex].InfoWindowData) {
+                    infoPopupFieldsCollection = this.configSearchSettings[infoIndex].InfoWindowData;
                     divInfoDetailsTab = domConstruct.create("div", {
                         "class": "esriCTInfoDetailsTab"
                     }, null);
@@ -950,61 +1064,22 @@ define([
                 infoPopupHeight = dojo.configData.InfoPopupHeight;
                 infoPopupWidth = dojo.configData.InfoPopupWidth;
                 if (infoPopupFieldsCollection) {
-                    for (key = 0; key < infoPopupFieldsCollection.length; key++) {
-                        divInfoRow = domConstruct.create("div", {
-                            "className": "esriCTDisplayRow"
-                        }, this.divInfoDetailsContainer);
-                        // Create the row's label
-                        this.divInfoDisplayField = domConstruct.create("div", {
-                            "className": "esriCTDisplayField",
-                            "innerHTML": infoPopupFieldsCollection[key].DisplayText
-                        }, divInfoRow);
-                        this.divInfoFieldValue = domConstruct.create("div", {
-                            "className": "esriCTValueField"
-                        }, divInfoRow);
-
-                        for (layer in this.map._layers) {
-                            if (this.map._layers.hasOwnProperty(layer)) {
-                                if (dojo.configData.SearchSettings[infoIndex].QueryURL === this.map._layers[layer].url) {
-                                    for (attribute in attributes) {
-                                        if (attributes.hasOwnProperty(attribute)) {
-                                            if (!attributes[attribute]) {
-                                                attributes[attribute] = sharedNls.showNullValue;
-                                            } else {
-                                                for (i = 0; i < this.map._layers[layer].fields.length; i++) {
-                                                    if (this.map._layers[layer].fields[i].name === attribute) {
-                                                        if (this.map._layers[layer].fields[i].domain) {
-                                                            if (this.map._layers[layer].fields[i].domain.codedValues) {
-                                                                for (j = 0; j < this.map._layers[layer].fields[i].domain.codedValues.length; j++) {
-                                                                    if (attributes[attribute] === this.map._layers[layer].fields[i].domain.codedValues[j].code) {
-                                                                        attributes[attribute] = this.map._layers[layer].fields[i].domain.codedValues[j].name;
-                                                                        break;
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if (attributes[this.map._layers[layer].typeIdField]) {
-                                        for (k = 0; k < this.map._layers[layer].types.length; k++) {
-                                            if (attributes[this.map._layers[layer].typeIdField] === this.map._layers[layer].types[k].id) {
-                                                attributes[this.map._layers[layer].typeIdField] = this.map._layers[layer].types[k].name;
-                                                if (this.map._layers[layer].types[k].domains) {
-                                                    for (domain in this.map._layers[layer].types[k].domains) {
-                                                        if (this.map._layers[layer].types[k].domains.hasOwnProperty(domain)) {
-                                                            if (attributes[domain]) {
-                                                                if (this.map._layers[layer].types[k].domains[domain].codedValues) {
-                                                                    for (l = 0; l < this.map._layers[layer].types[k].domains[domain].codedValues.length; l++) {
-                                                                        if (attributes[domain] === this.map._layers[layer].types[k].domains[domain].codedValues[l].code) {
-                                                                            attributes[domain] = this.map._layers[layer].types[k].domains[domain].codedValues[l].name;
-                                                                            break;
-                                                                        }
-                                                                    }
-                                                                }
+                    fieldInfos = this._getLayerFieldsInfo(this.configSearchSettings[infoIndex].QueryURL);
+                    if (fieldInfos.isLayerAvailable) {
+                        for (attribute in attributes) {
+                            if (attributes.hasOwnProperty(attribute)) {
+                                if (!attributes[attribute]) {
+                                    attributes[attribute] = sharedNls.showNullValue;
+                                } else {
+                                    if (fieldInfos.fields) {
+                                        for (i = 0; i < fieldInfos.fields.length; i++) {
+                                            if (fieldInfos.fields[i].name === attribute) {
+                                                if (fieldInfos.fields[i].domain) {
+                                                    if (fieldInfos.fields[i].domain.codedValues) {
+                                                        for (j = 0; j < fieldInfos.fields[i].domain.codedValues.length; j++) {
+                                                            if (attributes[attribute] === fieldInfos.fields[i].domain.codedValues[j].code) {
+                                                                attributes[attribute] = fieldInfos.fields[i].domain.codedValues[j].name;
+                                                                break;
                                                             }
                                                         }
                                                     }
@@ -1013,7 +1088,6 @@ define([
                                             }
                                         }
                                     }
-                                    break;
                                 }
                             }
                         }
@@ -1031,31 +1105,119 @@ define([
                                 }
                             }
                         }
-                        fieldNames = string.substitute(infoPopupFieldsCollection[key].FieldName, attributes);
-                        if (string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("http:") || string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("https:")) {
-                            link = fieldNames;
-                            divLink = domConstruct.create("div", {
-                                "class": "esriCTLink",
-                                "link": link,
-                                "innerHTML": sharedNls.buttons.link
-                            }, this.divInfoFieldValue);
-                            on(divLink, "click", this._openDetailWindow);
-                        } else {
-                            this.divInfoFieldValue.innerHTML = fieldNames;
+
+                        if (fieldInfos.typeIdField && attributes[fieldInfos.typeIdField]) {
+                            for (k = 0; k < fieldInfos.types.length; k++) {
+                                if (attributes[fieldInfos.typeIdField] === fieldInfos.types[k].id) {
+                                    attributes[fieldInfos.typeIdField] = fieldInfos.types[k].name;
+                                    if (fieldInfos.types[k].domains) {
+                                        for (domain in fieldInfos.types[k].domains) {
+                                            if (fieldInfos.types[k].domains.hasOwnProperty(domain)) {
+                                                if (attributes[domain]) {
+                                                    if (fieldInfos.types[k].domains[domain].codedValues) {
+                                                        for (l = 0; l < fieldInfos.types[k].domains[domain].codedValues.length; l++) {
+                                                            if (attributes[domain] === fieldInfos.types[k].domains[domain].codedValues[l].code) {
+                                                                attributes[domain] = fieldInfos.types[k].domains[domain].codedValues[l].name;
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
                         }
+
+                        for (key = 0; key < infoPopupFieldsCollection.length; key++) {
+                            divInfoRow = domConstruct.create("div", {
+                                "className": "esriCTDisplayRow"
+                            }, this.divInfoDetailsContainer);
+                            // Create the row's label
+                            this.divInfoDisplayField = domConstruct.create("div", {
+                                "className": "esriCTDisplayField",
+                                "innerHTML": infoPopupFieldsCollection[key].DisplayText
+                            }, divInfoRow);
+                            this.divInfoFieldValue = domConstruct.create("div", {
+                                "className": "esriCTValueField"
+                            }, divInfoRow);
+                            fieldNames = string.substitute(infoPopupFieldsCollection[key].FieldName, attributes);
+                            if (string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("http:") || string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("https:")) {
+                                link = fieldNames;
+                                divLink = domConstruct.create("div", {
+                                    "class": "esriCTLink",
+                                    "link": link,
+                                    "innerHTML": sharedNls.buttons.link
+                                }, this.divInfoFieldValue);
+                                on(divLink, "click", this._openDetailWindow);
+                            } else {
+                                this.divInfoFieldValue.innerHTML = fieldNames;
+                            }
+                        }
+
+
                     }
-                    infoTitle = string.substitute(dojo.configData.SearchSettings[infoIndex].InfoWindowHeaderField, attributes);
-                    dojo.selectedMapPoint = mapPoint;
-                    this._setInfoWindowZoomLevel(mapPoint, infoTitle, divInfoDetailsTab, infoPopupWidth, infoPopupHeight, count, zoomToFeature);
+
+                }
+                if (this.configSearchSettings[infoIndex].InfoWindowHeaderField) {
+                    infoTitle = string.substitute(this.configSearchSettings[infoIndex].InfoWindowHeaderField, attributes);
                 } else {
                     infoTitle = sharedNls.errorMessages.emptyInfoWindowTitle;
-                    dojo.selectedMapPoint = mapPoint;
-                    this._setInfoWindowZoomLevel(mapPoint, infoTitle, divInfoDetailsTab, infoPopupWidth, infoPopupHeight, count, zoomToFeature);
-                    topic.publish("hideProgressIndicator");
                 }
+                dojo.selectedMapPoint = mapPoint;
+                this._setInfoWindowZoomLevel(mapPoint, infoTitle, divInfoDetailsTab, infoPopupWidth, infoPopupHeight, count, zoomToFeature);
+                topic.publish("hideProgressIndicator");
             } catch (err) {
                 alert(err.message);
             }
+        },
+
+        _getLayerFieldsInfo: function (queryURL) {
+            var layerId, lastIndex, layerIndex, layerURLwithSlash, layerURL, layerFieldsInfo = {};
+            layerFieldsInfo.isLayerAvailable = false;
+            layerFieldsInfo.types = null;
+            layerFieldsInfo.typeIdField = null;
+            layerFieldsInfo.fields = null;
+            lastIndex = queryURL.lastIndexOf('/');
+            layerIndex = queryURL.substr(lastIndex + 1);
+            layerURLwithSlash = queryURL.substring(0, lastIndex + 1);
+            layerURL = queryURL.substring(0, lastIndex);
+            for (layerId in this.map._layers) {
+                if (this.map._layers.hasOwnProperty(layerId)) {
+                    if (this.map._layers[layerId].url) {
+                        if (queryURL === this.map._layers[layerId].url) {
+                            layerFieldsInfo.isLayerAvailable = true;
+                            layerFieldsInfo.fields = this.map._layers[layerId].fields || null;
+                            layerFieldsInfo.typeIdField = this.map._layers[layerId].typeIdField || null;
+                            layerFieldsInfo.types = this.map._layers[layerId].types || null;
+                            break;
+                        } else if ((layerURL === this.map._layers[layerId].url || layerURLwithSlash === this.map._layers[layerId].url) && array.indexOf(this.map._layers[layerId].visibleLayers, parseInt(layerIndex, 10)) > -1) {
+                            layerFieldsInfo.isLayerAvailable = true;
+                            layerFieldsInfo.fields = this.map._layers[layerId].layerInfos;
+                            break;
+                        }
+                    }
+                }
+            }
+            return layerFieldsInfo;
+        },
+
+        _validateAvailableLayers: function (queryURL, layer) {
+            var lastIndex, layerIndex, layerURLwithSlash, layerURL, isLayerAvailable = false;
+            lastIndex = queryURL.lastIndexOf('/');
+            layerIndex = queryURL.substr(lastIndex + 1);
+            layerURLwithSlash = queryURL.substring(0, lastIndex + 1);
+            layerURL = queryURL.substring(0, lastIndex);
+            if (layer.url) {
+                if (queryURL === layer.url) {
+                    isLayerAvailable = true;
+                } else if ((layerURL === layer.url || layerURLwithSlash === layer.url) && array.indexOf(layer.visibleLayers, parseInt(layerIndex, 10)) > -1) {
+                    isLayerAvailable = true;
+                }
+            }
+            return isLayerAvailable;
         },
 
         _openDetailWindow: function () {
@@ -1082,7 +1244,7 @@ define([
                         topic.publish("hideProgressIndicator");
                         screenPoint = this.map.toScreen(dojo.selectedMapPoint);
                         screenPoint.y = this.map.height - screenPoint.y;
-                        topic.publish("setInfoWindowOnMap", infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count);
+                        this._onSetInfoWindowPosition(infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count);
                     }));
                 }));
             } else {
@@ -1092,7 +1254,7 @@ define([
                     topic.publish("hideProgressIndicator");
                     screenPoint = this.map.toScreen(dojo.selectedMapPoint);
                     screenPoint.y = this.map.height - screenPoint.y;
-                    topic.publish("setInfoWindowOnMap", infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count);
+                    this._onSetInfoWindowPosition(infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count);
                 }));
             }
         },

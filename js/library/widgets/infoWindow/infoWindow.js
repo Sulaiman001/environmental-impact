@@ -101,6 +101,7 @@ define([
 
         setTitle: function (infoTitle) {
             if (infoTitle.length > 0) {
+                this.headerPanel.innerHTML = "";
                 this.headerPanel.innerHTML = infoTitle;
                 this.headerPanel.title = infoTitle;
             } else {
