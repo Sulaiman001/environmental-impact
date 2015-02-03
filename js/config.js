@@ -63,30 +63,6 @@ define([], function () {
         // Set the application theme. Supported theme keys are blueTheme and greenTheme.
         ThemeColor: "js/library/themes/styles/greenTheme.css",
 
-        //------------------------------------------------------------------------------------------------------------------------
-        // Header Widget Settings
-        //------------------------------------------------------------------------------------------------------------------------
-        // Set widgets settings such as widget title, widgetPath, mapInstanceRequired to be displayed in header panel
-        // WidgetPath: path of the widget respective to the widgets package.
-        // MapInstanceRequired: true if widget is dependent on the map instance.
-
-        AppHeaderWidgets: [{
-            WidgetPath: "widgets/locator/locator",
-            MapInstanceRequired: true
-        }, {
-            WidgetPath: "widgets/reports/reports",
-            MapInstanceRequired: true
-        }, {
-            WidgetPath: "widgets/geoLocation/geoLocation",
-            MapInstanceRequired: true
-        }, {
-            WidgetPath: "widgets/share/share",
-            MapInstanceRequired: true
-        }, {
-            WidgetPath: "widgets/help/help",
-            MapInstanceRequired: false
-        }],
-
         // ------------------------------------------------------------------------------------------------------------------------
         // BASEMAP SETTINGS
         // ------------------------------------------------------------------------------------------------------------------------
@@ -111,9 +87,56 @@ define([], function () {
         // Choose if you want to use WebMap or Map Services for operational layers. If using WebMap, specify WebMapId within quotes, otherwise leave this empty and configure operational layers
         WebMapId: "",
 
+        // Set Area Of Interest Tab Text
+        AOITabText: "Area of Interest",
+
+        // Set Report Tab Text
+        ReportTabText: "Report",
+
+        // ------------------------------------------------------------------------------------------------------------------------
+        // AOI TAB SETTINGS
+        // ------------------------------------------------------------------------------------------------------------------------
+        // Placename tab AOI definition labels
+        // Title: Set Placename tab title
+        // DefineAOILabel: Specify text to display as a hint to define AOI
+        PlacenameTab: {
+            Title: "Placename",
+            DefineAOILabel: "Use an address to define your AOI"
+        },
+
+        // Draw tab AOI definition labels
+        // Title: Draw tab title
+        // AddressSearchHintLabel: Specifty text to display as a hint above addres search
+        // DefineAOILabel: Specify text to display as a hint to define AOI
+        DrawTab: {
+            Title: "Draw",
+            AddressSearchHintLabel: "Navigate to geography",
+            DefineAOILabel: "Use the Drawing tools to define your AOI"
+        },
+
+        // Shapefile tab AOI definition labels
+        // Title: Shapefile tab title
+        // DefineAOILabel : Specify text to display as a hint to define AOI
+        ShapefileTab: {
+            Title: "Shapefile",
+            DefineAOILabel: "Upload a zipped shapefile to define your AOI"
+        },
+
+        // Coordinates tab AOI definition labels
+        // Title: Coordinates tab title
+        // DefineStartPointAddressLabel: Specify text to display as a hint to define start point using an address
+        // DefineStartPointMapClickLabel: Specify text to display as a hint to define start point by clicking on map
+        // EnterBearingDistanceLabel: Specify text to display as a hint to add bearing and distance
+        CoordinatesTab: {
+            Title: "Coordinates",
+            DefineStartPointAddressLabel: "Define Start point using address search",
+            DefineStartPointMapClickLabel: "Click on map to select start point",
+            EnterBearingDistanceLabel: "Enter bearings and distances from start point"
+        },
+
+        // ------------------------------------------------------------------------------------------------------------------------
         // OPERATIONAL DATA SETTINGS
         // ------------------------------------------------------------------------------------------------------------------------
-
         // Configure operational layers:
 
         // Configure operational layers  below. The order of displaying layers is reversed on map. The last configured layer is displayed on top.
@@ -121,10 +144,10 @@ define([], function () {
         // LoadAsServiceType: Field to specify if the operational layers should be added as dynamic map service layer or feature layer.
         // Supported service types are 'dynamic' or 'feature'.
         OperationalLayers: [{
-            ServiceURL: "http://54.193.222.183:6080/arcgis/rest/services/EIAPoly/MapServer/0",
+            ServiceURL: "http://54.241.236.56:6080/arcgis/rest/services/EIAPoly/MapServer/0",
             LoadAsServiceType: "feature"
         }, {
-            ServiceURL: "http://54.193.222.183:6080/arcgis/rest/services/EIAPoly/MapServer/7",
+            ServiceURL: "http://54.241.236.56:6080/arcgis/rest/services/EIAPoly/MapServer/7",
             LoadAsServiceType: "feature"
         }],
 
@@ -368,12 +391,12 @@ define([], function () {
         GeometryService: "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer",
 
         // Set GP service for creating AOI from shapefile and uploading shapefile for analysis
-        ShapefileTools: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_2/EnvironmentalImpactTools/GPServer/ShapefileTools",
+        ShapefileTools: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_4/EnvironmentalImpactTools/GPServer/ShapefileTools",
 
         // ReportDownloadSettings: Settings for downloading quick and detailed summary reports in PDF format
         // GPServiceURL: url to geoprocessing service
         ReportDownloadSettings: {
-            GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_2/EnvironmentalImpactTools/GPServer/GeneratePDFReport",
+            GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_4/EnvironmentalImpactTools/GPServer/GeneratePDFReport",
             ReportSettings: [
                 {
                     Type: "Quick",
@@ -396,19 +419,19 @@ define([], function () {
                 Enabled: true,
                 Label: "Excel",
                 Format: "Excel",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_2/EnvironmentalImpactTools/GPServer/ClipToExcel"
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_4/EnvironmentalImpactTools/GPServer/ClipToExcel"
             },
             {
                 Enabled: true,
                 Label: "File GDB",
                 Format: "File Geodatabase - GDB - .gdb",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_2/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_4/EnvironmentalImpactTools/GPServer/ClipZipandShip"
             },
             {
                 Enabled: true,
                 Label: "Shapefile",
                 Format: "Shapefile - SHP - .shp",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_2/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_4/EnvironmentalImpactTools/GPServer/ClipZipandShip"
             }
         ],
 
@@ -424,11 +447,24 @@ define([], function () {
             ShareByMailLink: "mailto:%20?subject=Check%20out%20this%20map!&body=${0}"
         },
 
-        // Set Area Of Interest Tab Text
-        AOITabText: "Area of Interest",
+        //------------------------------------------------------------------------------------------------------------------------
+        // Header Widget Settings
+        //------------------------------------------------------------------------------------------------------------------------
+        // Set widgets settings such as widget title, widgetPath, mapInstanceRequired to be displayed in header panel
+        // WidgetPath: path of the widget respective to the widgets package.
+        // MapInstanceRequired: true if widget is dependent on the map instance.
 
-        // Set Report Tab Text
-        ReportTabText: "Report"
+        AppHeaderWidgets: [{
+            WidgetPath: "widgets/locator/locator"
+        }, {
+            WidgetPath: "widgets/reports/reports"
+        }, {
+            WidgetPath: "widgets/geoLocation/geoLocation"
+        }, {
+            WidgetPath: "widgets/share/share"
+        }, {
+            WidgetPath: "widgets/help/help"
+        }]
 
     };
 });

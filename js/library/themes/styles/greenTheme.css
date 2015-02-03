@@ -102,6 +102,11 @@
     {
         background-image: url("../images/img44x44/pointMapClickGreen.png") !important;
     }
+
+    .esriCTIconSelection
+    {
+        border-color: #028D6A !important;
+    }
 }
 
 /* Application header Styles */
@@ -432,4 +437,9 @@
 .esriCTClearAOIButton
 {
     background-image: url("../images/clear-aoi-green.png") !important;
+}
+
+.esriCTIconSelection
+{
+    border-color: #028D6A !important;
 }

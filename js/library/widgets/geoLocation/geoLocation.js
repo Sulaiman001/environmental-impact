@@ -134,32 +134,6 @@ define([
         },
 
         /**
-        * Description
-        * @method showBuffer
-        * @param {} bufferedGeometries
-        * @return
-        */
-        showBuffer: function (bufferedGeometries) {
-            var _self, symbol, graphic;
-            _self = this;
-            symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
-                new SimpleLineSymbol(
-                    SimpleLineSymbol.STYLE_SOLID,
-                    new Color([parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[0], 10), parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[1], 10), parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.BufferSymbology.LineSymbolTransparency.split(",")[0], 10)]),
-                    2
-                ),
-                new Color([parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[0], 10), parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[1], 10), parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.BufferSymbology.FillSymbolTransparency.split(",")[0], 10)])
-                );
-            array.forEach(bufferedGeometries, function (geometry) {
-                graphic = new Graphic(geometry, symbol);
-                _self.map.getLayer("tempBufferLayer").clear();
-                _self.map.getLayer("tempBufferLayer").add(graphic);
-                _self.map.setExtent(graphic.geometry.getExtent().expand(1.6));
-            });
-            domStyle.set(dojo.query('.esriCTClearAOIButton')[0], "display", "block");
-        },
-
-        /**
         * add push pin on the map
         * @memberOf widgets/geoLocation/geoLocation
         * @method _addGraphic

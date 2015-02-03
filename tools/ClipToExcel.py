@@ -24,6 +24,7 @@ import zipfile
 
 SCRATCH = arcpy.env.scratchFolder
 OUTPUT_ZIPFILE = "ClipAnalysisOutput"
+arcpy.env.overwriteOutput = True
 
 def loop_req_layers(layers_to_clip, area_of_interest):
     """ This function loop through all the layers provided and generate the
@@ -104,8 +105,8 @@ def generate_excel(name, area_of_interest, in_features):
                     val_row += 1
             workbook.save(xlsx_file_path)
             return True
-    except Exception:
-        arcpy.AddError(("Error occured while genrating excel for {0}.")
+    except Exception as error:
+        arcpy.AddError(("Error occurred while generating excel for {0}.")
                        .format((name)))
         return False
 
@@ -137,7 +138,7 @@ def create_zip_folder():
         return out_zip_file
 
     except Exception:
-        arcpy.AddError("Error ocurred while creating zip file.")
+        arcpy.AddError("Error occurred while creating zip file.")
         return False
 
 def main():
@@ -146,7 +147,7 @@ def main():
     layers_to_clip = arcpy.GetParameterAsText(0)
     area_of_interest = arcpy.GetParameter(1)
 
-    #   Check if valid AOI is provided. It should have atleast 1 polygon feature
+    #   Check if valid AOI is provided. It should have at least 1 polygon feature
     aoi_featset = arcpy.FeatureSet()
     aoi_featset.load(area_of_interest)
     aoi_feat_count = int(arcpy.GetCount_management(aoi_featset)[0])
@@ -171,4 +172,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

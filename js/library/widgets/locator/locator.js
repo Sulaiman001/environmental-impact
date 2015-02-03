@@ -129,37 +129,10 @@ define([
             var i;
             this.configSearchSettings = [];
             for (i = 0; i < dojo.configData.SearchSettings.length; i++) {
-                if (this._checkLayerAvailability(dojo.configData.SearchSettings[i].QueryURL)) {
+                if (dojo.configData.SearchSettings[i].QueryURL) {
                     this.configSearchSettings.push(dojo.configData.SearchSettings[i]);
                 }
             }
-        },
-
-        /**
-        * checks if the layer is available on Map
-        * @method widgets/locator/locator
-        * @param {} queryURL
-        */
-        _checkLayerAvailability: function (queryURL) {
-            var layerId, lastIndex, layerIndex, layerURLwithSlash, layerURL, isLayerAvailable = false;
-            lastIndex = queryURL.lastIndexOf('/');
-            layerIndex = queryURL.substr(lastIndex + 1);
-            layerURLwithSlash = queryURL.substring(0, lastIndex + 1);
-            layerURL = queryURL.substring(0, lastIndex);
-            for (layerId in this.map._layers) {
-                if (this.map._layers.hasOwnProperty(layerId)) {
-                    if (this.map._layers[layerId].url) {
-                        if (queryURL === this.map._layers[layerId].url) {
-                            isLayerAvailable = true;
-                            break;
-                        } else if ((layerURL === this.map._layers[layerId].url || layerURLwithSlash === this.map._layers[layerId].url) && Array.indexOf(this.map._layers[layerId].visibleLayers, parseInt(layerIndex, 10)) > -1) {
-                            isLayerAvailable = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            return isLayerAvailable;
         },
 
         /**
@@ -181,7 +154,7 @@ define([
             domAttr.set(this.imgSearchLoader, "src", dojoConfig.baseURL + "/js/library/themes/images/loader.gif");
             this.own(on(this.divSearch, "click", lang.hitch(this, function (evt) {
                 this._toggleTexBoxControls(true);
-                this._locateAddress();
+                this._locateAddress(true);
             })));
             this.own(on(this.txtAddress, "keyup", lang.hitch(this, function (evt) {
                 domStyle.set(this.close, "display", "block");
@@ -268,33 +241,26 @@ define([
         _submitAddress: function (evt, locatorText) {
             if (locatorText) {
                 setTimeout(lang.hitch(this, function () {
-                    this._locateAddress();
+                    this._locateAddress(true);
                 }), 100);
                 return;
             }
             if (evt) {
-                if (evt.keyCode === dojo.keys.ENTER) {
-                    if (this.txtAddress.value !== '') {
-                        this._toggleTexBoxControls(true);
-                        this._locateAddress();
-                        return;
-                    }
-                }
-                if (evt.keyCode === dojo.keys.BACKSPACE) {
-                    if (this.txtAddress.value === '' || this.txtAddress.length === 0 || this.txtAddress.value === null) {
-                        this._toggleTexBoxControls(false);
-                        this.clearplaceNameSearchTextbox = "";
-                        domConstruct.empty(this.divAddressResults);
-                        return;
-                    }
-                }
-
                 /**
-                * do not perform auto complete search if alphabets,
-                * numbers,numpad keys,comma,ctl+v,ctrl +x,delete or
-                * backspace is pressed
+                * Enter key immediately starts search
                 */
-                if ((!((evt.keyCode >= 46 && evt.keyCode < 58) || (evt.keyCode > 64 && evt.keyCode < 91) || (evt.keyCode > 95 && evt.keyCode < 106) || evt.keyCode === 8 || evt.keyCode === 110 || evt.keyCode === 188)) || (evt.keyCode === 86 && evt.ctrlKey) || (evt.keyCode === 88 && evt.ctrlKey)) {
+                if (evt.keyCode === dojo.keys.ENTER) {
+                    this._toggleTexBoxControls(true);
+                    this._locateAddress(true);
+                    return;
+                }
+                /**
+                * do not perform auto complete search if control &| alt key pressed, except for ctrl-v
+                */
+                if (evt.ctrlKey || evt.altKey || evt.keyCode === dojo.keys.UP_ARROW || evt.keyCode === dojo.keys.DOWN_ARROW ||
+                        evt.keyCode === dojo.keys.LEFT_ARROW || evt.keyCode === dojo.keys.RIGHT_ARROW ||
+                        evt.keyCode === dojo.keys.HOME || evt.keyCode === dojo.keys.END ||
+                        evt.keyCode === dojo.keys.CTRL || evt.keyCode === dojo.keys.SHIFT) {
                     evt.cancelBubble = true;
                     if (evt.stopPropagation) {
                         evt.stopPropagation();
@@ -307,35 +273,7 @@ define([
                 * call locator service if search text is not empty
                 */
                 this._toggleTexBoxControls(true);
-                if (domGeom.getMarginBox(this.divAddressContent).h > 0) {
-                    if (lang.trim(this.txtAddress.value) !== '') {
-                        if (this.lastSearchString !== lang.trim(this.txtAddress.value)) {
-                            this.lastSearchString = lang.trim(this.txtAddress.value);
-                            domConstruct.empty(this.divAddressResults);
-
-                            /**
-                            * clear any staged search
-                            */
-                            clearTimeout(this.stagedSearch);
-                            if (lang.trim(this.txtAddress.value).length > 0) {
-
-                                /**
-                                * stage a new search, which will launch if no new searches show up
-                                * before the timeout
-                                */
-                                this.stagedSearch = setTimeout(lang.hitch(this, function () {
-                                    this.stagedSearch = this._locateAddress();
-                                }), 500);
-                            }
-                        } else {
-                            this._toggleTexBoxControls(false);
-                        }
-                    } else {
-                        this.lastSearchString = lang.trim(this.txtAddress.value);
-                        this._toggleTexBoxControls(false);
-                        domConstruct.empty(this.divAddressResults);
-                    }
-                }
+                this._locateAddress(false);
             }
         },
 
@@ -343,12 +281,29 @@ define([
         * perform search by address if search type is address search
         * @memberOf widgets/locator/locator
         */
-        _locateAddress: function () {
-            domConstruct.empty(this.divAddressResults);
-            if (lang.trim(this.txtAddress.value) === '') {
-                this._locatorErrBack();
-            } else {
-                this._searchLocation();
+        _locateAddress: function (launchImmediately) {
+            var searchText = lang.trim(this.txtAddress.value);
+            if (launchImmediately || this.lastSearchString !== searchText) {
+                this.lastSearchString = searchText;
+
+                // Clear any staged search
+                clearTimeout(this.stagedSearch);
+
+                // Hide existing results
+                domConstruct.empty(this.divAddressResults);
+                /**
+                * stage a new search, which will launch if no new searches show up
+                * before the timeout
+                */
+                this.stagedSearch = setTimeout(lang.hitch(this, function () {
+                    var thisSearchTime;
+
+                    // Replace search type-in box' clear X with a busy cursor
+                    this._toggleTexBoxControls(false);
+                    // Launch a search after recording when the search began
+                    this.lastSearchTime = thisSearchTime = (new Date()).getTime();
+                    this._searchLocation(searchText, thisSearchTime);
+                }), (launchImmediately ? 0 : 500));
             }
         },
 
@@ -357,107 +312,129 @@ define([
         * @memberOf widgets/locator/locator
         * @method _searchLocation
         */
-        _searchLocation: function () {
+        _searchLocation: function (searchText, thisSearchTime) {
             var nameArray = {}, locatorSettings, locator, searchFieldName, addressField, baseMapExtent,
                 options, searchFields, addressFieldValues, s, deferredArray,
                 locatorDef, deferred, resultLength, deferredListResult, index, resultAttributes, key, order;
-            nameArray[this.locatorSettings.DisplayText] = [];
-            this._toggleTexBoxControls(true);
-            domAttr.set(this.txtAddress, "defaultAddress", this.txtAddress.value);
+            // Discard searches made obsolete by new typing from user
+            if (thisSearchTime < this.lastSearchTime) {
+                return;
+            }
+            if (searchText === "") {
+                // Short-circuit and clear results if the search string is empty
 
-            /**
-            * call locator service specified in configuration file
-            */
-            locatorSettings = this.locatorSettings;
-            locator = new Locator(locatorSettings.LocatorURL);
-            searchFieldName = locatorSettings.LocatorParameters.SearchField;
-            addressField = {};
-            addressField[searchFieldName] = lang.trim(this.txtAddress.value);
-            if (this.map.getLayer("defaultBasemap")) {
-                baseMapExtent = this.map.getLayer("defaultBasemap").fullExtent;
+                this._toggleTexBoxControls(true);
+                this.mapPoint = null;
+                this._locatorErrBack(true);
+
             } else {
-                baseMapExtent = this.map.getLayer("defaultBasemap0").fullExtent;
-            }
-            options = {};
-            options.address = addressField;
-            options.outFields = locatorSettings.LocatorOutFields;
-            options[locatorSettings.LocatorParameters.SearchBoundaryField] = baseMapExtent;
-            locator.outSpatialReference = this.map.spatialReference;
-            searchFields = [];
-            addressFieldValues = locatorSettings.FilterFieldValues;
-            for (s in addressFieldValues) {
-                if (addressFieldValues.hasOwnProperty(s)) {
-                    searchFields.push(addressFieldValues[s]);
+                nameArray[this.locatorSettings.DisplayText] = [];
+                domAttr.set(this.txtAddress, "defaultAddress", searchText);
+
+                /**
+                * call locator service specified in configuration file
+                */
+                locatorSettings = this.locatorSettings;
+                locator = new Locator(locatorSettings.LocatorURL);
+                searchFieldName = locatorSettings.LocatorParameters.SearchField;
+                addressField = {};
+                addressField[searchFieldName] = searchText;
+                if (this.map.getLayer("defaultBasemap")) {
+                    baseMapExtent = this.map.getLayer("defaultBasemap").fullExtent;
+                } else {
+                    baseMapExtent = this.map.getLayer("defaultBasemap0").fullExtent;
                 }
-            }
+                options = {};
+                options.address = addressField;
+                options.outFields = locatorSettings.LocatorOutFields;
+                options[locatorSettings.LocatorParameters.SearchBoundaryField] = baseMapExtent;
+                locator.outSpatialReference = this.map.spatialReference;
+                searchFields = [];
+                addressFieldValues = locatorSettings.FilterFieldValues;
+                for (s in addressFieldValues) {
+                    if (addressFieldValues.hasOwnProperty(s)) {
+                        searchFields.push(addressFieldValues[s]);
+                    }
+                }
+                // Discard searches made obsolete by new typing from user
+                if (thisSearchTime < this.lastSearchTime) {
+                    return;
+                }
 
-            /**
-            * get results from locator service
-            * @param {object} options Contains address, outFields and basemap extent for locator service
-            * @param {object} candidates Contains results from locator service
-            */
-            deferredArray = [];
-            if (!this.configSearchSettings || !this.preLoaded) {
-                this._setSearchSettings();
-            }
-            for (index = 0; index < this.configSearchSettings.length; index++) {
-                this._layerSearchResults(deferredArray, this.configSearchSettings[index]);
-            }
-            locatorDef = locator.addressToLocations(options);
-            locator.on("address-to-locations-complete", lang.hitch(this, function (candidates) {
-                deferred = new Deferred();
-                deferred.resolve(candidates);
-                return deferred.promise;
-            }), function () {
-                this._locatorErrBack();
-            });
-            deferredArray.push(locatorDef);
-            deferredListResult = new DeferredList(deferredArray);
-            deferredListResult.then(lang.hitch(this, function (result) {
-                var num, results;
+                /**
+                * get results from locator service
+                * @param {object} options Contains address, outFields and basemap extent for locator service
+                * @param {object} candidates Contains results from locator service
+                */
+                deferredArray = [];
+                if (!this.configSearchSettings || !this.preLoaded) {
+                    this._setSearchSettings();
+                }
+                for (index = 0; index < this.configSearchSettings.length; index++) {
+                    this._layerSearchResults(searchText, deferredArray, this.configSearchSettings[index]);
+                }
+                locatorDef = locator.addressToLocations(options);
+                locator.on("address-to-locations-complete", lang.hitch(this, function (candidates) {
+                    deferred = new Deferred();
+                    deferred.resolve(candidates);
+                    return deferred.promise;
+                }), function () {
+                    this._locatorErrBack(true);
+                });
+                deferredArray.push(locatorDef);
+                deferredListResult = new DeferredList(deferredArray);
+                deferredListResult.then(lang.hitch(this, function (result) {
+                    var num, results;
+                    // Discard searches made obsolete by new typing from user
+                    if (thisSearchTime < this.lastSearchTime) {
+                        return;
+                    }
 
-                if (result) {
-                    if (result.length > 0) {
-                        for (num = 0; num < result.length; num++) {
-                            if (result[num][0] === true) {
-                                if (this.configSearchSettings[num] && this.configSearchSettings[num].UnifiedSearch.toLowerCase() === "true") {
-                                    key = this.configSearchSettings[num].SearchDisplayTitle;
-                                    nameArray[key] = [];
-                                    if (result[num][1].features) {
-                                        for (order = 0; order < result[num][1].features.length; order++) {
-                                            resultAttributes = result[num][1].features[order].attributes;
-                                            for (results in resultAttributes) {
-                                                if (resultAttributes.hasOwnProperty(results)) {
-                                                    if (!resultAttributes[results]) {
-                                                        resultAttributes[results] = sharedNls.showNullValue;
+                    dojo.lastSearchAddress = this.lastSearchString;
+                    if (result) {
+                        if (result.length > 0) {
+                            for (num = 0; num < result.length; num++) {
+                                if (result[num][0] === true) {
+                                    if (this.configSearchSettings[num] && this.configSearchSettings[num].UnifiedSearch.toLowerCase() === "true") {
+                                        key = this.configSearchSettings[num].SearchDisplayTitle;
+                                        nameArray[key] = [];
+                                        if (result[num][1].features) {
+                                            for (order = 0; order < result[num][1].features.length; order++) {
+                                                resultAttributes = result[num][1].features[order].attributes;
+                                                for (results in resultAttributes) {
+                                                    if (resultAttributes.hasOwnProperty(results)) {
+                                                        if (!resultAttributes[results]) {
+                                                            resultAttributes[results] = sharedNls.showNullValue;
+                                                        }
                                                     }
                                                 }
+                                                if (nameArray[key].length < this.locatorSettings.MaxResults) {
+                                                    nameArray[key].push({
+                                                        name: string.substitute(this.configSearchSettings[num].SearchDisplayFields, resultAttributes),
+                                                        attributes: resultAttributes,
+                                                        fields: result[num][1].fields,
+                                                        layer: this.configSearchSettings[num],
+                                                        geometry: result[num][1].features[order].geometry
+                                                    });
+                                                }
                                             }
-                                            if (nameArray[key].length < this.locatorSettings.MaxResults) {
-                                                nameArray[key].push({
-                                                    name: string.substitute(this.configSearchSettings[num].SearchDisplayFields, resultAttributes),
-                                                    attributes: resultAttributes,
-                                                    fields: result[num][1].fields,
-                                                    layer: this.configSearchSettings[num],
-                                                    geometry: result[num][1].features[order].geometry
-                                                });
-                                            }
-                                        }
 
+                                        }
+                                    } else {
+                                        this._addressResult(result[num][1], nameArray, searchFields);
                                     }
-                                } else {
-                                    this._addressResult(result[num][1], nameArray, searchFields);
+                                    resultLength = result[num][1].length;
                                 }
-                                resultLength = result[num][1].length;
                             }
+                            this._showLocatedAddress(searchText, nameArray, resultLength);
                         }
-                        this._showLocatedAddress(nameArray, resultLength);
+                    } else {
+                        this.mapPoint = null;
+                        this._locatorErrBack(true);
                     }
-                } else {
-                    this.mapPoint = null;
-                    this._locatorErrBack();
-                }
-            }));
+                }));
+            }
+
         },
 
         /**
@@ -466,14 +443,14 @@ define([
         * @param {} deferredArray
         * @param {} layerobject
         */
-        _layerSearchResults: function (deferredArray, layerobject) {
+        _layerSearchResults: function (searchText, deferredArray, layerobject) {
             var queryTask, queryLayer, deferred, currentTime;
             this._toggleTexBoxControls(true);
             if (layerobject.QueryURL) {
                 currentTime = new Date();
                 queryTask = new QueryTask(layerobject.QueryURL);
                 queryLayer = new Query();
-                queryLayer.where = string.substitute(layerobject.SearchExpression, [lang.trim(this.txtAddress.value).toUpperCase()]) + " AND " + currentTime.getTime().toString() + "=" + currentTime.getTime().toString();
+                queryLayer.where = string.substitute(layerobject.SearchExpression, [searchText.toUpperCase()]) + " AND " + currentTime.getTime().toString() + "=" + currentTime.getTime().toString();
                 queryLayer.outSpatialReference = this.map.spatialReference;
                 queryLayer.returnGeometry = true;
                 queryLayer.outFields = ["*"];
@@ -524,11 +501,11 @@ define([
         * @param {object} candidates contains results from locator service
         * @param {} resultLength
         */
-        _showLocatedAddress: function (candidates, resultLength) {
-            var addrListCount = 0, addrList = [], candidateArray, divAddressCounty, candidate, listContainer, i, divAddressSearchCell;
+        _showLocatedAddress: function (searchText, candidates, resultLength) {
+            var addrListCount = 0, noResultCount = 0, candidatesCount = 0, addrList = [], candidateArray, divAddressCounty, candidate, listContainer, i, divAddressSearchCell;
             domConstruct.empty(this.divAddressResults);
 
-            if (lang.trim(this.txtAddress.value) === "") {
+            if (lang.trim(searchText) === "") {
                 this.txtAddress.focus();
                 domConstruct.empty(this.divAddressResults);
                 this._toggleTexBoxControls(false);
@@ -545,6 +522,7 @@ define([
                 this._toggleTexBoxControls(false);
                 for (candidateArray in candidates) {
                     if (candidates.hasOwnProperty(candidateArray)) {
+                        candidatesCount++;
                         if (candidates[candidateArray].length > 0) {
                             divAddressCounty = domConstruct.create("div", {
                                 "class": "esriCTSearchGroupRow esriCTBottomBorder esriCTResultColor esriCTCursorPointer esriCTAddressCounty"
@@ -561,12 +539,18 @@ define([
                             for (i = 0; i < candidates[candidateArray].length; i++) {
                                 this._displayValidLocations(candidates[candidateArray][i], i, candidates[candidateArray], listContainer);
                             }
+                        } else {
+                            noResultCount++;
                         }
                     }
                 }
+                if (noResultCount === candidatesCount) {
+                    this.mapPoint = null;
+                    this._locatorErrBack(true);
+                }
             } else {
                 this.mapPoint = null;
-                this._locatorErrBack();
+                this._locatorErrBack(true);
             }
         },
 
@@ -731,13 +715,15 @@ define([
         * display error message if locator service fails or does not return any results
         * @memberOf widgets/locator/locator
         */
-        _locatorErrBack: function () {
+        _locatorErrBack: function (showMessage) {
             domConstruct.empty(this.divAddressResults);
             domClass.remove(this.divAddressContainer, "esriCTAddressContentHeight");
             domStyle.set(this.divAddressResults, "display", "block");
             domClass.add(this.divAddressContent, "esriCTAddressResultHeight");
             this._toggleTexBoxControls(false);
-            domConstruct.create("div", { "class": "esriCTDivNoResultFound", "innerHTML": sharedNls.errorMessages.invalidSearch }, this.divAddressResults);
+            if (showMessage) {
+                domConstruct.create("div", { "class": "esriCTDivNoResultFound", "innerHTML": sharedNls.errorMessages.invalidSearch }, this.divAddressResults);
+            }
         },
 
         /**

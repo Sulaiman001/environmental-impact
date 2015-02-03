@@ -50,10 +50,12 @@ define(["dojo/_base/declare",
     "esri/geometry/Extent",
     "dojo/_base/array",
     "dojo/query",
-    "dojo/DeferredList"
+    "dojo/DeferredList",
+    "widgets/share/commonShare"
+
     ], function (declare, domConstruct, lang, domAttr, on, dom, domClass, domGeom, domStyle, string, html, template, _WidgetBase, _TemplatedMixin,
     _WidgetsInTemplateMixin, sharedNls, topic, esriRequest, Polyline, Polygon, PictureMarkerSymbol, SimpleMarkerSymbol, Multipoint, SimpleFillSymbol, SimpleLineSymbol,
-    SpatialReference, BufferParameters, GeometryService, Point, Graphic, Color, GeometryExtent, array, query, DeferredList) {
+    SpatialReference, BufferParameters, GeometryService, Point, Graphic, Color, GeometryExtent, array, query, DeferredList, commonShare) {
     //========================================================================================================================//
     return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
         templateString: template,
@@ -115,7 +117,6 @@ define(["dojo/_base/declare",
                     topic.publish("toggleWidget", "share");
                     topic.publish("setMaxLegendLength");
                     this._showHideShareContainer();
-                    //this._shareLink();
                 })));
                 applicationHeaderDiv = domConstruct.create("div", {
                     "class": "esriCTApplicationShareicon"
@@ -128,21 +129,9 @@ define(["dojo/_base/declare",
                     this.emailSharedData = emailSharingData;
                 }));
 
-                if (window.location.toString().split("?extent=").length > 1) {
-                    setTimeout(lang.hitch(this, function () {
-                        var currentExtentLegend, graphicDetails;
-                        currentExtentLegend = this._getQueryString('extent');
-                        currentExtentLegend = decodeURIComponent(currentExtentLegend);
-                        graphicDetails = currentExtentLegend.split('|');
-                        this.extentPoints = graphicDetails[0].split(",");
-                        this._actualData = graphicDetails[1];
-                        this._replicateSharedData(graphicDetails);
-                        this._fetchData(graphicDetails);
-                        if (!graphicDetails.TAB) {
-                            topic.publish("disableDefaultSharingExtent");
-                        }
-                    }), 6000);
-                }
+                topic.subscribe("modulesLoaded", lang.hitch(this, function () {
+                    this._loadShareData();
+                }));
 
                 topic.subscribe("baseMapIndex", lang.hitch(this, function (preLayerIndex, selectedBaseMapIndex, presentThumbNail) {
                     this._baseMapIndex = preLayerIndex;
@@ -151,6 +140,7 @@ define(["dojo/_base/declare",
                 }));
 
                 topic.subscribe("infoWindowData", lang.hitch(this, function (mapPoint) {
+                    //check if the mapPoint of infoWindow has the attribute property containing featureLayer and ObjectID
                     if (mapPoint.attributes) {
                         this._infoX = mapPoint.geometry.x;
                         this._infoY = mapPoint.geometry.y;
@@ -172,11 +162,45 @@ define(["dojo/_base/declare",
                     this._setEmailSharingMapExtent();
                 }));
 
+                /**
+                * add event handlers to sharing options
+                */
+                on(this.divFacebook, "click", lang.hitch(this, function () {
+                    this._share("facebook");
+                }));
+                on(this.divTwitter, "click", lang.hitch(this, function () {
+                    this._share("twitter");
+                }));
+                on(this.divMail, "click", lang.hitch(this, function () {
+                    this._share("email");
+                }));
             } catch (err) {
                 alert(err.message);
             }
         },
 
+        /**
+        * check the loading url for the extent of shared map
+        * if extent is present proceed with loading of shared data
+        * @memberOf widgets/share/share
+        */
+        _loadShareData: function () {
+            if (window.location.toString().split("?extent=").length > 1) {
+                var currentExtentLegend, graphicDetails;
+                currentExtentLegend = this._getQueryString('extent');
+                currentExtentLegend = decodeURIComponent(currentExtentLegend);
+                graphicDetails = currentExtentLegend.split('|');
+                this.extentPoints = graphicDetails[0].split(",");
+                this._actualData = graphicDetails[1];
+                this._replicateSharedData(graphicDetails);
+                this._fetchData(graphicDetails);
+            }
+        },
+
+        /**
+        * replicate the shared data
+        * @memberOf widgets/share/share
+        */
         _replicateSharedData: function (graphicDetails) {
             try {
                 if (graphicDetails) {
@@ -191,6 +215,11 @@ define(["dojo/_base/declare",
             }
         },
 
+        /**
+        * based on shared url parameters, proceed with the loading of share data
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _fetchData: function (graphicDetails) {
             try {
                 if (graphicDetails.length > 0) {
@@ -200,6 +229,7 @@ define(["dojo/_base/declare",
                         if (graphicDetails.BMI) {
                             topic.publish("setBaseMap", graphicDetails.BMI, graphicDetails.SBI, graphicDetails.PTI);
                         }
+                        //check for the infoWindow if present
                         if (graphicDetails.SHOWINFO === "true") {
                             var evt, pointGeometry;
                             evt = {};
@@ -207,32 +237,37 @@ define(["dojo/_base/declare",
                                 "wkid": this.map.spatialReference.wkid
                             }));
                             evt.mapPoint = pointGeometry;
+                            //check if infoWindow featureLayer and objectID is present
                             if (graphicDetails.INFOFEATUREID && graphicDetails.INFOLAYERID) {
                                 topic.publish("showInfoWindowOnMap", pointGeometry, [graphicDetails.INFOFEATUREID, graphicDetails.INFOLAYERID]);
                             } else {
                                 topic.publish("displayInfoWindow", evt);
                             }
                         }
-
-                        switch (graphicDetails.TAB) {
-                        case "locator":
-                            this._displayLocatorData(graphicDetails);
-                            break;
-                        case "geolocation":
-                            this._displayGeoLocationData(graphicDetails);
-                            break;
-                        case "Placename":
-                            this._displayPlaceNameData(graphicDetails);
-                            break;
-                        case "Draw":
-                            this._displayDrawData(graphicDetails);
-                            break;
-                        case "Coordinates":
-                            this._displayCoordinatesData(graphicDetails);
-                            break;
-                        case "Shapefile":
-                            this._displayShapefileData(graphicDetails);
-                            break;
+                        //if AOI panel is selected in shared data, check for the selected tab
+                        if (graphicDetails.TAB) {
+                            switch (graphicDetails.TAB) {
+                            case "locator":
+                                this._displayLocatorData(graphicDetails);
+                                break;
+                            case "geolocation":
+                                this._displayGeoLocationData(graphicDetails);
+                                break;
+                            case dojo.configData.PlacenameTab.Title:
+                                this._displayPlaceNameData(graphicDetails);
+                                break;
+                            case dojo.configData.DrawTab.Title:
+                                this._displayDrawData(graphicDetails);
+                                break;
+                            case dojo.configData.CoordinatesTab.Title:
+                                this._displayCoordinatesData(graphicDetails);
+                                break;
+                            case dojo.configData.ShapefileTab.Title:
+                                this._displayShapefileData(graphicDetails);
+                                break;
+                            }
+                        } else {
+                            topic.publish("disableDefaultSharingExtent");
                         }
                     }
                 }
@@ -240,6 +275,12 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
+
+        /**
+        * display the placeName tab data
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _displayPlaceNameData: function (graphicDetails) {
             try {
                 this._displayGeometry(graphicDetails);
@@ -247,6 +288,12 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
+
+        /**
+        * display the Draw tab data
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _displayDrawData: function (graphicDetails) {
             try {
                 this._displayGeometry(graphicDetails);
@@ -254,6 +301,12 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
+
+        /**
+        * display the coordinates tab data
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _displayCoordinatesData: function (graphicDetails) {
             try {
                 this._displayGeometry(graphicDetails);
@@ -261,6 +314,12 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
+
+        /**
+        * display the shapefile tab data
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _displayShapefileData: function (graphicDetails) {
             try {
                 this._displayGeometry(graphicDetails);
@@ -268,6 +327,12 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
+
+        /**
+        * display the shared AOI data based on the geometry type of graphic
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _displayGeometry: function (graphicDetails) {
             try {
                 switch (graphicDetails.GeomType) {
@@ -294,28 +359,34 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
+
+        /**
+        * highlight the draw tab and publish an event to report widget to highlight the selected features on map
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _displaySelectedFeature: function (graphicDetails) {
             try {
                 this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
+                this._setSliderProperties(graphicDetails);
                 topic.publish("displaySelectedFeature", graphicDetails.Geom);
-                if (graphicDetails.SD > 0) {
-                    topic.publish("setSliderDistanceAndUnit", graphicDetails.SD, graphicDetails.UV);
-                    dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
+                if (parseFloat(graphicDetails.SD) > 0) {
+                    topic.publish("setSliderDistanceAndUnit", parseFloat(graphicDetails.SD), graphicDetails.UV);
+                    dijit.byId("horizontalSlider").setValue(parseFloat(graphicDetails.SD));
                 } else {
                     topic.publish("disableDefaultSharingExtent");
                     this._setEmailSharingMapExtent();
                 }
-                this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
-                domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
-                domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
-                this._removeHighlightedUnit();
-                this._highlightUnit(graphicDetails);
-                topic.publish("setSliderValue", graphicDetails.UV);
-                //this._replicateSharedData(null);
             } catch (err) {
                 alert(err.message);
             }
         },
+
+        /**
+        * split the comma seperated shared data parameters in a object
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _getGraphicDetailsObject: function (graphicDetails) {
             try {
                 var i, obj;
@@ -330,7 +401,12 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
-        // This function is used to create symbols
+
+        /**
+        * create the symbols to draw on map as per the geometry type
+        * @param {object} type of geometry
+        * @memberOf widgets/share/share
+        */
         _createFeatureSymbol: function (geometryType) {
             try {
                 var symbol;
@@ -356,30 +432,37 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
-        // This function is used to highlight tab
+
+        /**
+        * highlight and publish an event to create the AOI panel tab
+        * set the address search textbox value if textBox is present
+        * @param {object} tabName tab that needs to be highlighted
+        * @param {object} address shared value of address
+        * @memberOf widgets/share/share
+        */
         _highlightTab: function (tabName, address) {
             try {
                 if (dojo.query(".esriCTAOILinkSelect")[0]) {
                     domClass.remove(dojo.query(".esriCTAOILinkSelect")[0], "esriCTAOILinkSelect");
                 }
                 switch (tabName) {
-                case "Placename":
+                case dojo.configData.PlacenameTab.Title:
                     domClass.add(dom.byId("divLinkplaceName"), "esriCTAOILinkSelect");
-                    this._hideContainer("placeNameSearch");
+                    this._hideContainer();
                     dom.byId("placeNameSearch").style.display = "block";
                     dojo.query(".esriCTTxtAddress")[1].value = (address === "") ? dojo.configData.LocatorSettings.LocatorDefaultPlaceNameSearchAddress : unescape(address);
                     break;
-                case "Shapefile":
+                case dojo.configData.ShapefileTab.Title:
                     domClass.add(dom.byId("divLinkUpload"), "esriCTAOILinkSelect");
-                    this._hideContainer("divFileUploadContainer");
+                    this._hideContainer();
                     dom.byId("divFileUploadContainer").style.display = "block";
                     break;
-                case "Draw":
+                case dojo.configData.DrawTab.Title:
                     domClass.add(dom.byId("divLinkDrawTool"), "esriCTAOILinkSelect");
                     topic.publish("showDrawPanel");
                     dojo.query(".esriCTTxtAddress")[2].value = (address === "") ? dojo.configData.LocatorSettings.LocatorDefaultAOIAddress : unescape(address);
                     break;
-                case "Coordinates":
+                case dojo.configData.CoordinatesTab.Title:
                     domClass.add(dom.byId("divLinkCoordinates"), "esriCTAOILinkSelect");
                     topic.publish("showCoordinatesPanel");
                     dojo.query(".esriCTTxtAddress")[2].value = (address === "") ? dojo.configData.LocatorSettings.LocatorDefaultAOIBearingAddress : unescape(address);
@@ -389,8 +472,8 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
-        // This function is used to hide container
-        _hideContainer: function (container) {
+
+        _hideContainer: function () {
             try {
                 dom.byId("placeNameSearch").style.display = "none";
                 dom.byId("divFileUploadContainer").style.display = "none";
@@ -400,46 +483,37 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
-        // This function is used to display point data
+
+        /**
+        * display the shared point feature on map as per the style of point and shared AOI panel tab
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _displayPointData: function (graphicDetails) {
             try {
-                var geometryService, params, pointGeometry;
+                var pointGeometry;
                 this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
+                this._setSliderProperties(graphicDetails);
+                dijit.byId("horizontalSlider").setValue(parseFloat(graphicDetails.SD));
                 pointGeometry = new Point(graphicDetails.X, graphicDetails.Y, new esri.SpatialReference({
                     "wkid": this.map.spatialReference.wkid
                 }));
                 if (graphicDetails.STYLE === "queryFeature") {
+                    //when point geometry is of query result feature
                     topic.publish("showFeatureResultsOnMap", pointGeometry);
                 } else {
-                    if (graphicDetails.TAB === "Coordinates") {
+                    if (graphicDetails.TAB === dojo.configData.CoordinatesTab.Title) {
+                        //in coordinates tab, point geometry is an initial point
                         topic.publish("locateInitialPoint", pointGeometry);
                     } else {
                         this._addGraphic(pointGeometry, graphicDetails);
-                        if (graphicDetails.TAB !== "Draw" && graphicDetails.SD > 0) {
-                            dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
-                            geometryService = new GeometryService(dojo.configData.GeometryService);
-                            params = new BufferParameters();
-                            params.distances = [graphicDetails.SD];
-                            params.bufferSpatialReference = new esri.SpatialReference({
-                                "wkid": this.map.spatialReference.wkid
-                            });
-                            params.outSpatialReference = this.map.spatialReference;
-                            params.unit = GeometryService[graphicDetails.UV];
-                            params.geometries = [pointGeometry];
-                            geometryService.buffer(params, lang.hitch(this, function (geometries) {
-                                this.showBuffer(geometries);
-                            }));
+                        if (graphicDetails.TAB !== dojo.configData.DrawTab.Title && parseFloat(graphicDetails.SD) > 0) {
+                            topic.publish("createBuffer", [pointGeometry], null);
                         }
                     }
                 }
-                this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
-                domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
-                domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
-                this._removeHighlightedUnit();
-                this._highlightUnit(graphicDetails);
-                topic.publish("setSliderValue", graphicDetails.UV);
                 topic.publish("showClearGraphicsIcon");
-                if (graphicDetails.SD === 0) {
+                if (parseFloat(graphicDetails.SD) === 0) {
                     topic.publish("disableDefaultSharingExtent");
                 }
                 this._setEmailSharingMapExtent();
@@ -448,24 +522,32 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
-        _highlightUnit: function (graphicDetails) {
-            try {
-                domClass.add(dom.byId(this._convertSelectedValue(graphicDetails)), "esriCTSelectedDistanceUnit");
-            } catch (err) {
-                alert(err.message);
-            }
+
+        /**
+        * set the slider unit, distance and minimum and maximum values
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
+        _setSliderProperties: function (graphicDetails) {
+            this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
+            domAttr.set(dom.byId("spanSliderValueTextBox"), "value", parseFloat(graphicDetails.SD));
+            domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
+            //remove the highlighted distance unit if any
+            array.forEach(query(".esriCTRadioBtnContent"), function (item) {
+                if (domClass.contains(item, "esriCTSelectedDistanceUnit")) {
+                    domClass.remove(item, "esriCTSelectedDistanceUnit");
+                }
+            });
+            //highlight the shared distance unit
+            domClass.add(dom.byId(this._convertSelectedValue(graphicDetails)), "esriCTSelectedDistanceUnit");
+            topic.publish("setSliderValue", graphicDetails.UV);
         },
-        _removeHighlightedUnit: function () {
-            try {
-                array.forEach(query(".esriCTRadioBtnContent"), function (item) {
-                    if (domClass.contains(item, "esriCTSelectedDistanceUnit")) {
-                        domClass.remove(item, "esriCTSelectedDistanceUnit");
-                    }
-                });
-            } catch (err) {
-                alert(err.message);
-            }
-        },
+
+        /**
+        * get the slider unit value from shared parameter and return the value to be highlighted
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _convertSelectedValue: function (graphicDetails) {
             try {
                 switch (graphicDetails.UV) {
@@ -482,6 +564,12 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
+
+        /**
+        * set the slider minimum and maximum values as per the shared distance unit
+        * @param {object} the slider distance unit
+        * @memberOf widgets/share/share
+        */
         _setSliderMinAndMaxValue: function (selectedUnitValue) {
             try {
                 var index, sliderStartValue, sliderEndValue;
@@ -559,109 +647,83 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
-        // This function is used to display polygon data
+
+        /**
+        * check the shared value of selected AOI panel tab and display the polygon geometry on map accordingly
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _displayPolygonData: function (graphicDetails) {
             try {
-                var k, m, geometryService, graphic, params, polygon, deferredListSimplifyResult, symbol, bufferRequestArray = [],
-                    simplifyRequestArray = [], unionResultArray = [], unionBufferArray = [], polygonBufferCollection = [], deferredListBufferResult = [];
-                geometryService = new GeometryService(dojo.configData.GeometryService);
-                params = new BufferParameters();
-                params.distances = [graphicDetails.SD];
-                params.bufferSpatialReference = new esri.SpatialReference({
-                    "wkid": this.map.spatialReference.wkid
-                });
-                params.outSpatialReference = this.map.spatialReference;
-                params.unit = GeometryService[graphicDetails.UV];
+                var graphic, polygon, symbol, horizontalSlider;
+                horizontalSlider = dijit.byId("horizontalSlider");
                 polygon = new Polygon();
                 polygon.rings = JSON.parse(unescape(graphicDetails.GEOM));
                 polygon.spatialReference = new esri.SpatialReference({
                     "wkid": this.map.spatialReference.wkid
                 });
-                params.geometries = [polygon];
-                if (graphicDetails.TAB === "Shapefile") {
+                this._setSliderProperties(graphicDetails);
+                //check if selected AOI panel tab is a shapefile
+                if (graphicDetails.TAB === dojo.configData.ShapefileTab.Title) {
                     this._highlightTab(graphicDetails.TAB, "");
-                    topic.publish("displayShapeFile", polygon);
+                    topic.publish("displayShapeFile", polygon, parseFloat(graphicDetails.SD));
                 } else {
                     this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
-                    if (graphicDetails.SN === "aOISearch" || graphicDetails.TAB === "Placename") {
+                    if (graphicDetails.SN === "aOISearch" || graphicDetails.TAB === dojo.configData.PlacenameTab.Title) {
+                        //if sourcename of geometry is aOISearch it is a query result feature of draw or coordinate tab
+                        //polygon geometry in case of Placename tab is a query result Feature
                         topic.publish("showFeatureResultsOnMap", polygon);
-                        if (graphicDetails.SD > 0 && graphicDetails.TAB === "Placename") {
-                            simplifyRequestArray.push(geometryService.simplify([polygon]));
-                            deferredListSimplifyResult = new DeferredList(simplifyRequestArray);
-                            deferredListSimplifyResult.then(lang.hitch(this, function (result) {
-                                for (k = 0; k < result[0][1].length; k++) {
-                                    if (result[0][1][k].type === "polygon") {
-                                        polygonBufferCollection.push(result[0][1][k]);
-                                    }
-                                }
-                                params.geometries = polygonBufferCollection;
-                                bufferRequestArray.push(geometryService.buffer(params));
-                                deferredListBufferResult = new DeferredList(bufferRequestArray);
-                                deferredListBufferResult.then(lang.hitch(this, function (result) {
-                                    for (m = 0; m < result.length; m++) {
-                                        unionBufferArray.push(result[m][1][0]);
-                                    }
-                                    geometryService.union(unionBufferArray, lang.hitch(this, function (geometry) {
-                                        unionResultArray.push(geometry);
-                                        this.showBuffer(unionResultArray);
-                                    }));
-                                }));
-                            }));
+                        //buffer will be drawn only in case of Placename tab
+                        if (parseFloat(graphicDetails.SD) > 0 && graphicDetails.TAB === dojo.configData.PlacenameTab.Title) {
+                            horizontalSlider.setValue(parseFloat(graphicDetails.SD));
+                        } else {
+                            topic.publish("disableDefaultSharingExtent");
                         }
                     } else {
+                        //a shared polygon is drawn using a draw tool of Draw tab
                         symbol = this._createFeatureSymbol(polygon.type);
                         graphic = new Graphic(polygon, symbol);
                         this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
+                        if (parseFloat(graphicDetails.SD) > 0) {
+                            horizontalSlider.setValue(parseFloat(graphicDetails.SD));
+                        } else {
+                            topic.publish("disableDefaultSharingExtent");
+                        }
                     }
                 }
-                this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
-                domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
-                domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
-                this._removeHighlightedUnit();
-                this._highlightUnit(graphicDetails);
-                topic.publish("setSliderValue", graphicDetails.UV);
                 topic.publish("showClearGraphicsIcon");
-                if (graphicDetails.SD > 0) {
-                    dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
-                }
                 this._setEmailSharingMapExtent();
                 this._replicateSharedData(null);
             } catch (err) {
                 alert(err.message);
             }
         },
-        // This function is used to display polyline data
+
+        /**
+        * check the shared value of selected AOI panel tab and display the polyline geometry on map accordingly
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _displayPolylineData: function (graphicDetails) {
             try {
-                var geometryService, params, polyline, pointGeometry, symbol, graphic;
-                geometryService = new GeometryService(dojo.configData.GeometryService);
-                params = new BufferParameters();
-                params.distances = [graphicDetails.SD];
-                params.bufferSpatialReference = new esri.SpatialReference({
-                    "wkid": this.map.spatialReference.wkid
-                });
-                params.outSpatialReference = this.map.spatialReference;
-                params.unit = GeometryService[graphicDetails.UV];
+                var polyline, pointGeometry, symbol, graphic, horizontalSlider;
+                horizontalSlider = dijit.byId("horizontalSlider");
                 polyline = new Polyline();
+                this._setSliderProperties(graphicDetails);
+                //if GEOM parameter value is present, create a polyline with shared geometry data
                 if (graphicDetails.GEOM && graphicDetails.GEOM !== "undefined") {
                     polyline.paths = JSON.parse(unescape(graphicDetails.GEOM));
                     polyline.spatialReference = new esri.SpatialReference({
                         "wkid": this.map.spatialReference.wkid
                     });
                 }
-                params.geometries = [polyline];
-                if (graphicDetails.TAB === "Shapefile") {
-                    topic.publish("displayShapeFile", polyline);
+                if (graphicDetails.TAB === dojo.configData.ShapefileTab.Title) {
                     this._highlightTab(graphicDetails.TAB, "");
-                    this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
-                    domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
-                    domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
-                    this._removeHighlightedUnit();
-                    this._highlightUnit(graphicDetails);
-                    topic.publish("setSliderValue", graphicDetails.UV);
+                    topic.publish("displayShapeFile", polyline, parseFloat(graphicDetails.SD));
                 } else {
                     this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
-                    if (graphicDetails.TAB === "Coordinates") {
+                    if (graphicDetails.TAB === dojo.configData.CoordinatesTab.Title) {
+                        //get the mapPoint from shared point geometry values
                         pointGeometry = new Point(graphicDetails.CX, graphicDetails.CY, new esri.SpatialReference({
                             "wkid": this.map.spatialReference.wkid
                         }));
@@ -669,73 +731,57 @@ define(["dojo/_base/declare",
                             dom.byId("addLatitudeValue").value = parseFloat(graphicDetails.LAT);
                             dom.byId("addLongitudeValue").value = parseFloat(graphicDetails.LONG);
                         }
+                        if (parseFloat(graphicDetails.SD) > 0) {
+                            horizontalSlider.setValue(parseFloat(graphicDetails.SD));
+                        }
+                        //publish an event to set and draw a startPoint and bearing distance values on map
                         topic.publish("normalizeStartPoint", pointGeometry, graphicDetails.BEARING, graphicDetails.SN);
                     } else {
+                        //a shared polyline is drawn using a draw tool of Draw tab
                         symbol = this._createFeatureSymbol(polyline.type);
                         graphic = new Graphic(polyline, symbol);
                         this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
                         topic.publish("showClearGraphicsIcon");
-                        if (graphicDetails.SD > 0) {
-                            geometryService.buffer(params, lang.hitch(this, function (geometries) {
-                                this.showBuffer(geometries);
-                            }));
+                        if (parseFloat(graphicDetails.SD) > 0) {
+                            horizontalSlider.setValue(parseFloat(graphicDetails.SD));
+                        } else {
+                            topic.publish("disableDefaultSharingExtent");
                         }
                     }
-                    this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
-                    domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
-                    domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
-                    this._removeHighlightedUnit();
-                    this._highlightUnit(graphicDetails);
-                    topic.publish("setSliderValue", graphicDetails.UV);
-                }
-                if (graphicDetails.SD > 0) {
-                    dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
-                } else {
-                    this._setEmailSharingMapExtent();
                 }
                 this._replicateSharedData(null);
             } catch (err) {
                 alert(err.message);
             }
         },
-        // This function is used to display multipoint data
+
+        /**
+        * display the multipoint geometry of shapefile on map
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _displayMulipointData: function (graphicDetails) {
             try {
-                var geometryService, params, multipoint;
-                geometryService = new GeometryService(dojo.configData.GeometryService);
-                params = new BufferParameters();
-                params.distances = [graphicDetails.SD];
-                params.bufferSpatialReference = new esri.SpatialReference({
-                    "wkid": this.map.spatialReference.wkid
-                });
-                params.outSpatialReference = this.map.spatialReference;
-                params.unit = GeometryService[graphicDetails.UV];
+                var multipoint;
                 multipoint = new Multipoint();
                 multipoint.points = JSON.parse(unescape(graphicDetails.GEOM));
                 multipoint.spatialReference = new esri.SpatialReference({
                     "wkid": this.map.spatialReference.wkid
                 });
-                params.geometries = [multipoint];
-                topic.publish("displayShapeFile", multipoint);
-                if (graphicDetails.SD > 0) {
-                    geometryService.buffer(params, lang.hitch(this, function (geometries) {
-                        this.showBuffer(geometries);
-                    }));
-                    dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
-                }
                 this._highlightTab(graphicDetails.TAB, "");
-                this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
-                domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
-                domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
-                this._removeHighlightedUnit();
-                this._highlightUnit(graphicDetails);
-                topic.publish("setSliderValue", graphicDetails.UV);
+                topic.publish("displayShapeFile", multipoint, parseFloat(graphicDetails.SD));
+                this._setSliderProperties(graphicDetails);
                 this._replicateSharedData(null);
             } catch (err) {
                 alert(err.message);
             }
         },
-        // This function is used to display geo-location data
+
+        /**
+        * display the shared geolocation point on map
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _displayGeoLocationData: function (graphicDetails) {
             try {
                 var pointGeometry;
@@ -751,18 +797,15 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
-        // This function is used to display extent data
+
+        /**
+        * display the shared graphics of geometry type extent on map
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _displayExtentData: function (graphicDetails) {
             try {
-                var geometryService, params, extent, symbol, graphic;
-                geometryService = new GeometryService(dojo.configData.GeometryService);
-                params = new BufferParameters();
-                params.distances = [graphicDetails.SD];
-                params.bufferSpatialReference = new esri.SpatialReference({
-                    "wkid": this.map.spatialReference.wkid
-                });
-                params.outSpatialReference = this.map.spatialReference;
-                params.unit = GeometryService[graphicDetails.UV];
+                var extent, symbol, graphic;
                 extent = new esri.geometry.Extent({
                     "xmin": graphicDetails.XMIN,
                     "ymin": graphicDetails.YMIN,
@@ -772,24 +815,16 @@ define(["dojo/_base/declare",
                         "wkid": this.map.spatialReference.wkid
                     }
                 });
-                params.geometries = [extent];
+                this._setSliderProperties(graphicDetails);
                 this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
                 symbol = this._createFeatureSymbol(extent.type);
                 graphic = new Graphic(extent, symbol);
-                if (graphicDetails.SD > 0) {
-                    geometryService.buffer(params, lang.hitch(this, function (geometries) {
-                        this.showBuffer(geometries);
-                    }));
-                    dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
+                if (parseFloat(graphicDetails.SD) > 0) {
+                    dijit.byId("horizontalSlider").setValue(parseFloat(graphicDetails.SD));
+                    topic.publish("createBuffer", [extent], null);
                 } else {
                     topic.publish("disableDefaultSharingExtent");
                 }
-                this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
-                domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
-                domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
-                this._removeHighlightedUnit();
-                this._highlightUnit(graphicDetails);
-                topic.publish("setSliderValue", graphicDetails.UV);
                 this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
                 topic.publish("showClearGraphicsIcon");
                 this._setEmailSharingMapExtent();
@@ -798,26 +833,29 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
-        // This function is used to display locator data.
+
+        /**
+        * highlight the search tab and display the shared locator data on map
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _displayLocatorData: function (graphicDetails) {
             try {
                 var pointGeometry, polygon;
                 pointGeometry = new Point(graphicDetails.X, graphicDetails.Y, new esri.SpatialReference({
                     "wkid": this.map.spatialReference.wkid
                 }));
-                this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
-                domAttr.set(dom.byId("spanSliderValueTextBox"), "value", graphicDetails.SD);
-                domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
-                this._removeHighlightedUnit();
-                this._highlightUnit(graphicDetails);
-                topic.publish("setSliderValue", graphicDetails.UV);
-                if (graphicDetails.SD > 0) {
-                    dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
+                this._setSliderProperties(graphicDetails);
+                domAttr.set(dojo.query(".esriCTTxtAddress")[0], "defaultAddress", unescape(graphicDetails.ADDR));
+                //set the buffer value if present
+                if (parseFloat(graphicDetails.SD) > 0) {
+                    dijit.byId("horizontalSlider").setValue(parseFloat(graphicDetails.SD));
                 } else {
                     topic.publish("disableDefaultSharingExtent");
                 }
                 topic.publish("toggleWidget", "locator");
                 if (graphicDetails.GeomType !== "polygon") {
+                    //point geometry
                     if (graphicDetails.STYLE === "pushPinFeature") {
                         this._addGraphic(pointGeometry, graphicDetails);
                     }
@@ -835,7 +873,12 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
-        // This function is used to get query string
+
+        /**
+        * get all the shared values in a seperate string from the shared url
+        * @param {string} a key value from the url used for seperation
+        * @memberOf widgets/share/share
+        */
         _getQueryString: function (key) {
             try {
                 var extentValue = "", regex, qs;
@@ -849,34 +892,50 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
-        // This function is used to add graphic
+
+        /**
+        * add the point geometry on map as per the graphic style and shared tabname
+        * @param {object} a point to drawn on map
+        * @param {array} collection of shared map extent and data parameters
+        * @memberOf widgets/share/share
+        */
         _addGraphic: function (mapPoint, graphicDetails) {
             try {
                 var locatorMarkupSymbol, geoLocationPushpin, graphic, attr;
                 geoLocationPushpin = dojoConfig.baseURL + dojo.configData.LocatorSettings.DefaultLocatorSymbol;
                 locatorMarkupSymbol = new esri.symbol.PictureMarkerSymbol(geoLocationPushpin, dojo.configData.LocatorSettings.MarkupSymbolSize.width, dojo.configData.LocatorSettings.MarkupSymbolSize.height);
-                if ((graphicDetails.TAB === "Coordinates") && (graphicDetails.CX) && (graphicDetails.CY)) {
+                if ((graphicDetails.TAB === dojo.configData.CoordinatesTab.Title) && (graphicDetails.CX) && (graphicDetails.CY)) {
                     locatorMarkupSymbol.setOffset(dojo.configData.LocatorSettings.MarkupSymbolSize.width / 4, dojo.configData.LocatorSettings.MarkupSymbolSize.height / 2);
                 }
                 if (graphicDetails.STYLE === "drawnFeature") {
-                    dijit.byId("horizontalSlider").setValue(graphicDetails.SD);
+                    //shared point is drawn using draw tool of Draw tab
                     topic.publish("shareDrawPointFeature", mapPoint);
+                    //set the slider value
+                    if (parseFloat(graphicDetails.SD) === 0) {
+                        topic.publish("disableDefaultSharingExtent");
+                    }
+                    dijit.byId("horizontalSlider").setValue(parseFloat(graphicDetails.SD));
                     return;
                 }
                 graphic = new Graphic(mapPoint, locatorMarkupSymbol, null, null);
                 this.map.getLayer("esriGraphicsLayerMapSettings").clear();
+                //check if showbuffer parameter is false
                 if (graphicDetails.SB === "false") {
                     attr = {};
-                    if (graphicDetails.TAB === "Draw" || graphicDetails.TAB === "Coordinates" || graphicDetails.SN === "aOISearch") {
+                    //shared point is drawn using draw or coordinate tab or geolocation
+                    if (graphicDetails.TAB === dojo.configData.DrawTab.Title || graphicDetails.TAB === dojo.configData.CoordinatesTab.Title || graphicDetails.SN === "aOISearch") {
                         attr.sourcename = "aOISearch";
                     } else if (graphicDetails.TAB === "geolocation" || graphicDetails.SN === "geoLocationSearch") {
                         attr.sourcename = "geoLocationSearch";
                     }
                     graphic.attributes = attr;
+                    topic.publish("disableDefaultSharingExtent");
                 }
+                //in case of search tab, add the point geometry on locatorGraphicsLayer
                 if (graphicDetails.TAB === "locator") {
                     this.map.getLayer("locatorGraphicsLayer").add(graphic);
                 } else {
+                    //except search tab, point geometry is drawn on esriGraphicsLayerMapSettings
                     this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
                 }
                 topic.publish("showClearGraphicsIcon");
@@ -884,25 +943,7 @@ define(["dojo/_base/declare",
                 alert(err.message);
             }
         },
-        // This function is used to show buffer
-        showBuffer: function (bufferedGeometries) {
-            try {
-                var _self, symbol, graphic;
-                _self = this;
-                topic.publish("disableDefaultSharingExtent");
-                symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID, new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[0], 10), parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[1], 10), parseInt(dojo.configData.BufferSymbology.LineSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.BufferSymbology.LineSymbolTransparency.split(",")[0], 10)]), 2), new Color([parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[0], 10), parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[1], 10), parseInt(dojo.configData.BufferSymbology.FillSymbolColor.split(",")[2], 10), parseFloat(dojo.configData.BufferSymbology.FillSymbolTransparency.split(",")[0], 10)]));
-                array.forEach(bufferedGeometries, function (geometry) {
-                    graphic = new Graphic(geometry, symbol);
-                    _self.map.getLayer("tempBufferLayer").clear();
-                    _self.map.getLayer("tempBufferLayer").add(graphic);
-                    topic.publish("showClearGraphicsIcon");
-                });
-                this._setEmailSharingMapExtent();
-                this._replicateSharedData(null);
-            } catch (err) {
-                alert(err.message);
-            }
-        },
+
         _showEmbeddingContainer: function () {
             var height;
             if (domGeom.getMarginBox(this.divShareContainer).h > 1) {
@@ -935,7 +976,7 @@ define(["dojo/_base/declare",
         * @memberOf widgets/share/share
         */
         _shareLink: function () {
-            var mapExtent, url, urlStr, encodedUri, urlPath;
+            var mapExtent, url, urlStr, urlPath;
             /**
             * get current map extent to be shared
             */
@@ -956,27 +997,9 @@ define(["dojo/_base/declare",
                 } else {
                     urlStr = encodeURI(urlPath) + "?extent=" + mapExtent + "|" + this.emailSharedData + "$" + "BMI:" + this._baseMapIndex + "$" + "SBI:" + this._selectedBaseMapIndex + "$" + "INFOX:" + this._infoX + "$" + "INFOY:" + this._infoY + "$" + "SHOWINFO:" + this._infoWindowVisibility + "$" + "INFOFEATUREID:" + this._infoWindowObjID + "$" + "INFOLAYERID:" + this._infoWindowLayerID + "$" + "PTI:" + this._presentThumbNail;
                 }
-                encodedUri = encodeURIComponent(urlStr);
-                url = string.substitute(dojo.configData.MapSharingOptions.TinyURLServiceURL, [encodedUri]);
-                esriRequest({
-                    url: url
-                }, {
-                    useProxy: true
-                }).then(lang.hitch(this, function (response) {
 
-                    this._isDataValid = true;
-                    var tinyUrl, tinyResponse;
-                    tinyResponse = response.data;
-                    if (tinyResponse) {
-                        tinyUrl = tinyResponse.url;
-                    }
-                    this._displayShareContainer(tinyUrl, urlStr);
-                }), lang.hitch(this, function (error) {
-
-                    this._isDataValid = false;
-                    this._displayShareContainer(null, urlStr);
-                    alert(sharedNls.errorMessages.unableToShareURL);
-                }));
+                // Attempt the shrinking of the URL
+                this.getTinyUrl = commonShare.getTinyLink(urlStr, dojo.configData.MapSharingOptions.TinyURLServiceURL);
             } catch (err) {
 
                 alert(err.message);
@@ -1043,11 +1066,9 @@ define(["dojo/_base/declare",
         /**
         * share application detail with selected share option
         * @param {string} site Selected share option
-        * @param {string} tinyUrl Tiny URL for sharing
-        * @param {string} urlStr Long URL for sharing
         * @memberOf widgets/share/share
         */
-        _share: function (site, tinyUrl, urlStr) {
+        _share: function (site) {
 
             /*
             * hide share panel once any of the sharing options is selected
@@ -1056,22 +1077,15 @@ define(["dojo/_base/declare",
                 domClass.replace(this.domNode, "esriCTImgSocialMedia", "esriCTImgSocialMediaSelected");
                 domClass.replace(this.divAppContainer, "esriCTHideContainerHeight", "esriCTShowContainerHeight");
             }
-            try {
-                if (this._isDataValid) {
-                    if (tinyUrl) {
-                        this._shareOptions(site, tinyUrl);
-                    } else {
-                        domClass.replace(this.domNode, "esriCTImgSocialMedia", "esriCTImgSocialMediaSelected");
-                        this._shareOptions(site, urlStr);
-                    }
-                } else {
-                    alert(sharedNls.errorMessages.unableToShareURL);
-                }
-            } catch (err) {
-                alert(sharedNls.errorMessages.shareFailed);
-            }
+
+            // Do the share
+            commonShare.share(this.getTinyUrl, dojo.configData.MapSharingOptions, site);
         },
 
+        /**
+        * set the default mapExtent as per the shared value of map extent
+        * @memberOf widgets/share/share
+        */
         _setEmailSharingMapExtent: function () {
             try {
                 var mapDefaultExtent = new GeometryExtent({
