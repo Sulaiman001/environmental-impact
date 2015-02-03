@@ -34,7 +34,7 @@ def extract_zip(zip_file_name):
 
         archive = zipfile.ZipFile(zip_data)
         if archive.testzip() != None:
-            arcpy.AddError("Invalid zipfile. Aborting script")
+            arcpy.AddError("Invalid zipfile.")
             return
         else:
             # Extracting zip file at scratch workspace
@@ -45,7 +45,7 @@ def extract_zip(zip_file_name):
         return True     # os.path.basename(zip_file_name)[:-4]
 
     except (zipfile.BadZipfile) as error:
-        arcpy.AddError("ERROR occured while extracting ZIP : " + str(error))
+        arcpy.AddError("ERROR occurred while extracting ZIP : " + str(error))
         return False
 
 
@@ -54,7 +54,7 @@ def shapefile_to_aoi():
     try:
         found_shp = False
         for shape_file in os.listdir(SCRATCH):
-            if (shape_file.endswith(".shp")):
+            if shape_file.endswith(".shp"):
                 found_shp = True
                 shapefile_path = os.path.join(SCRATCH, shape_file)
                 arcpy.AddMessage("Found shapefile: {0}".format(shapefile_path))
@@ -104,7 +104,7 @@ def create_featureset():
             return False
 
     except arcpy.ExecuteError as error:
-        arcpy.AddError("Error occured during execution:" + str(error))
+        arcpy.AddError("Error occurred during execution:" + str(error))
         return False
 
 def check_feature_type(featureset):
@@ -117,15 +117,15 @@ def check_feature_type(featureset):
         feat_desc = arcpy.Describe(featureset)
         arcpy.AddMessage(("Shapefile is of '{0}' type.")
                          .format(str(feat_desc.shapeType)))
-        units = feat_desc.spatialReference.linearUnitName
+        units = feat_desc.spatialReference.linearUnitName or "Meter"
         return [feat_desc.shapeType, units]
 
     except arcpy.ExecuteError as error:
-        arcpy.AddError("Error occured during execution:" + str(error))
+        arcpy.AddError("Error occurred during execution:" + str(error))
         return False
 
 def set_table_header(feature_type):
-    """This function helps to set the table headers as per provided goemtry"""
+    """This function helps to set the table headers as per provided geometry"""
     try:
         if feature_type[0].upper() == "POLYGON":
             list_of_fields = ["summaryfield", "summaryvalue", "area_acres",
@@ -146,7 +146,7 @@ def set_table_header(feature_type):
 
         return [list_of_fields, search_fields, output_unit]
     except arcpy.ExecuteError as error:
-        arcpy.AddError("Error occured during execution:" + str(error))
+        arcpy.AddError("Error occurred during execution:" + str(error))
 
 def create_summary_table(feature_details):
     """This function helps to create summary table of required fields"""
@@ -162,24 +162,24 @@ def create_summary_table(feature_details):
         arcpy.AddMessage("Summary Table is created.")
         return summary_table
     except arcpy.ExecuteError as error:
-        arcpy.AddError("Error occured during execution:" + str(error))
+        arcpy.AddError("Error occurred during execution:" + str(error))
 
 def tabulate_intersection(featureset, feature_type, area_of_interset,
                           feature_details):
     """
-    This function helps to sumup parameters by using Tabulate Intersection
+    This function helps to sum up parameters by using Tabulate Intersection
     Analysis
     """
     try:
         fields = arcpy.ListFields(featureset)
         if len(fields) != 0:
-            arcpy.AddMessage("Adding summarized value to Summary Table...")
+            arcpy.AddMessage("Adding summarized values to Summary Table...")
 
             #   Maintain dictionary of field table having Field name as key
             #   and table as value
             table_list = {}
 
-            #   Exclud fields which are not required in resulted Summary table
+            #   Exclude fields which are not required in resulted Summary table
             not_include_field = ["AREA", "LENGTH", "ID", "OID", "OBJECTID"]
             fields_names = []
             for fld in fields:
@@ -217,7 +217,7 @@ def tabulate_intersection(featureset, feature_type, area_of_interset,
             return False
 
     except arcpy.ExecuteError as error:
-        arcpy.AddError("Error occured during execution:" + str(error))
+        arcpy.AddError("Error occurred during execution:" + str(error))
 
 
 def add_value(summarized_value, feature_type, feature_details, summary_table):
@@ -253,15 +253,15 @@ def add_value(summarized_value, feature_type, feature_details, summary_table):
 
                 feature_details[1].remove(fld)
 
-        arcpy.AddMessage("Summarized value added to Summary Table.")
+        arcpy.AddMessage("Summarized values added to Summary Table.")
         return summary_table
 
     except Exception as error:
-        arcpy.AddError("Error occured during execution:" + str(error))
+        arcpy.AddError("Error occurred during execution:" + str(error))
 
 
 def get_converted_units(feature_type, field_param):
-    """ This function helps to convert units of goemetry. """
+    """ This function helps to convert units of geometry. """
     try:
         if feature_type[0].upper() == "POLYGON":
             if feature_type[1].upper() == "METER":
@@ -282,7 +282,7 @@ def get_converted_units(feature_type, field_param):
 
 def main():
     """ Main Function """
-    #   Inpt parameters
+    #   Input parameters
     zip_file_name = arcpy.GetParameterAsText(0)
     area_of_interest = arcpy.GetParameterAsText(1)
 
@@ -313,14 +313,14 @@ def main():
         aoi_fesatureset.load(area_of_interest)
         aoi_feature_count = int(arcpy.GetCount_management(aoi_fesatureset)[0])
 
-        #   If AOI is provided, but it has no features, perfrom the Shapefile
+        #   If AOI is provided, but it has no features, perform the Shapefile
         #   to AOI task. Else perform Analysis.
         if aoi_feature_count == 0:
             arcpy.AddMessage("0 features found in aoi." +
                              " Performing ShapeFile To AOI...")
             out_featureset = shapefile_to_aoi()
 
-            #   Set generated featrue set as output AOI
+            #   Set generated feature set as output AOI
             arcpy.SetParameter(2, out_featureset)
             #   Keep second output parameter as blank, as we are not generating
             #   summary table here
@@ -329,7 +329,7 @@ def main():
         #   If valid AOI is provided, perform analysis
         elif aoi_feature_count > 0:
             arcpy.AddMessage("Area of Interest provided." +
-                             " Performing Analyze Shapefile...")
+                             " Performing Analyse Shapefile...")
 
             #   Create feature set out of provided shape file
             featureset = create_featureset()
@@ -348,7 +348,7 @@ def main():
             #   Create summary table of required fields
             summary_table = create_summary_table(feature_details)
 
-            #   sumup parameters
+            #   sum up parameters
             summarized_value = tabulate_intersection(
                 featureset, feature_type, area_of_interest, feature_details)
 
@@ -365,4 +365,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

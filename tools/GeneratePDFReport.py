@@ -47,7 +47,7 @@ STYLES = getSampleStyleSheet()
 STYLEBODYTEXT = STYLES["BodyText"]
 STYLEBODYTEXT.wordWrap = 'CJK'
 
-#   Style for the Headers in th begining of report
+#   Style for the Headers in the beginning of report
 STYLES.add(ParagraphStyle(name='HeadingLeft', alignment=TA_LEFT,
                           fontName='Helvetica-Bold', fontSize=15,
                           textColor='cornflowerblue'))
@@ -67,8 +67,12 @@ STYLES.add(ParagraphStyle(name='error-left', alignment=TA_LEFT,
 STYLES.add(ParagraphStyle(name='areaStyle', alignment=TA_LEFT, fontSize=13,
                           fontName='Helvetica'))
 
-STYLES.add(ParagraphStyle(name='noDataaStyle', alignment=TA_LEFT,
+STYLES.add(ParagraphStyle(name='noDataStyle', alignment=TA_LEFT,
                           fontSize=10, fontName='Helvetica'))
+
+STYLES.add(ParagraphStyle(name='HeadersBold', fontName='Helvetica-Bold',
+                          fontSize=10))
+
 
 #   Specify Page width and height
 PAGE_HEIGHT = defaultPageSize[1]
@@ -82,6 +86,15 @@ REPORT_FORMAT = arcpy.GetParameterAsText(2)
 
 #   Specify logo image path
 LOGO_URL = arcpy.GetParameterAsText(8)
+#   Specify Subtitle for the report
+REPORT_SUBTITLE = arcpy.GetParameterAsText(9).replace("&", "and") or\
+                  "Area of Interest (AOI) Information"
+
+#   Specify message to be shown when no fields are provided to summurized
+NO_FIELDS_MSG = ("* There is known impact, but no fields are provided to" +
+                 " summarize.")
+
+INCORRECT_FIELDS_MSG = "* Some incorrect fields provided : "
 
 class NumberedCanvas(canvas.Canvas):
     """ Class to print page numbers out of total pages  on each page """
@@ -116,7 +129,8 @@ def calculate_area(area_of_interest, report_units):
     This function helps to calculate area of AOI
     """
     try:
-        #   Check the Report units type and set the Output Units
+        #   Check the Report units type and set the Output Units for calculating
+        #   area of AOI
         if report_units.upper() == "Metric".upper():
             area_unit = ["esriSquareKilometers", "SqKm"]
         else:
@@ -126,7 +140,7 @@ def calculate_area(area_of_interest, report_units):
         aoi_fesatureset.load(area_of_interest)
         area_of_interest = convert(json.loads(aoi_fesatureset.JSON))
 
-        #   Find out Spatial Reference and rings of provided AOI and caculate
+        #   Find out Spatial Reference and rings of provided AOI and calculate
         #   its area using Geometry Service
         if area_of_interest['spatialReference'].has_key("wkid"):
             spatial_ref = area_of_interest['spatialReference']['wkid']
@@ -151,17 +165,17 @@ def calculate_area(area_of_interest, report_units):
         arcpy.AddMessage("Area of AOI calculated successfully.")
         return area_string
 
-    except arcpy.ExecuteError as error:
-        arcpy.AddError("Error occured during calculate_area:" + str(error))
+    except arcpy.ExecuteError:
+        arcpy.AddError("Error occurred during calculating area:")
         return False
 
-    except Exception as error:
-        arcpy.AddError("Error occured during calculate_area:" + str(error))
+    except Exception:
+        arcpy.AddError("Error occurred during calculating area:")
         return False
 
 def convert(data):
     """
-    Removes the unicode characters from the dict
+    Removes the Unicode characters from the dictionary
     """
     if isinstance(data, basestring):
         return str(data)
@@ -183,7 +197,7 @@ def create_image_to_print(web_map_as_json):
     """
     try:
         arcpy.AddMessage("Printing Image..")
-        # Setting parametrs for Export web map server
+        # Setting parameters for Export web map server
         output_file = SCRATCH  + os.sep + "image.png"
         image_format = "PNG32"
 
@@ -203,14 +217,12 @@ def create_image_to_print(web_map_as_json):
         arcpy.AddMessage(webmap_img_path)
         return webmap_img_path
 
-    except arcpy.ExecuteError as error:
-        arcpy.AddError("Error occured during create_image_to_print:" +
-                       str(error))
+    except arcpy.ExecuteError:
+        arcpy.AddError("Error occurred while printing image :")
         return False
 
-    except Exception as error:
-        arcpy.AddError("Error occured during create_image_to_print:" +
-                       str(error))
+    except Exception:
+        arcpy.AddError("Error occurred while printing image :")
         return False
 
 
@@ -220,7 +232,6 @@ def validate_detailed_report(web_map_as_json, area_of_interest, uploaded_zip,
     """
     aoi_area = ""
     image = ""
-    zip_dir_path = ""
 
     #   Calculate area of provided AOI
     aoi_area = calculate_area(area_of_interest, report_units)
@@ -236,17 +247,12 @@ def validate_detailed_report(web_map_as_json, area_of_interest, uploaded_zip,
             arcpy.AddWarning("Failed to get image from web map." +
                              " It will not be drawn on report.")
 
-    #   If shapefile is uploaded, perform analysis for it
-    if uploaded_zip != "":
-        arcpy.AddMessage("Zip file provided.")
-        zip_dir_path = extract_zip(uploaded_zip)
-
-    #   Get Analysis data of all provided layers
-    all_layers_data, fields_data = intersect_layers(
-        detailed_fields, area_of_interest, report_units, zip_dir_path)
+    #   Clip the layers with provided AOI
+    summary_data, all_layers_data = clip_layers(
+        detailed_fields, area_of_interest, report_units, uploaded_zip)
 
     #   Generate PDF using all generated data after analysis
-    pdf_path = generate_pdf(image, all_layers_data, fields_data,
+    pdf_path = generate_pdf(image, summary_data, all_layers_data,
                             aoi_area, "")
     return pdf_path
 
@@ -283,77 +289,93 @@ def extract_zip(zip_file_name):
         arcpy.AddMessage("Zip file extracted at : {0}".format(zip_dir_path))
         return zip_dir_path
 
-    except (zipfile.BadZipfile) as error:
-        arcpy.AddError("Error occured during extracting zip file:" + str(error))
+    except zipfile.BadZipfile:
+        arcpy.AddError("Error occurred while extracting zip file:")
         sys.exit()
 
-def intersect_layers(detailed_fields, area_of_interest, report_units,
-                     zip_dir_path):
-    """
-    This function helps to intersect layers from json and shapefiles
-    """
-    all_layers_data = []
-    #   Check for report type provided, and set the output Units
+
+def clip_layers(detailed_fields, area_of_interest, report_units, zip_file_path):
+    """ This fucntion sends the valid layers and also valis shapefile from
+    uploaded zip for Clip ans Statistic Analysis """
+    #   Check for report type provided, and set the output Units and build the
+    #   expression required for CalculateField operation
     if report_units.upper() == "METRIC":
         area_unit = 'Area(SqKm)'
         length_unit = 'Length(Meter)'
+        area_calc_expression = "!SHAPE.AREA@SQUAREKILOMETERS!"
+        length_calc_expression = "!SHAPE.LENGTH@METERS!"
     elif report_units.upper() == "STANDARD":
         area_unit = 'Area(Acres)'
         length_unit = 'Length(Miles)'
+        area_calc_expression = "!SHAPE.AREA@ACRES!"
+        length_calc_expression = "!SHAPE.LENGTH@MILES!"
 
-    #   Set all layers table header
-    all_layers_data.append(["Name", "Impact", "Count", area_unit,
-                            length_unit])
-    all_layer_fields_data = []
-    fields_data = []
 
-    arcpy.AddMessage("Clipping layers and its features...")
-    layers_keys = detailed_fields.keys()
-    #   loop through all layers in mxd for Detailed report
-    for lyr in layers_keys:
-        arcpy.AddMessage("Clipping '{0}' ...".format(lyr))
-        arcpy.AddMessage("Fields provided : {0}"
-                         .format(str(detailed_fields[lyr])))
-        try:
-            data_type = arcpy.Describe(lyr).DataType.lower()
-            #   Include only Feature layerfor analysis
-            if data_type == "featurelayer":
-                lyr_fields = detailed_fields[lyr]
-                if not isinstance(lyr_fields, dict):
-                    raise Exception("Please check the format of Report Fields.")
-                layer_details = [Paragraph(lyr, STYLEBODYTEXT)]
+    #   Create a dict that stores index at which the calculated impact value to
+    #   be inserted in Summary Table data, the expression required for
+    #   CalculateField operation and summary column headings
+    statistic_field = {"POLYLINE" : [4, length_calc_expression, length_unit],
+                       "POLYGON" : [3, area_calc_expression, area_unit],
+                       "POINT" : [2, "", "Count"]}
 
-                #   Get information for each layer
-                layer_data, all_layer_fields_data = intersect(
-                    lyr_fields, lyr, area_of_interest, area_unit, length_unit,
-                    report_units, False)
-                for feat in layer_data:
-                    layer_details.append(feat)
+    #   List to store the summary details of layers
+    summary_data = [["Name", "Impact", "Count", area_unit, length_unit]]
+    #   List to store the individual details of layers
+    all_layers_data = []
 
-                #   Include each layer data in All layer table
-                all_layers_data.append(layer_details)
-                #   Include each field data in table for each layer
-                fields_data.append(all_layer_fields_data)
-            else:
-                arcpy.AddWarning("Layer is not a feature layer")
-                arcpy.AddWarning("Skipping {0}".format(lyr))
-        except IOError:
-            arcpy.AddError("{0} is not a valid layer. Please check the name"
-                           .format(lyr))
-        except Exception as error:
-            arcpy.AddError("Error occurred for {0} layer. \n Error : {1}"
-                           .format(lyr, str(error)))
+    for lyr_object in detailed_fields:
+        ind_lyr_tables = {}
+        data_type = arcpy.Describe(lyr_object.keys()[0]).DataType.upper()
+        shape_type = arcpy.Describe(lyr_object.keys()[0]).shapeType.upper()
+
+        #   Include only Feature layer for analysis
+        if data_type.upper() == "FEATURELAYER":
+            arcpy.AddMessage("Clipping '{0}' ...".format(lyr_object.keys()[0]))
+
+            lyr_fields = lyr_object[lyr_object.keys()[0]]
+            arcpy.AddMessage("Fields provided : {0}".format(lyr_fields.keys()))
+
+            # Get the table generated after StatisticAnalysis and also
+            #   individual layer details
+            out_stat_tbl, lyr_summary_info, invalid_fields = get_stat_table(
+                lyr_object.keys()[0], area_of_interest, lyr_fields.keys(),
+                statistic_field[shape_type], False)
+
+            #   If Layer dont have impact in AOI, directly append the details to
+            #   summary table
+            if not out_stat_tbl:
+                summary_data += [lyr_summary_info]
+                continue
+
+            #   If layer is having impact in AOI, get the individual layers
+            #   details
+            layer_tables_data = get_layer_table_data(
+                out_stat_tbl, lyr_fields, statistic_field[shape_type],
+                invalid_fields)
+
+            #   Append individual layers details in the single list and also
+            #   summary data in summary table list
+            ind_lyr_tables[lyr_object.keys()[0]] = layer_tables_data
+            all_layers_data.append(ind_lyr_tables)
+            summary_data += [lyr_summary_info]
 
     #   If shapefile is uploaded perform analysis for it
-    if zip_dir_path != "":
+    if zip_file_path != "":
+        zip_dir_path = extract_zip(zip_file_path)
         for shape_file in os.listdir(zip_dir_path):
+            #   Get the shapefile
             if shape_file.endswith(".shp"):
+                ind_lyr_tables = {}
                 arcpy.AddMessage("Clipping {0} layer...".format(shape_file))
-                layer_details = [Paragraph(shape_file[:-4], STYLEBODYTEXT)]
-                out_feature = arcpy.FeatureSet()
-                out_feature.load(zip_dir_path + os.path.sep + shape_file)
-                desc = arcpy.Describe(out_feature)
-                fields = desc.fields
+
+                #   Load the shapefile in feature set for processing
+                lyr = arcpy.FeatureSet()
+                lyr.load(zip_dir_path + os.path.sep + shape_file)
+
+                shape_type = arcpy.Describe(lyr).shapeType.upper()
+
+                #   Exclude the not required fields from statistic
+                fields = arcpy.Describe(lyr).fields
                 not_include_field = ["AREA", "LENGTH", "ID", "OID", "OBJECTID",
                                      "OBJECTID_1"]
                 lyr_fields = {}
@@ -364,241 +386,198 @@ def intersect_layers(detailed_fields, area_of_interest, report_units,
                         lyr_fields[fld.name] = fld.aliasName
                 arcpy.AddMessage("Fields provided : {0}"
                                  .format(str(lyr_fields)))
-                #   Get information for each layer
-                layer_data, all_layer_fields_data = intersect(
-                    lyr_fields, out_feature, area_of_interest, area_unit,
-                    length_unit, report_units, True)
-                for feat in layer_data:
-                    layer_details.append(feat)
 
-                #   Include each layer data in All layer table
-                all_layers_data.append(layer_details)
+                #   Get the table generated after StatisticAnalysis and also
+                #   shapefile details
+                out_stat_tbl, lyr_summary_info, invalid_fields = get_stat_table(
+                    lyr, area_of_interest, lyr_fields.keys(),
+                    statistic_field[shape_type], shape_file[:-4])
 
-                #   Include each field data in table for each layer
-                fields_data.append(all_layer_fields_data)
+                #   If Layer dont have impact in AOI, directly append the
+                #   details to summary table
+                if not out_stat_tbl:
+                    summary_data += [lyr_summary_info]
+                    break
+                #   If shapefile is having impact in AOI, get the details
+                layer_tables_data = get_layer_table_data(
+                    out_stat_tbl, lyr_fields, statistic_field[shape_type],
+                    invalid_fields)
+
+                ind_lyr_tables[shape_file[:-4]] = layer_tables_data
+                all_layers_data.append(ind_lyr_tables)
+                summary_data += [lyr_summary_info]
                 break
 
-    return all_layers_data, fields_data
+    return summary_data, all_layers_data
 
-def intersect(*args):
-    """This function helps to to tabulate intersection analysis on features."""
-    lyr_fields, out_feature, area_of_interest = args[0], args[1], args[2]
-    area_unit, length_unit, report_units = args[3], args[4], args[5]
-    is_zip = args[6] #   Checks if zip file is sent
-    layer_data = []
-    all_layer_fields_data = []
 
-    #   Set Output units based on Geometry type of layer
-    desc = arcpy.Describe(out_feature)
-    feature_type = desc.shapeType
-    if feature_type.upper() == "POINT":
-        output_unit = "UNKNOWN"
-    if feature_type.upper() == "POLYGON":
-        if report_units.upper() == "METRIC":
-            output_unit = "SQUARE_KILOMETERS"
-        elif report_units.upper() == "STANDARD":
-            output_unit = "ACRES"
-    if feature_type.upper() == "POLYLINE":
-        if report_units.upper() == "METRIC":
-            output_unit = "METERS"
-        elif report_units.upper() == "STANDARD":
-            output_unit = "MILES"
+def get_stat_table(lyr, area_of_interest, lyr_fields, shape_type, shp_name):
+    """ This function performs the Clip Analysis on the providede layer.
+    If any feature intersects the AOI, it performs statistic analysis using
+    provided fields. It stores the layer's information for Summary Table. """
+    #   Get the name of the layer/shapefile
+    if shp_name:
+        layer_name = shp_name
+    else:
+        layer_name = lyr
 
-    tbl_name = str(desc.name)
-    sumtablepath = (SCRATCH + os.sep +
-                    tbl_name.replace(" ", "") + "_sumtable.dbf")
-    lyr_fields_names = lyr_fields.keys()
+    lyr_summary_info = [Paragraph(layer_name, STYLEBODYTEXT)]
+    #   Validate the name of output feature class after clip analysis
+    valid_out_feature_name = arcpy.ValidateFieldName(str(layer_name)\
+                                                     .replace(" ", ""),
+                                                     "in_memory")
+    out_features = os.path.join(r"in_memory", valid_out_feature_name)
+    arcpy.Clip_analysis(lyr, area_of_interest, out_features)
 
-    #   Set Object ID field of Area of Interest as class field for
-    #   Tabulate Intersection
-    zone_field = arcpy.Describe(area_of_interest).OIDFieldName
-    try:
-        #   Perform Tabulate Intersection
-        layer_intersect = arcpy.TabulateIntersection_analysis(
-            area_of_interest, zone_field, out_feature, sumtablepath,
-            lyr_fields_names, "", "", output_unit)
+    layer_summary_data = {}
+    #   If clipped feature class has some features then performs Statistic
+    #   analysis on provided fields
+    if int(arcpy.GetCount_management(out_features)[0]) > 0:
+        lyr_summary_info += ["Potential Impact", "0", "0", "0"]
 
-    except arcpy.ExecuteError as error:
-        arcpy.AddError("Error while performing intersection")
-        arcpy.AddError(str(error))
-        sys.exit()
+        #   Add field to the output feature class to store calculated area
+        if arcpy.Describe(lyr).shapeType.upper() in ["POLYGON", "POLYLINE"]:
+            # Add validate field name for newly added field
+            new_field_name = arcpy.ValidateFieldName("Calc_Shape", out_features)
+            arcpy.AddField_management(out_features, new_field_name, "DOUBLE")
+            expression = shape_type[1]
+            arcpy.CalculateField_management(out_features, new_field_name,
+                                            expression, "PYTHON_9.3")
+        else:
+            new_field_name = arcpy.Describe(out_features).OIDFieldName
 
-    except Exception as error:
-        arcpy.AddError("Error while performing intersection.")
-        arcpy.AddError(str(error))
-        sys.exit()
+        #   Check for the valid fields provided in lyr_fields
+        #   (DetailedReportFields) parameters
+        desc_fields = [field.name for field in \
+                       arcpy.Describe(out_features).fields]
+        valid_fields = [fld for fld in lyr_fields if fld in desc_fields]
+        invalid_fields = [fld for fld in lyr_fields if fld not in desc_fields]
 
-    #   If any feature found after Tabulate intersection, means the layer has
-    #   some impact on provided AOI else No Known Impact
-    if int(arcpy.GetCount_management(layer_intersect)[0]) != 0:
-        impact_status = "Potential Impact"
-        search_cursor = arcpy.da.SearchCursor(layer_intersect, ["*"])
+        out_stat_table = os.path.join(r"in_memory",
+                                      str(layer_name).replace(" ", "") +
+                                      "_stat")
+        arcpy.Statistics_analysis(out_features, out_stat_table,
+                                  [[new_field_name, "SUM"]], valid_fields)
+
+        #   Get the field added by Statistic analysis which is used for summary
+        sum_field = [field.name for field in arcpy.ListFields(out_stat_table) \
+                     if field.name != arcpy.Describe(out_stat_table)\
+                     .OIDFieldName and field.name.upper() in \
+                     ("SUM_" + new_field_name).upper()][0]
+
+        #   For point feature class, copy the FREQUENCY values in "Count" field
+        if arcpy.Describe(lyr).shapeType.upper() == "POINT":
+            arcpy.DeleteField_management(out_stat_table, sum_field)
+            arcpy.AddField_management(out_stat_table, "Count")
+            arcpy.CalculateField_management(out_stat_table, "Count",
+                                            "!FREQUENCY!", "PYTHON_9.3")
+            sum_field = "Count"
+
+        #   Delete the FREQUENCY from output table
+        arcpy.DeleteField_management(out_stat_table, "FREQUENCY")
+
+        #   Add up the summary values to get total impacted Count/Area/Length
         impact_value = 0
-        for row in search_cursor:
-            impact_value = impact_value + row[-2]
+        with arcpy.da.SearchCursor(out_stat_table, [sum_field]) as stat_cursor:
+            for row in stat_cursor:
+                impact_value += row[0]
 
-    elif int(arcpy.GetCount_management(layer_intersect)[0]) == 0:
-        impact_status = "No Known Impact"
-        impact_value = 0
+        if isinstance(impact_value, int) or isinstance(impact_value, long):
+            impact_value = str(format(impact_value, '8,d'))
+        elif isinstance(impact_value, float):
+            impact_value = "{:,}".format(round(impact_value, 2))
+        lyr_summary_info[shape_type[0]] = [Paragraph(impact_value,
+                                                     STYLES["Right"])]
 
-    #   If layer has Impact, get the details for each of the required field
-    all_fields_data = append_data(out_feature, layer_intersect, lyr_fields,
-                                  area_unit, length_unit, is_zip)
-    all_layer_fields_data.append(all_fields_data)
-    #   Include Imapct status in layer details table
-    layer_data.append(impact_status)
+        layer_summary_data[layer_name] = [lyr_summary_info]
+        return out_stat_table, lyr_summary_info, invalid_fields
+    else:
+        lyr_summary_info += ["No known Impact", "0", "0", "0"]
+        layer_summary_data[layer_name] = [lyr_summary_info]
+        return None, lyr_summary_info, ""
 
-    #   If layer is of point type, insert value in COUNT column of table
-    if feature_type.upper() == "POINT":
-        if impact_value == 0:
-            count = "0"
+def get_layer_table_data(out_stat_table, lyr_fields, sum_value_header,
+                         invalid_fields):
+    """ It generates the list having layer details required for individual layer
+    tables in PDF """
+    layer_tables_data = [[]]
+    oid_field_name = arcpy.Describe(out_stat_table).OIDFieldName
+
+    #   Get the fields from statistic table for spliting them in batch
+    #   while printing tables of maximum 3 fields columns
+    stat_fields = [field.name for field in arcpy.ListFields(out_stat_table) \
+                   if not field.name.upper() == oid_field_name]
+
+    continue_process = True
+    start_index = 0
+    column_limit = 3
+
+    while continue_process:
+        field_values = []
+        with arcpy.da.SearchCursor(out_stat_table,
+                                   stat_fields[start_index:column_limit]) \
+                                   as s_cursor:
+            #   Add the layers to the tables
+            field_headers = ["#"]
+            for i in xrange(len(stat_fields[start_index:column_limit])):
+                try:
+                    value = lyr_fields[stat_fields[start_index:column_limit][i]]
+                    header_para = Paragraph(str(value), STYLES["HeadersBold"])
+                    field_headers += [header_para]
+                except IndexError:
+                    continue
+                except KeyError:
+                    header_para = Paragraph(str(sum_value_header[2]),
+                                            STYLES["HeadersBold"])
+                    field_headers += [header_para]
+
+            field_values += [field_headers]
+
+            #   Add values to the table
+            row_index = 1
+            for row in s_cursor:
+                row_values = [row_index]
+                for j in xrange(3):
+                    try:
+                        if isinstance(row[j], int) or isinstance(row[j], long):
+                            value = str(format(row[j], '8,d'))
+                        elif isinstance(row[j], float):
+                            value = "{:,}".format(round(row[j], 2))
+                        else:
+                            value = str(row[j])
+                        row_value_para = Paragraph(value, STYLEBODYTEXT)
+                        row_values += [row_value_para]
+                    except IndexError:
+                        continue
+                row_index += 1
+                field_values += [row_values]
+
+        layer_tables_data[0] += [field_values]
+
+        start_index = column_limit
+        if start_index >= len(stat_fields):
+            continue_process = False
         else:
-            count = str(format(impact_value, '8,d'))
+            column_limit = start_index + column_limit
+            if column_limit > len(stat_fields):
+                column_limit = len(stat_fields)
 
-        layer_data.append(Paragraph(count, STYLES['Right']))
-        layer_data.append(Paragraph("0", STYLES['Right']))
-        layer_data.append(Paragraph("0", STYLES['Right']))
-
-    #   If layer is of point type, insert value in AREA column of table
-    if feature_type.upper() == "POLYGON":
-        if impact_value == 0:
-            area = "0"
+    # Add messages according to condition
+    if invalid_fields:
+        layer_tables_data += [INCORRECT_FIELDS_MSG +
+                              ", ".join(map(str, invalid_fields))]
+    else:
+        if len(stat_fields) == 1:
+            layer_tables_data += [NO_FIELDS_MSG]
         else:
-            area = "{:,}".format(round(impact_value, 2))
-        layer_data.append(Paragraph("0", STYLES['Right']))
-        layer_data.append(Paragraph(area, STYLES['Right']))
-        layer_data.append(Paragraph("0", STYLES['Right']))
+            layer_tables_data += [[]]
 
-    #   If layer is of point type, insert value in LENGTH column of table
-    if feature_type.upper() == "POLYLINE":
-        if impact_value == 0:
-            length = "0"
-        else:
-            length = "{:,}".format(round(impact_value, 2))
-        layer_data.append(Paragraph("0", STYLES['Right']))
-        layer_data.append(Paragraph("0", STYLES['Right']))
-        layer_data.append(Paragraph(length, STYLES['Right']))
+    return layer_tables_data
 
-    return  layer_data, all_layer_fields_data
 
-def append_data(*args):
+def generate_pdf(image, summary_data, all_layers_data, area, quick_json):
     """
-    This function helps to append data on created lists in this fucntion to
-    maintain table format in PDF
-    """
-    try:
-        out_feature, layer_intersect = args[0], args[1]
-        lyr_fields, area_unit = args[2], args[3]
-        length_unit, is_zip = args[4], args[5]
-        #   Maintained list to hold fields data
-        all_fields_data = []
-        desc = arcpy.Describe(out_feature)
-        if is_zip:
-            layer_name = desc.name[:-4]
-        else:
-            layer_name = str(out_feature)
-
-        all_fields_data.append([layer_name, "", ""])
-
-        #   Appending empty list of fields in the main layer list which dont
-        #   impact in the provided AOI. Latre while building pdf the string will
-        #   be shown below the layer name describing " No known Impact "
-        if int(arcpy.GetCount_management(layer_intersect)[0]) == 0:
-            all_fields_data.append(["No known impact."])
-
-        elif int(arcpy.GetCount_management(layer_intersect)[0]) != 0:
-            valid_fields = 0
-            #   Add detailes of each of layer in table
-            for fld in arcpy.ListFields(layer_intersect):
-                #   Consider only required fields
-                exclude_list = ["OBJECTID", "FID", "AREA", "LENGTH",
-                                "PNT_COUNT", "PERCENTAGE", "FID_", "OID",
-                                "OBJECTID_1"]
-                if fld.name.upper() not in exclude_list:
-                    valid_fields += 1
-                    field_values = []
-                    #   Take value of field from attribute table
-                    with arcpy.da.SearchCursor(layer_intersect, [fld.name]) \
-                            as search_cursor:
-                        for row in search_cursor:
-                            field_values.append(row[0])
-
-                    feature_type = desc.shapeType
-                    #   Set field table header baced on Geometry type of layer
-
-                    if feature_type.upper() == "POINT":
-                        sum_field = "PNT_COUNT"
-                        field_header = [lyr_fields[fld.name], "COUNT"]
-                    elif feature_type.upper() == "POLYGON":
-                        sum_field = "AREA"
-                        field_header = [lyr_fields[fld.name], area_unit]
-                    elif feature_type.upper() == "POLYLINE":
-                        sum_field = "LENGTH"
-                        field_header = [lyr_fields[fld.name], length_unit]
-
-                    field_data = []
-                    #   Add Header to field data table
-                    field_data.append(field_header)
-
-                    unique_fieldvalue = list(set(field_values))
-                    unique_fieldvalue.sort()
-
-                    #   Add each unique value details into field data table
-                    for value in unique_fieldvalue:
-                        total_count = 0
-                        values = []
-                        #   Insert value in field data table
-                        values.append(Paragraph(str(value), STYLEBODYTEXT))
-                        sum_val = 0
-                        #   If Point type, insert the count,
-                        #   if Polygon type, insert area
-                        #   if polyline type, insert length
-                        with arcpy.da.SearchCursor(layer_intersect,
-                                                   [fld.name, sum_field]) \
-                                                   as cursor:
-                            for row in cursor:
-                                row_value = row[1]
-                                total_count = total_count + row_value
-                                if row[0] == value:
-                                    sum_val = (sum_val + row_value)
-                                    if feature_type.upper() == "POINT":
-                                        val = format(sum_val, '8,d')
-                                    else:
-                                        val = "{:,}".format(round(sum_val, 2))
-                                if feature_type.upper() == "POINT":
-                                    total = total_count
-                                else:
-                                    total = "{:,}".format(round(total_count, 2))
-                            para_val = (Paragraph(str(val), STYLES['Right']))
-                            values.append(para_val)
-
-                            field_data.append(values)
-                    #   Insert total of all values for field in total section of
-                    #   field data table
-                    para_total = Paragraph(str(total), STYLES['header_right'])
-                    field_data.append(["Total", para_total])
-                    #   insert each field data in all fields details
-                    all_fields_data.append(field_data)
-
-            if valid_fields == 0:
-                no_fields_msg = ("There is known impact, but no fields are" +
-                                 " provided to summarize.")
-                all_fields_data.append([no_fields_msg])
-
-        return all_fields_data
-
-
-    except arcpy.ExecuteError as error:
-        arcpy.AddError("Error occured during append_data:" + str(error))
-        sys.exit()
-
-    except Exception as error:
-        arcpy.AddError("Error occured during append_data:" + str(error))
-        sys.exit()
-
-def generate_pdf(image, all_layers_data, fields_data, area, quick_json):
-    """
-    This function helps to genrate PDF report for quick summary report and
+    This function helps to generate PDF report for quick summary report and
     detailed summary report
     """
     try:
@@ -623,7 +602,7 @@ def generate_pdf(image, all_layers_data, fields_data, area, quick_json):
         parts = []
         parts.append(Spacer(0.15, 0.15 * inch))
 
-        heading1 = "Area of Interest (AOI) Information"
+        heading1 = REPORT_SUBTITLE
         parts.append(Paragraph(heading1, STYLES["HeadingLeft"]))
         parts.append(Spacer(0.20, 0.20* inch))
 
@@ -647,58 +626,61 @@ def generate_pdf(image, all_layers_data, fields_data, area, quick_json):
 
 
         if REPORT_FORMAT == DETAIL_REPORT_TYPE:
-            #   Build Detailed PDF Reoprt if report type is Detailed
+            #   Build Detailed PDF Report if report type is Detailed
             arcpy.AddMessage("Building PDF for {0}.".format(REPORT_FORMAT))
             heading4 = "Summary of Impact"
+            parts.append(Spacer(0.20, 0.20 * inch))
             parts.append(Paragraph(heading4, STYLES["HeadingLeft"]))
             parts.append(Spacer(0.20, 0.20 * inch))
 
-            #   Insert All layers table in PDF doc
-            tbl = Table(all_layers_data, vAlign='TOP',
-                        colWidths=[5.0*cm, 3.2*cm, 2*cm, 2.6*cm,
-                                   2.7*cm],
+            # Summary table
+
+            tbl = Table(summary_data,
+                        colWidths=[5.0*cm, 3.4*cm, 2*cm, 2.6*cm, 2.7*cm],
                         style=[('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-                               ('FONT', (0, 0), (4, 0), 'Helvetica-Bold', 10),
+                               ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold', 10),
                                ('VALIGN', (0, 1), (-1, -1), 'TOP'),
                                ('ALIGN', (2, 0), (4, -1), 'RIGHT'),
                                ('ALIGN', (0, 0), (1, -1), 'LEFT'),
                                ('BACKGROUND', (0, 0), (4, 0), colors.lavender)])
             parts.append(Spacer(0.20, 0.20 * inch))
             parts.append(tbl)
+            parts.append(Spacer(0.20, 0.20 * inch))
 
-            #   Insert tables for each field for each layer having impact
-            for i in xrange(len(fields_data)):
-                if len(fields_data[i]) > 0:
-                    lyr_name = fields_data[i][0][0][0] +" - Impact Information"
-                    parts.append(Spacer(0.35, 0.35 * inch))
-                    parts.append(Paragraph(lyr_name, STYLES["HeadingLeft"]))
-                    parts.append(Spacer(0.20, 0.20 * inch))
+            # Individual Layers Table
+            for layer_details in all_layers_data:
+                parts.append(Spacer(0.30, 0.30 * inch))
+                layer_heading = (str(layer_details.keys()[0]) +
+                                 " - Impact Information")
+                parts.append(Paragraph(layer_heading, STYLES["HeadingLeft"]))
+                parts.append(Spacer(0.20, 0.20 * inch))
 
-                    if isinstance(fields_data[i][0][1][0], str):
-                        no_impact_para = Paragraph(fields_data[i][0][1][0],
-                                                   STYLES['noDataaStyle'])
-                        parts.append(no_impact_para)
-                    else:
-                        for j in xrange(1, len(fields_data[i][0])):
-                            field_value_table = Table(
-                                fields_data[i][0][j],
+                for field_section in layer_details[layer_details.keys()[0]][0]:
+                    #arcpy.AddMessage(field_section)
+                    col_widths = [0.9*cm]
+                    for _ in xrange(len(field_section[0][1:])):
+                        col_widths += [4.9*cm]
+                    tbl = Table(field_section, colWidths=col_widths,
+                                hAlign='LEFT',
                                 style=[('GRID', (0, 0), (-1, -1), 0.5,
                                         colors.black),
-                                       ('FONT', (0, 0), (1, 0),
+                                       ('FONT', (0, 0), (-1, 0),
                                         'Helvetica-Bold', 10),
-                                       ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-                                       ('BACKGROUND', (0, 0), (1, 0),
+                                       ('BACKGROUND', (0, 0), (-1, 0),
                                         colors.lavender),
-                                       ('FONT', (0, -1), (1, -1),
-                                        'Helvetica-Bold', 10),
-                                       ('ALIGN', (1, -1), (1, -1), 'RIGHT')],
-                                colWidths=(5.1*inch, 1*inch))
-                            parts.append(Spacer(0.20, 0.20 * inch))
-                            parts.append(field_value_table)
+                                       ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                                       ('ALIGN', (0, 0), (0, -1), 'CENTER')])
+                    parts.append(Spacer(0.20, 0.20 * inch))
+                    parts.append(tbl)
+                if len(layer_details[layer_details.keys()[0]][1]) > 0:
+                    val = str(layer_details[layer_details.keys()[0]][1])
+                    no_impact_para = Paragraph(val, STYLES['noDataStyle'])
+                    parts.append(Spacer(0.10, 0.10 * inch))
+                    parts.append(no_impact_para)
 
 
         if REPORT_FORMAT == QUICK_REPORT_TYPE:
-            #   Build Quick PDF Reoprt if report type is Quick
+            #   Build Quick PDF Report if report type is Quick
             arcpy.AddMessage("Building PDF for {0}.".format(REPORT_FORMAT))
             parts = get_quick_report_data(parts, quick_json)
 
@@ -710,17 +692,17 @@ def generate_pdf(image, all_layers_data, fields_data, area, quick_json):
         return pdf_name
 
     except arcpy.ExecuteError as error:
-        arcpy.AddError("Error occured during generate_pdf:" + str(error))
+        arcpy.AddError("Error occurred during generating PDF :" + str(error))
         sys.exit()
 
     except Exception as error:
-        arcpy.AddError("Error occured during generate_pdf:" + str(error))
+        arcpy.AddError("Error occurred during generating PDF :" + str(error))
         sys.exit()
 
 def get_quick_report_data(parts, quick_json):
     """ This function generated the table to be included in PDF doc for Quick
     type"""
-    #   Maintaine dict for settign header of tables
+    #   Maintain dictionary for setting header of tables
     unit_dict = {"standard" : {"area" : "Area(acres)",
                                "length" : "Length(Miles)",
                                "count" : "Count"},
@@ -730,18 +712,17 @@ def get_quick_report_data(parts, quick_json):
                  "" : {"area" : "Area(acres)",
                        "length" : "Length(Miles)",
                        "count" : "Count"}}
-    #   Insert details of each layer
     try:
         #   Insert Summary Table
         parts.append(Spacer(0.20, 0.20 * inch))
-        parts.append(Paragraph("Summary of Impact", STYLES["HeadingLeft"]))
+        parts.append(Paragraph("Summary of Potential Impact", STYLES["HeadingLeft"]))
         parts.append(Spacer(0.20, 0.20 * inch))
 
         summary_list = []
         summary_header = ["Name", "Impact", "Count"]
         #   Insert headers of summary tables as per unit type provided
         for layer_item in quick_json:
-            if layer_item["summaryType"].upper() in ["AREA", "LENGTH"]:
+            if layer_item["summaryType"].upper() in ["AREA", "LENGTH", ""]:
                 if layer_item["summaryUnits"].upper() == "METRIC":
                     summary_header += ["Area(SqKm)", "Length(Meter)"]
                 elif layer_item["summaryUnits"].upper() in ["STANDARD", ""]:
@@ -755,32 +736,42 @@ def get_quick_report_data(parts, quick_json):
             layer_name = Paragraph(layer_item["layerName"], STYLEBODYTEXT)
             layer_list = [layer_name]
             if layer_item["summaryType"] == "":
-                layer_list += ["No known Impact", "0", "0", "0"]
+                layer_list += ["No Potential Impact", "0", "0", "0"]
             else:
                 if layer_item["summaryFields"] == []:
-                    layer_list += ["Known Impact", "0", "0", "0"]
+                    layer_list += ["Potential Impact", "0", "0", "0"]
                 else:
                     field_value_total = 0
                     for field in layer_item["summaryFields"][0]["fieldValues"]:
+                        if (isinstance(field[field.keys()[0]], str) or
+                                isinstance(field[field.keys()[0]], unicode)):
+                            raise Exception("Non numeric value found for" +
+                                            " - {0} : {1}."
+                                            .format(field.keys()[0],
+                                                    field[field.keys()[0]]))
                         field_value_total += field[field.keys()[0]]
+
+                    if (isinstance(field_value_total, int) or
+                            isinstance(field_value_total, long)):
+                        value = str(format(field_value_total, '8,d'))
+                    else:
+                        value = "{:,}".format(round(field_value_total, 2))
+
+                    impact_value = Paragraph(value, STYLES['Right'])
+
                     if layer_item["summaryType"].upper() == "COUNT":
-                        impact_value = Paragraph(str(format(field_value_total,
-                                                            '8,d')),
-                                                 STYLES['Right'])
-                        layer_list += ["Known Impact", impact_value, "0", "0"]
+                        layer_list += ["Potential Impact", impact_value, "0", "0"]
+
                     elif layer_item["summaryType"].upper() == "AREA":
-                        value = "{:,}".format(round(field_value_total, 2))
-                        impact_value = Paragraph(value, STYLES['Right'])
-                        layer_list += ["Known Impact", "0", impact_value, "0"]
+                        layer_list += ["Potential Impact", "0", impact_value, "0"]
+
                     elif layer_item["summaryType"].upper() == "LENGTH":
-                        value = "{:,}".format(round(field_value_total, 2))
-                        impact_value = Paragraph(value, STYLES['Right'])
-                        layer_list += ["Known Impact", "0", "0", impact_value]
+                        layer_list += ["Potential Impact", "0", "0", impact_value]
 
             summary_list.append(layer_list)
 
         summary_table = Table(
-            summary_list, vAlign='TOP', colWidths=[5.0*cm, 3.2*cm, 2*cm, 2.7*cm,
+            summary_list, vAlign='TOP', colWidths=[5.0*cm, 3.4*cm, 2*cm, 2.7*cm,
                                                    2.7*cm],
             style=[('GRID', (0, 0), (-1, -1), 0.5, colors.black),
                    ('FONT', (0, 0), (4, 0), 'Helvetica-Bold', 10),
@@ -792,16 +783,15 @@ def get_quick_report_data(parts, quick_json):
 
         #   Insert Individual Layer data
         for i in xrange(len(quick_json)):
-            #   Insert Layer name header
-            lyr_name = quick_json[i]["layerName"] + " - Impact Information"
-            arcpy.AddMessage("Processing : " + lyr_name)
-            parts.append(Spacer(0.20, 0.20 * inch))
-            parts.append(Paragraph(lyr_name, STYLES["HeadingLeft"]))
-            parts.append(Spacer(0.10, 0.10 * inch))
-            #   Insert fields data in table
-
             if quick_json[i]["summaryType"] != "":
+                #   Insert Layer name header
+                lyr_name = quick_json[i]["layerName"] + " - Potential Impact Information"
+
+                parts.append(Spacer(0.20, 0.20 * inch))
+                parts.append(Paragraph(lyr_name, STYLES["HeadingLeft"]))
+                parts.append(Spacer(0.10, 0.10 * inch))
                 if len(quick_json[i]["summaryFields"]) > 0:
+                    #   Insert fields data in table
                     for fields in quick_json[i]["summaryFields"]:
                         unit = quick_json[i]['summaryUnits'].lower()
                         u_type = quick_json[i]['summaryType'].lower()
@@ -818,10 +808,18 @@ def get_quick_report_data(parts, quick_json):
                         for j in xrange(len(fields['fieldValues'])):
                             for the_key, the_value in fields['fieldValues'][j].\
                                                             iteritems():
-                                if u_type in ["area", "length"]:
+                                if (isinstance(the_value, str) or
+                                        isinstance(the_value, unicode)):
+                                    raise Exception("Non numeric value found" +
+                                                    " for - {0} : {1}."
+                                                    .format(the_key, the_value))
+
+                                if isinstance(the_value, float):
                                     val = "{:,}".format(round(the_value, 2))
-                                else:
+                                elif isinstance(the_value, int) or\
+                                     isinstance(the_value, long):
                                     val = str(format(the_value, '8,d'))
+
                                 impact_val = Paragraph(val, STYLES['Right'])
                                 value = [the_key, impact_val]
                             field_data.append(value)
@@ -836,20 +834,14 @@ def get_quick_report_data(parts, quick_json):
                                     colors.lavender)],
                             colWidths=(5.0*inch, 1.1*inch))
                         parts.append(Spacer(0.20, 0.20 * inch))
-                        #   Insert field value table for each field in mai PDF
+                        #   Insert field value table for each field in PDF
                         parts.append(field_value_table)
+
                 elif len(quick_json[i]["summaryFields"]) == 0:
-                    no_field_msg = "No fields specified for analysis"
-                    no_fields_para = Paragraph(no_field_msg,
-                                               STYLES['noDataaStyle'])
+                    no_fields_para = Paragraph(NO_FIELDS_MSG,
+                                               STYLES['noDataStyle'])
                     parts.append(Spacer(0.10, 0.10 * inch))
                     parts.append(no_fields_para)
-
-            elif quick_json[i]["summaryType"] == "":
-                no_impact_para = Paragraph("No known Impact",
-                                           STYLES['noDataaStyle'])
-                parts.append(Spacer(0.10, 0.10 * inch))
-                parts.append(no_impact_para)
 
         return parts
     except Exception as error:
@@ -862,7 +854,7 @@ def on_first_page(canvas, doc):
     header(canvas, doc)
     now = time.strftime("%c")
     doc_date = "Date: " + str(now)
-    canvas.drawString(PAGE_WIDTH - 211, PAGE_HEIGHT - 105, doc_date)
+    canvas.drawString(PAGE_WIDTH - 192, PAGE_HEIGHT - 105, doc_date)
     footer(canvas, doc)
     canvas.restoreState()
 
@@ -1000,12 +992,12 @@ def validate_quick_report(web_map_as_json, quick_summary_json,
         return pdf_path
 
     except arcpy.ExecuteError as error:
-        arcpy.AddError("Error occured during validate_quick_report:" +
+        arcpy.AddError("Error occurred during validate_quick_report:" +
                        str(error))
         sys.exit()
 
     except Exception as error:
-        arcpy.AddError("Error occured during validate_quick_report:" +
+        arcpy.AddError("Error occurred during validate_quick_report:" +
                        str(error))
         sys.exit()
 
@@ -1032,16 +1024,15 @@ def main():
 
     area_of_interest = arcpy.GetParameterAsText(3)
 
-    detailed_fields = arcpy.GetParameterAsText(4)
+    detailed_fields = arcpy.GetParameterAsText(4).replace("&", "and")
     uploaded_zip = arcpy.GetParameterAsText(5)
-    quick_summary_json = arcpy.GetParameterAsText(6).strip()
+    quick_summary_json = arcpy.GetParameterAsText(6).replace("&", "and").strip()
     report_units = arcpy.GetParameterAsText(7)
 
-    #   Check if valid AOI is provided. It should have atleast 1 polygon feature
+    #   Check if valid AOI is provided. It should have at least 1 polygon feature
     aoi_featset = arcpy.FeatureSet()
     aoi_featset.load(area_of_interest)
     aoi_feat_count = int(arcpy.GetCount_management(aoi_featset)[0])
-
 
     if aoi_feat_count == 0:
         arcpy.AddError("Provided AOI has no polygon features." +
@@ -1050,13 +1041,9 @@ def main():
 
     #   Generate PDF for Detailed type
     if REPORT_FORMAT == DETAIL_REPORT_TYPE:
-        if quick_summary_json != "":
-            arcpy.AddMessage("***Quick summary json is provided for detailed" +
-                             " report which is not required.")
-
         #   Report units are required for Detailed Report type
         if report_units == "":
-            arcpy.AddError("Reoprt Units must be provided.")
+            arcpy.AddError("Report Units must be provided.")
             return
 
         if detailed_fields == "":
@@ -1066,9 +1053,8 @@ def main():
 
         field_unicode_json = json.loads(detailed_fields)
         detailed_fields = convert(field_unicode_json)
+        arcpy.AddMessage(detailed_fields)
 
-        #   Variable "layers_to_analyze" previously used as 3rd argument for
-        #   refering to mxd layers.
         pdf_path = validate_detailed_report(
             web_map_as_json, area_of_interest, uploaded_zip,
             report_units, detailed_fields)
@@ -1076,7 +1062,7 @@ def main():
             return
         else:
             #   Set Detailed PDF Report File path as output parameter
-            arcpy.SetParameter(9, pdf_path)
+            arcpy.SetParameter(10, pdf_path)
 
     #   Generate PDF for Quick type
     elif REPORT_FORMAT == QUICK_REPORT_TYPE:
@@ -1089,8 +1075,7 @@ def main():
             return
         else:
             #   Set Quick PDF Report File path as output parameter
-            arcpy.SetParameter(9, pdf_path)
+            arcpy.SetParameter(10, pdf_path)
 
 if __name__ == '__main__':
     main()
-

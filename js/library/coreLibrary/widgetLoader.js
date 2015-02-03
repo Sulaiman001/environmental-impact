@@ -102,7 +102,7 @@ define([
                 widgets[widgetConfig.WidgetPath] = null;
                 require([widgetConfig.WidgetPath], function (Widget) {
                     widgetId = widgetConfig.WidgetPath.split('/')[widgetConfig.WidgetPath.split('/').length - 1];
-                    widgets[widgetConfig.WidgetPath] = new Widget({ id: widgetId, map: widgetConfig.MapInstanceRequired ? mapInstance : null });
+                    widgets[widgetConfig.WidgetPath] = new Widget({ id: widgetId, map: mapInstance });
 
                     deferred.resolve(widgetConfig.WidgetPath);
                 });
@@ -111,11 +111,11 @@ define([
 
             all(deferredArray).then(lang.hitch(this, function () {
                 try {
-                    topic.publish("widgetInitialized");
                     /**
                     * create application header
                     */
                     this._createApplicationHeader(widgets);
+                    topic.publish("widgetInitialized");
                 } catch (ex) {
                     alert(sharedNls.errorMessages.widgetNotLoaded);
                 }

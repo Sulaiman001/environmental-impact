@@ -354,7 +354,6 @@
     }
     .esriCTDrawMultiPoint
     {
-        float: right !important;
         margin: 12px 0 !important;
         width:44px;
         height:44px;
