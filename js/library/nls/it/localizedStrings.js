@@ -83,7 +83,8 @@ define({
         bearingValue: "@it@ (0-360)",
         distance: "@it@ Distance (Miles)",
         reportPanelHeader: "@it@ Summary Report for Area of Interest",
-        selectReportFields: "@it@ Select report fields"
+        selectReportFields: "@it@ Select report fields",
+        reportLoadingText: "@it@ Generating report. Please wait..."
     },
     errorMessages: {
         invalidSearch: "Nessun risultato trovato.",

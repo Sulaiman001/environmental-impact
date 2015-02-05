@@ -391,12 +391,12 @@ define([], function () {
         GeometryService: "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer",
 
         // Set GP service for creating AOI from shapefile and uploading shapefile for analysis
-        ShapefileTools: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_4/EnvironmentalImpactTools/GPServer/ShapefileTools",
+        ShapefileTools: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_5/EnvironmentalImpactTools/GPServer/ShapefileTools",
 
         // ReportDownloadSettings: Settings for downloading quick and detailed summary reports in PDF format
         // GPServiceURL: url to geoprocessing service
         ReportDownloadSettings: {
-            GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_4/EnvironmentalImpactTools/GPServer/GeneratePDFReport",
+            GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_5/EnvironmentalImpactTools/GPServer/GeneratePDFReport",
             ReportSettings: [
                 {
                     Type: "Quick",
@@ -419,19 +419,19 @@ define([], function () {
                 Enabled: true,
                 Label: "Excel",
                 Format: "Excel",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_4/EnvironmentalImpactTools/GPServer/ClipToExcel"
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_5/EnvironmentalImpactTools/GPServer/ClipToExcel"
             },
             {
                 Enabled: true,
                 Label: "File GDB",
                 Format: "File Geodatabase - GDB - .gdb",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_4/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_5/EnvironmentalImpactTools/GPServer/ClipZipandShip"
             },
             {
                 Enabled: true,
                 Label: "Shapefile",
                 Format: "Shapefile - SHP - .shp",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_4/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_5/EnvironmentalImpactTools/GPServer/ClipZipandShip"
             }
         ],
 

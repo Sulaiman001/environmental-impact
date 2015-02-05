@@ -115,6 +115,8 @@ define([
                     this._fetchWebMapData(response);
                     topic.publish("setMap", this.map);
                     topic.publish("hideProgressIndicator");
+                    this._mapLoaded = true;
+                    this._dependeciesLoadedEventHandler();
                     this._mapOnLoad();
                     this._mapEvents();
                     if (dojo.configData.ShowLegend) {
@@ -254,7 +256,7 @@ define([
                         topic.publish("infoWindowVisibilityStatus", true);
                         topic.publish("shareLocatorAddress", [graphic.geometry], false, graphic.name);
                         for (i = 0; i < dojo.operationLayerSettings.length; i++) {
-                            if (graphic.layer.QueryLayerId === dojo.operationLayerSettings[i].layerID && graphic.layer.Title === dojo.operationLayerSettings[i].layerTitle) {
+                            if (parseInt(graphic.layer.QueryLayerId, 10) === parseInt(dojo.operationLayerSettings[i].layerID, 10) && graphic.layer.Title === dojo.operationLayerSettings[i].layerTitle) {
                                 infoIndex = i;
                                 break;
                             }
@@ -364,35 +366,41 @@ define([
             var i, j, k, webMapDetails, layerInfo;
             webMapDetails = response.itemInfo.itemData;
             for (i = 0; i < webMapDetails.operationalLayers.length; i++) {
-                //create operation layers array
-                this._createWebmapOperationLayer(webMapDetails.operationalLayers[i]);
-                //set infowWindowData for each operation layer
-                if (webMapDetails.operationalLayers[i].layers) {
-                    //Fetching infopopup data in case the layers are added as dynamic layers in the webmap
-                    for (j = 0; j < webMapDetails.operationalLayers[i].layers.length; j++) {
-                        layerInfo = webMapDetails.operationalLayers[i].layers[j];
+                if (webMapDetails.operationalLayers[i].visibility) {
+                    //create operation layers array
+                    this._createWebmapOperationLayer(webMapDetails.operationalLayers[i]);
+                    //set infowWindowData for each operation layer
+                    if (webMapDetails.operationalLayers[i].layers) {
+                        //Fetching infopopup data in case the layers are added as dynamic layers in the webmap
+                        for (j = 0; j < webMapDetails.operationalLayers[i].layers.length; j++) {
+                            layerInfo = webMapDetails.operationalLayers[i].layers[j];
+                            //check the operation layer before creating the infoWindow data
+                            for (k = 0; k < dojo.operationLayerSettings.length; k++) {
+                                if (webMapDetails.operationalLayers[i].title === dojo.operationLayerSettings[k].layerTitle && dojo.operationLayerSettings[k].layerID === layerInfo.id) {
+                                    //set infoWindow content to operation layer
+                                    dojo.operationLayerSettings[k].infoWindowData = {};
+                                    break;
+                                }
+                            }
+                            if (dojo.operationLayerSettings[k] && dojo.operationLayerSettings[k].infoWindowData) {
+                                this._createWebMapInfoWindowData(layerInfo, dojo.operationLayerSettings[k].infoWindowData);
+                            }
+                        }
+                    } else if (webMapDetails.operationalLayers[i].popupInfo) {
+                        //Fetching infopopup data in case the layers are added as feature layers in the webmap
+                        layerInfo = webMapDetails.operationalLayers[i];
                         //check the operation layer before creating the infoWindow data
                         for (k = 0; k < dojo.operationLayerSettings.length; k++) {
-                            if (webMapDetails.operationalLayers[i].title === dojo.operationLayerSettings[k].layerTitle && dojo.operationLayerSettings[k].layerID === layerInfo.id) {
+                            if (dojo.operationLayerSettings[k].layerURL === webMapDetails.operationalLayers[i].url) {
                                 //set infoWindow content to operation layer
                                 dojo.operationLayerSettings[k].infoWindowData = {};
                                 break;
                             }
                         }
-                        this._createWebMapInfoWindowData(layerInfo, dojo.operationLayerSettings[k].infoWindowData);
-                    }
-                } else if (webMapDetails.operationalLayers[i].popupInfo) {
-                    //Fetching infopopup data in case the layers are added as feature layers in the webmap
-                    layerInfo = webMapDetails.operationalLayers[i];
-                    //check the operation layer before creating the infoWindow data
-                    for (k = 0; k < dojo.operationLayerSettings.length; k++) {
-                        if (dojo.operationLayerSettings[k].layerURL === webMapDetails.operationalLayers[i].url) {
-                            //set infoWindow content to operation layer
-                            dojo.operationLayerSettings[k].infoWindowData = {};
-                            break;
+                        if (dojo.operationLayerSettings[k] && dojo.operationLayerSettings[k].infoWindowData) {
+                            this._createWebMapInfoWindowData(layerInfo, dojo.operationLayerSettings[k].infoWindowData);
                         }
                     }
-                    this._createWebMapInfoWindowData(layerInfo, dojo.operationLayerSettings[k].infoWindowData);
                 }
             }
         },
@@ -432,7 +440,7 @@ define([
                         //set searchSetting for operation layer if available
                         for (j = 0; j < searchSettings.length; j++) {
                             if (lang.trim(layer.title) === searchSettings[j].Title && layer.layerObject.layerInfos[i].id === parseInt((searchSettings[j].QueryLayerId), 10)) {
-                                searchSettings[j].QueryURL = url;
+                                searchSettings[j].QueryURL = operationLayer.layerURL;
                                 break;
                             }
                         }
@@ -451,7 +459,7 @@ define([
                 //set searchSetting for operation layer if available
                 for (j = 0; j < searchSettings.length; j++) {
                     if (lang.trim(layer.title) === searchSettings[j].Title && layer.layerObject.layerId === parseInt((searchSettings[j].QueryLayerId), 10)) {
-                        searchSettings[j].QueryURL = layer.url;
+                        searchSettings[j].QueryURL = operationLayer.layerURL;
                         break;
                     }
                 }
@@ -465,12 +473,12 @@ define([
         _createWebMapInfoWindowData: function (layerInfo, infoWindowData) {
             var i, infoWindowHeaderField, field;
             //set infowWindow header field with title and attribute
-            if (layerInfo.popupInfo.title.split("{").length > 1) {
+            if (layerInfo.popupInfo && layerInfo.popupInfo.title.split("{").length > 1) {
                 infoWindowHeaderField = lang.trim(layerInfo.popupInfo.title.split("{")[0]) + " ";
                 for (i = 1; i < layerInfo.popupInfo.title.split("{").length; i++) {
                     infoWindowHeaderField += "${" + lang.trim(layerInfo.popupInfo.title.split("{")[i]);
                 }
-            } else {
+            } else if (layerInfo.popupInfo) {
                 if (lang.trim(layerInfo.popupInfo.title) !== "") {
                     infoWindowHeaderField = lang.trim(layerInfo.popupInfo.title);
                 } else {
@@ -480,13 +488,15 @@ define([
             infoWindowData.infoWindowHeader = infoWindowHeaderField;
             //populate infoWindow fieldname and display text
             infoWindowData.infoWindowfields = [];
-            for (field in layerInfo.popupInfo.fieldInfos) {
-                if (layerInfo.popupInfo.fieldInfos.hasOwnProperty(field)) {
-                    if (layerInfo.popupInfo.fieldInfos[field].visible) {
-                        infoWindowData.infoWindowfields.push({
-                            "DisplayText": layerInfo.popupInfo.fieldInfos[field].label + ":",
-                            "FieldName": "${" + layerInfo.popupInfo.fieldInfos[field].fieldName + "}"
-                        });
+            if (layerInfo.popupInfo) {
+                for (field in layerInfo.popupInfo.fieldInfos) {
+                    if (layerInfo.popupInfo.fieldInfos.hasOwnProperty(field)) {
+                        if (layerInfo.popupInfo.fieldInfos[field].visible) {
+                            infoWindowData.infoWindowfields.push({
+                                "DisplayText": layerInfo.popupInfo.fieldInfos[field].label + ":",
+                                "FieldName": "${" + layerInfo.popupInfo.fieldInfos[field].fieldName + "}"
+                            });
+                        }
                     }
                 }
             }
@@ -727,7 +737,7 @@ define([
                                         break;
                                     }
                                 } else {
-                                    returnVal = true;
+                                    returnVal = false;
                                     break;
                                 }
                             }
@@ -1019,7 +1029,7 @@ define([
             //set layer url in searchSetting if available
             for (j = 0; j < searchSettings.length; j++) {
                 if (title === searchSettings[j].Title && parseInt(id, 10) === parseInt((searchSettings[j].QueryLayerId), 10)) {
-                    searchSettings[j].QueryURL = url;
+                    searchSettings[j].QueryURL = operationLayer.layerURL;
                     break;
                 }
             }

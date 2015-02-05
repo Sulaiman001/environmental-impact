@@ -50,7 +50,7 @@ STYLEBODYTEXT.wordWrap = 'CJK'
 #   Style for the Headers in the beginning of report
 STYLES.add(ParagraphStyle(name='HeadingLeft', alignment=TA_LEFT,
                           fontName='Helvetica-Bold', fontSize=15,
-                          textColor='cornflowerblue'))
+                          textColor='cornflowerblue', leading=20))
 
 #   Style for count, area, length values in all tables
 STYLES.add(ParagraphStyle(name='Right', alignment=TA_RIGHT,
@@ -87,7 +87,7 @@ REPORT_FORMAT = arcpy.GetParameterAsText(2)
 #   Specify logo image path
 LOGO_URL = arcpy.GetParameterAsText(8)
 #   Specify Subtitle for the report
-REPORT_SUBTITLE = arcpy.GetParameterAsText(9).replace("&", "and") or\
+REPORT_SUBTITLE = arcpy.GetParameterAsText(9) or\
                   "Area of Interest (AOI) Information"
 
 #   Specify message to be shown when no fields are provided to summurized
@@ -325,20 +325,21 @@ def clip_layers(detailed_fields, area_of_interest, report_units, zip_file_path):
 
     for lyr_object in detailed_fields:
         ind_lyr_tables = {}
-        data_type = arcpy.Describe(lyr_object.keys()[0]).DataType.upper()
-        shape_type = arcpy.Describe(lyr_object.keys()[0]).shapeType.upper()
+        data_type = arcpy.Describe(lyr_object["LayerTitle"]).DataType.upper()
+        shape_type = arcpy.Describe(lyr_object["LayerTitle"]).shapeType.upper()
 
         #   Include only Feature layer for analysis
         if data_type.upper() == "FEATURELAYER":
-            arcpy.AddMessage("Clipping '{0}' ...".format(lyr_object.keys()[0]))
+            arcpy.AddMessage("Clipping '{0}' ...".\
+                             format(lyr_object["LayerTitle"]))
 
-            lyr_fields = lyr_object[lyr_object.keys()[0]]
+            lyr_fields = lyr_object["DetailSummaryReportFields"]
             arcpy.AddMessage("Fields provided : {0}".format(lyr_fields.keys()))
 
             # Get the table generated after StatisticAnalysis and also
             #   individual layer details
             out_stat_tbl, lyr_summary_info, invalid_fields = get_stat_table(
-                lyr_object.keys()[0], area_of_interest, lyr_fields.keys(),
+                lyr_object, area_of_interest, lyr_fields.keys(),
                 statistic_field[shape_type], False)
 
             #   If Layer dont have impact in AOI, directly append the details to
@@ -355,7 +356,7 @@ def clip_layers(detailed_fields, area_of_interest, report_units, zip_file_path):
 
             #   Append individual layers details in the single list and also
             #   summary data in summary table list
-            ind_lyr_tables[lyr_object.keys()[0]] = layer_tables_data
+            ind_lyr_tables[lyr_object["SearchDisplayTitle"]] = layer_tables_data
             all_layers_data.append(ind_lyr_tables)
             summary_data += [lyr_summary_info]
 
@@ -417,17 +418,21 @@ def get_stat_table(lyr, area_of_interest, lyr_fields, shape_type, shp_name):
     provided fields. It stores the layer's information for Summary Table. """
     #   Get the name of the layer/shapefile
     if shp_name:
-        layer_name = shp_name
+        layer_name = display_name = shp_name
+        in_features = lyr
     else:
-        layer_name = lyr
+        layer_name = in_features = lyr["LayerTitle"]
+        display_name = lyr["SearchDisplayTitle"]
 
-    lyr_summary_info = [Paragraph(layer_name, STYLEBODYTEXT)]
+
+    lyr_summary_info = [Paragraph(display_name, STYLEBODYTEXT)]
+    #lyr_summary_info = [display_name]
     #   Validate the name of output feature class after clip analysis
-    valid_out_feature_name = arcpy.ValidateFieldName(str(layer_name)\
+    valid_out_feature_name = arcpy.ValidateTableName(layer_name\
                                                      .replace(" ", ""),
                                                      "in_memory")
     out_features = os.path.join(r"in_memory", valid_out_feature_name)
-    arcpy.Clip_analysis(lyr, area_of_interest, out_features)
+    arcpy.Clip_analysis(in_features, area_of_interest, out_features)
 
     layer_summary_data = {}
     #   If clipped feature class has some features then performs Statistic
@@ -436,7 +441,8 @@ def get_stat_table(lyr, area_of_interest, lyr_fields, shape_type, shp_name):
         lyr_summary_info += ["Potential Impact", "0", "0", "0"]
 
         #   Add field to the output feature class to store calculated area
-        if arcpy.Describe(lyr).shapeType.upper() in ["POLYGON", "POLYLINE"]:
+        if arcpy.Describe(in_features).shapeType.upper() in \
+                ["POLYGON", "POLYLINE"]:
             # Add validate field name for newly added field
             new_field_name = arcpy.ValidateFieldName("Calc_Shape", out_features)
             arcpy.AddField_management(out_features, new_field_name, "DOUBLE")
@@ -453,9 +459,9 @@ def get_stat_table(lyr, area_of_interest, lyr_fields, shape_type, shp_name):
         valid_fields = [fld for fld in lyr_fields if fld in desc_fields]
         invalid_fields = [fld for fld in lyr_fields if fld not in desc_fields]
 
-        out_stat_table = os.path.join(r"in_memory",
-                                      str(layer_name).replace(" ", "") +
-                                      "_stat")
+        valid_table_name = arcpy.ValidateTableName((layer_name.\
+                           replace(" ", "") + "_stat"), r"in_memory")
+        out_stat_table = os.path.join(r"in_memory", valid_table_name)
         arcpy.Statistics_analysis(out_features, out_stat_table,
                                   [[new_field_name, "SUM"]], valid_fields)
 
@@ -466,7 +472,7 @@ def get_stat_table(lyr, area_of_interest, lyr_fields, shape_type, shp_name):
                      ("SUM_" + new_field_name).upper()][0]
 
         #   For point feature class, copy the FREQUENCY values in "Count" field
-        if arcpy.Describe(lyr).shapeType.upper() == "POINT":
+        if arcpy.Describe(in_features).shapeType.upper() == "POINT":
             arcpy.DeleteField_management(out_stat_table, sum_field)
             arcpy.AddField_management(out_stat_table, "Count")
             arcpy.CalculateField_management(out_stat_table, "Count",
@@ -488,7 +494,7 @@ def get_stat_table(lyr, area_of_interest, lyr_fields, shape_type, shp_name):
             impact_value = "{:,}".format(round(impact_value, 2))
         lyr_summary_info[shape_type[0]] = [Paragraph(impact_value,
                                                      STYLES["Right"])]
-
+        #lyr_summary_info[shape_type[0]] = [impact_value]
         layer_summary_data[layer_name] = [lyr_summary_info]
         return out_stat_table, lyr_summary_info, invalid_fields
     else:
@@ -512,16 +518,17 @@ def get_layer_table_data(out_stat_table, lyr_fields, sum_value_header,
     start_index = 0
     column_limit = 3
 
+    end_index = start_index + column_limit
     while continue_process:
         field_values = []
         with arcpy.da.SearchCursor(out_stat_table,
-                                   stat_fields[start_index:column_limit]) \
+                                   stat_fields[start_index:end_index]) \
                                    as s_cursor:
             #   Add the layers to the tables
             field_headers = ["#"]
-            for i in xrange(len(stat_fields[start_index:column_limit])):
+            for i in xrange(len(stat_fields[start_index:end_index])):
                 try:
-                    value = lyr_fields[stat_fields[start_index:column_limit][i]]
+                    value = lyr_fields[stat_fields[start_index:end_index][i]]
                     header_para = Paragraph(str(value), STYLES["HeadersBold"])
                     field_headers += [header_para]
                 except IndexError:
@@ -554,13 +561,13 @@ def get_layer_table_data(out_stat_table, lyr_fields, sum_value_header,
 
         layer_tables_data[0] += [field_values]
 
-        start_index = column_limit
+        start_index = end_index
         if start_index >= len(stat_fields):
             continue_process = False
         else:
-            column_limit = start_index + column_limit
-            if column_limit > len(stat_fields):
-                column_limit = len(stat_fields)
+            end_index = start_index + column_limit
+            if end_index > len(stat_fields):
+                end_index = len(stat_fields)
 
     # Add messages according to condition
     if invalid_fields:
@@ -600,11 +607,10 @@ def generate_pdf(image, summary_data, all_layers_data, area, quick_json):
         width = 6.35 * inch
 
         parts = []
-        parts.append(Spacer(0.15, 0.15 * inch))
-
+        parts.append(Spacer(0.175, 0.175 * inch))
         heading1 = REPORT_SUBTITLE
         parts.append(Paragraph(heading1, STYLES["HeadingLeft"]))
-        parts.append(Spacer(0.20, 0.20* inch))
+        parts.append(Spacer(0.05, 0.05 * inch))
 
         heading3 = "Area: "
         parts.append(Paragraph(heading3 + str(area),
@@ -715,7 +721,8 @@ def get_quick_report_data(parts, quick_json):
     try:
         #   Insert Summary Table
         parts.append(Spacer(0.20, 0.20 * inch))
-        parts.append(Paragraph("Summary of Potential Impact", STYLES["HeadingLeft"]))
+        parts.append(Paragraph("Summary of Potential Impact",
+                               STYLES["HeadingLeft"]))
         parts.append(Spacer(0.20, 0.20 * inch))
 
         summary_list = []
@@ -760,13 +767,16 @@ def get_quick_report_data(parts, quick_json):
                     impact_value = Paragraph(value, STYLES['Right'])
 
                     if layer_item["summaryType"].upper() == "COUNT":
-                        layer_list += ["Potential Impact", impact_value, "0", "0"]
+                        layer_list += ["Potential Impact", impact_value, "0",
+                                       "0"]
 
                     elif layer_item["summaryType"].upper() == "AREA":
-                        layer_list += ["Potential Impact", "0", impact_value, "0"]
+                        layer_list += ["Potential Impact", "0", impact_value,
+                                       "0"]
 
                     elif layer_item["summaryType"].upper() == "LENGTH":
-                        layer_list += ["Potential Impact", "0", "0", impact_value]
+                        layer_list += ["Potential Impact", "0", "0",
+                                       impact_value]
 
             summary_list.append(layer_list)
 
@@ -785,7 +795,8 @@ def get_quick_report_data(parts, quick_json):
         for i in xrange(len(quick_json)):
             if quick_json[i]["summaryType"] != "":
                 #   Insert Layer name header
-                lyr_name = quick_json[i]["layerName"] + " - Potential Impact Information"
+                lyr_name = (quick_json[i]["layerName"] +
+                            " - Potential Impact Information")
 
                 parts.append(Spacer(0.20, 0.20 * inch))
                 parts.append(Paragraph(lyr_name, STYLES["HeadingLeft"]))
@@ -1024,12 +1035,12 @@ def main():
 
     area_of_interest = arcpy.GetParameterAsText(3)
 
-    detailed_fields = arcpy.GetParameterAsText(4).replace("&", "and")
+    detailed_fields = arcpy.GetParameterAsText(4)
     uploaded_zip = arcpy.GetParameterAsText(5)
-    quick_summary_json = arcpy.GetParameterAsText(6).replace("&", "and").strip()
+    quick_summary_json = arcpy.GetParameterAsText(6).strip()
     report_units = arcpy.GetParameterAsText(7)
 
-    #   Check if valid AOI is provided. It should have at least 1 polygon feature
+    #   Check if valid AOI is provided. It should have at least 1 polygon
     aoi_featset = arcpy.FeatureSet()
     aoi_featset.load(area_of_interest)
     aoi_feat_count = int(arcpy.GetCount_management(aoi_featset)[0])
@@ -1053,7 +1064,6 @@ def main():
 
         field_unicode_json = json.loads(detailed_fields)
         detailed_fields = convert(field_unicode_json)
-        arcpy.AddMessage(detailed_fields)
 
         pdf_path = validate_detailed_report(
             web_map_as_json, area_of_interest, uploaded_zip,

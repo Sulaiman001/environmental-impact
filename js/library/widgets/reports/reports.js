@@ -2808,111 +2808,116 @@ define([
             this.counter = 0;
             domConstruct.empty(this.reportScrollContent);
             this._showLoadingIndicatorReports();
-            for (index = 0; index < this.configSearchSettings.length; index++) {
-                requestHandle = esriRequest({
-                    "url": this.configSearchSettings[index].QueryURL,
-                    "content": {
-                        "f": "json"
-                    },
-                    "callbackParamName": "callback"
-                });
-                requestHandle.then(_self.requestSucceeded, _self.requestFailed);
-                onMapFeaturArray.push(requestHandle);
-            }
-            deferredListForFeatures = new DeferredList(onMapFeaturArray);
-            deferredListForFeatures.then(lang.hitch(this, function (featureResult) {
-                this.featureResults = featureResult;
-                if (featureResult) {
-                    //query each layer for available feature count
-                    for (i = 0; i < this.configSearchSettings.length; i++) {
-                        statisticFieldsCount.push(this._executeQueryTaskForCount(i, geometry));
-                    }
-                    deferredListCount = new DeferredList(statisticFieldsCount);
-                    deferredListCount.then(lang.hitch(this, function (countResult) {
-                        //query the layers which has feature count more than 0
-                        for (j = 0; j < countResult.length; j++) {
-                            if (countResult[j][1].result > 0) {
-                                if (featureResult[j][1].geometryType === "esriGeometryPoint") {
-                                    statisticType = "COUNT";
-                                    statisticTypeValue = "count";
-                                    standardPointLayerUnit = "";
-                                    reportFields = this.configSearchSettings[j].QuickSummaryReportFields;
-                                    reportFieldsCount = reportFields.length;
-                                    layerName = featureResult[j][1].name;
-                                    for (count = 0; count < reportFieldsCount; count++) {
-                                        reportFieldName = reportFields[count];
-                                        staticFieldName = reportFieldName;
-                                        statisticFieldsInfo.push(this._executeQueryTaskPointReport(j, geometry, statisticType, reportFieldName, staticFieldName, statisticTypeValue, standardPointLayerUnit, layerName));
-                                    }
-                                }
-                                if (featureResult[j][1].geometryType === "esriGeometryPolygon") {
-                                    statisticType = "SUM";
-                                    statisticTypeValue = "area";
-                                    reportFields = this.configSearchSettings[j].QuickSummaryReportFields;
-                                    reportFieldsCount = reportFields.length;
-                                    layerName = featureResult[j][1].name;
-                                    for (count = 0; count < reportFieldsCount; count++) {
-                                        reportFieldName = reportFields[count];
-                                        staticFieldName = this.configSearchSettings[j].SummaryStatisticField;
-                                        statisticFieldsInfo.push(this._executeQueryTaskPointReport(j, geometry, statisticType, reportFieldName, staticFieldName, statisticTypeValue, sharedNls.titles.areaStandardUnit, layerName));
-                                    }
-                                }
-                                if (featureResult[j][1].geometryType === "esriGeometryPolyline") {
-                                    statisticType = "SUM";
-                                    statisticTypeValue = "length";
-                                    reportFields = this.configSearchSettings[j].QuickSummaryReportFields;
-                                    reportFieldsCount = reportFields.length;
-                                    layerName = featureResult[j][1].name;
-                                    for (count = 0; count < reportFieldsCount; count++) {
-                                        reportFieldName = reportFields[count];
-                                        staticFieldName = this.configSearchSettings[j].SummaryStatisticField;
-                                        statisticFieldsInfo.push(this._executeQueryTaskPointReport(j, geometry, statisticType, reportFieldName, staticFieldName, statisticTypeValue, sharedNls.titles.lengthStandardUnit, layerName));
-                                    }
-                                }
-                            } else {
-                                //the layers having feature count as 0, store the layernames for reportPanel creation reference
-                                reportFields = this.configSearchSettings[j].QuickSummaryReportFields;
-                                reportFieldsCount = reportFields.length;
-                                for (count = 0; count < reportFieldsCount; count++) {
-                                    this._unQueriedLayers.push({ index: statisticFieldsInfo.length + this._unQueriedLayers.length, data: [true, { layerName: this.configSearchSettings[j].SearchDisplayTitle, result: { features: []}}] });
-                                    this._layerNameArray.push(this.configSearchSettings[j].SearchDisplayTitle);
-                                }
-                            }
+            if (this.configSearchSettings.length > 0) {
+                for (index = 0; index < this.configSearchSettings.length; index++) {
+                    requestHandle = esriRequest({
+                        "url": this.configSearchSettings[index].QueryURL,
+                        "content": {
+                            "f": "json"
+                        },
+                        "callbackParamName": "callback"
+                    });
+                    requestHandle.then(_self.requestSucceeded, _self.requestFailed);
+                    onMapFeaturArray.push(requestHandle);
+                }
+                deferredListForFeatures = new DeferredList(onMapFeaturArray);
+                deferredListForFeatures.then(lang.hitch(this, function (featureResult) {
+                    this.featureResults = featureResult;
+                    if (featureResult) {
+                        //query each layer for available feature count
+                        for (i = 0; i < this.configSearchSettings.length; i++) {
+                            statisticFieldsCount.push(this._executeQueryTaskForCount(i, geometry));
                         }
-                        if (statisticFieldsInfo.length > 0) {
-                            deferredListInfo = new DeferredList(statisticFieldsInfo);
-                            deferredListInfo.then(lang.hitch(this, function (infoResult) {
-                                this.queryAllResults = infoResult;
-                                if (infoResult) {
-
-                                    for (k = 0; k < infoResult.length; k++) {
-                                        if (infoResult[k][0] === false) {
-                                            noResultCount++;
+                        deferredListCount = new DeferredList(statisticFieldsCount);
+                        deferredListCount.then(lang.hitch(this, function (countResult) {
+                            //query the layers which has feature count more than 0
+                            for (j = 0; j < countResult.length; j++) {
+                                if (countResult[j][1].result > 0) {
+                                    if (featureResult[j][1].geometryType === "esriGeometryPoint") {
+                                        statisticType = "COUNT";
+                                        statisticTypeValue = "count";
+                                        standardPointLayerUnit = "";
+                                        reportFields = this.configSearchSettings[j].QuickSummaryReportFields;
+                                        reportFieldsCount = reportFields.length;
+                                        layerName = featureResult[j][1].name;
+                                        for (count = 0; count < reportFieldsCount; count++) {
+                                            reportFieldName = reportFields[count];
+                                            staticFieldName = reportFieldName;
+                                            statisticFieldsInfo.push(this._executeQueryTaskPointReport(j, geometry, statisticType, reportFieldName, staticFieldName, statisticTypeValue, standardPointLayerUnit, layerName));
                                         }
                                     }
-                                    if (noResultCount === infoResult.length) {
-                                        alert(sharedNls.errorMessages.errorPerfomingQuery);
-                                        this._hideLoadingIndicatorReports();
-                                    } else {
-                                        this._mergeResults();
-                                        this._createReport();
+                                    if (featureResult[j][1].geometryType === "esriGeometryPolygon") {
+                                        statisticType = "SUM";
+                                        statisticTypeValue = "area";
+                                        reportFields = this.configSearchSettings[j].QuickSummaryReportFields;
+                                        reportFieldsCount = reportFields.length;
+                                        layerName = featureResult[j][1].name;
+                                        for (count = 0; count < reportFieldsCount; count++) {
+                                            reportFieldName = reportFields[count];
+                                            staticFieldName = this.configSearchSettings[j].SummaryStatisticField;
+                                            statisticFieldsInfo.push(this._executeQueryTaskPointReport(j, geometry, statisticType, reportFieldName, staticFieldName, statisticTypeValue, sharedNls.titles.areaStandardUnit, layerName));
+                                        }
+                                    }
+                                    if (featureResult[j][1].geometryType === "esriGeometryPolyline") {
+                                        statisticType = "SUM";
+                                        statisticTypeValue = "length";
+                                        reportFields = this.configSearchSettings[j].QuickSummaryReportFields;
+                                        reportFieldsCount = reportFields.length;
+                                        layerName = featureResult[j][1].name;
+                                        for (count = 0; count < reportFieldsCount; count++) {
+                                            reportFieldName = reportFields[count];
+                                            staticFieldName = this.configSearchSettings[j].SummaryStatisticField;
+                                            statisticFieldsInfo.push(this._executeQueryTaskPointReport(j, geometry, statisticType, reportFieldName, staticFieldName, statisticTypeValue, sharedNls.titles.lengthStandardUnit, layerName));
+                                        }
+                                    }
+                                } else {
+                                    //the layers having feature count as 0, store the layernames for reportPanel creation reference
+                                    reportFields = this.configSearchSettings[j].QuickSummaryReportFields;
+                                    reportFieldsCount = reportFields.length;
+                                    for (count = 0; count < reportFieldsCount; count++) {
+                                        this._unQueriedLayers.push({ index: statisticFieldsInfo.length + this._unQueriedLayers.length, data: [true, { layerName: this.configSearchSettings[j].SearchDisplayTitle, result: { features: []}}] });
+                                        this._layerNameArray.push(this.configSearchSettings[j].SearchDisplayTitle);
                                     }
                                 }
-                            }), function (err) {
-                                alert(err.messgae);
-                            });
-                        } else {
-                            this._hideLoadingIndicatorReports();
-                            this._mergeResults();
-                            this._createReport();
-                        }
-                    }), function (err) {
-                        alert(err.message);
-                    });
-                }
-            }), function (err) {
-                alert(err.message);
-            });
+                            }
+                            if (statisticFieldsInfo.length > 0) {
+                                deferredListInfo = new DeferredList(statisticFieldsInfo);
+                                deferredListInfo.then(lang.hitch(this, function (infoResult) {
+                                    this.queryAllResults = infoResult;
+                                    if (infoResult) {
+                                        for (k = 0; k < infoResult.length; k++) {
+                                            if (infoResult[k][0] === false) {
+                                                noResultCount++;
+                                            }
+                                        }
+                                        if (noResultCount === infoResult.length) {
+                                            alert(sharedNls.errorMessages.errorPerfomingQuery);
+                                            this._hideLoadingIndicatorReports();
+                                        } else {
+                                            this._mergeResults();
+                                            this._createReport();
+                                        }
+                                    }
+                                }), function (err) {
+                                    alert(err.messgae);
+                                });
+                            } else {
+                                this._hideLoadingIndicatorReports();
+                                this._mergeResults();
+                                this._createReport();
+                            }
+                        }), function (err) {
+                            alert(err.message);
+                        });
+                    } else {
+                        this._hideLoadingIndicatorReports();
+                    }
+                }), function (err) {
+                    alert(err.message);
+                });
+            } else {
+                this._hideLoadingIndicatorReports();
+            }
         },
 
         /**
@@ -4268,22 +4273,38 @@ define([
         * @memberOf widgets/reports/reports
         */
         _downloadReport: function (jsonObject) {
-            var loadingMsgNodes, gp, params, i, j, layersArray = [];
-            this.downloadWindow = window.open("./loading.htm");
-            on(this.downloadWindow, "load", lang.hitch(this, function (obj) {
-                loadingMsgNodes = query("#reportLoadingMsg", this.downloadWindow.document);
-                if (loadingMsgNodes !== null && loadingMsgNodes.length > 0) {
-                    loadingMsgNodes[0].innerHTML = sharedNls.messages.legendLoadingText;
-                }
-            }));
+            var loadingMsgFailed = true, loadingMsgNodes, gp, params, i, j, layersArray = [];
             topic.publish("showProgressIndicator");
+            this.downloadWindow = window.open("./loading.htm");
+            //display a loading message in blank window
+            try {
+                //for chrome and firefox
+                on(this.downloadWindow, "load", lang.hitch(this, function (obj) {
+                    loadingMsgFailed = false;
+                    loadingMsgNodes = query("#reportLoadingMsg", this.downloadWindow.document);
+                    if (loadingMsgNodes !== null && loadingMsgNodes.length > 0) {
+                        loadingMsgNodes[0].innerHTML = sharedNls.messages.reportLoadingText;
+                    }
+                }));
+            } catch (err) {
+                loadingMsgFailed = true;
+            }
+            if (loadingMsgFailed) {
+                //for Internet Explorer
+                setTimeout(lang.hitch(this, function () {
+                    loadingMsgNodes = query("#reportLoadingMsg", this.downloadWindow.document);
+                    if (loadingMsgNodes !== null && loadingMsgNodes.length > 0) {
+                        loadingMsgNodes[0].innerHTML = sharedNls.messages.reportLoadingText;
+                    }
+                }), 100);
+            }
             params = {
                 "Web_Map_as_JSON": JSON.stringify(jsonObject),
                 "Report_Type": this.report_type,
                 "AOI": this._selectedAOI,
                 "Report_Units": this.convertedUnitType,
                 "Report_Subtitle": this.summaryReportTitle.value,
-                "Logo_URL": ""
+                "Logo_URL": (dojo.configData.ApplicationIcon === "") ? "" : dojoConfig.baseURL + dojo.configData.ApplicationIcon
             };
             if (this.report_type === "Detailed") {
                 this._initiateDetailedReport(params);
@@ -4325,10 +4346,9 @@ define([
         * @memberOf widgets/reports/reports
         */
         _initiateDetailedReport: function (params) {
-            var i, j, k, gp, layerName, fieldName, alias, layerFields, fieldNameAlias, layerFieldsCollection = [];
+            var i, j, k, gp, fieldName, alias, layerFields, fieldNameAlias, layerFieldsCollection = [];
             params.Report_Units = this.convertedUnitType === "" ? "Standard" : this.convertedUnitType;
             for (i = 0; i < this.configSearchSettings.length; i++) {
-                layerName = this.featureResults[i][1].name;
                 fieldNameAlias = {};
                 layerFields = {};
                 for (j = 0; j < this.configSearchSettings[i].DetailSummaryReportFields.length; j++) {
@@ -4346,7 +4366,9 @@ define([
                         fieldNameAlias[fieldName] = alias;
                     }
                 }
-                layerFields[layerName] = fieldNameAlias;
+                layerFields.LayerTitle = this.featureResults[i][1].name;
+                layerFields.SearchDisplayTitle = this.configSearchSettings[i].SearchDisplayTitle;
+                layerFields.DetailSummaryReportFields = fieldNameAlias;
                 layerFieldsCollection.push(layerFields);
             }
             params.Report_Fields = JSON.stringify(layerFieldsCollection);
@@ -4364,6 +4386,7 @@ define([
             } else {
                 alert(sharedNls.errorMessages.esriJobFailToGenerateReport);
                 topic.publish("hideProgressIndicator");
+                this.downloadWindow.close("./loading.htm");
             }
         },
 
@@ -4374,6 +4397,7 @@ define([
             } else {
                 alert(sharedNls.errorMessages.esriJobFailToGenerateReport);
                 topic.publish("hideProgressIndicator");
+                this.downloadWindow.close("./loading.htm");
             }
         },
 

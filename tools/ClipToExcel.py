@@ -59,8 +59,9 @@ def generate_excel(name, area_of_interest, in_features):
     """ This function first performs the Clip Analysis for provided layer.
     Once the analysis is complete it generates the excel file ( .xls) having
     all attributes of clipped data. """
-    out_feature_name = (name)[:-4] + "_Clip"
-    output_feature = os.path.join(SCRATCH, out_feature_name)
+    valid_out_feature_name = arcpy.ValidateTableName(name[:-4] + "_Clip",
+                                                     SCRATCH)
+    output_feature = os.path.join(SCRATCH, valid_out_feature_name)
     try:
         #   Perform Clip analysis for input layer
         shp_data = arcpy.Clip_analysis(in_features, area_of_interest,
@@ -168,6 +169,7 @@ def main():
         return
     else:
         # Set generated zip file as output
+        arcpy.AddMessage("Zip file created at : " + str(output_zip_file))
         arcpy.SetParameter(2, output_zip_file)
 
 if __name__ == '__main__':

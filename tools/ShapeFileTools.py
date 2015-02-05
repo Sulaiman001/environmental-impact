@@ -59,8 +59,10 @@ def shapefile_to_aoi():
                 shapefile_path = os.path.join(SCRATCH, shape_file)
                 arcpy.AddMessage("Found shapefile: {0}".format(shapefile_path))
                 arcpy.AddMessage("Dissolving extracted shapefile...")
+                valid_output_name = arcpy.ValidateTableName(
+                    shape_file[:-4] + "_Output", SCRATCH)
                 output_fc_name = os.path.join(SCRATCH,
-                                              shape_file[:-4] + "_Output.shp")
+                                              valid_output_name + ".shp")
                 arcpy.Dissolve_management(shapefile_path, output_fc_name)
                 #  Loading extracted shape file into feature set to be returned
                 #  as Output Parameter
@@ -153,8 +155,9 @@ def create_summary_table(feature_details):
     try:
 
         arcpy.AddMessage("Generating Summary Table...")
+        valid_table_name = arcpy.ValidateTableName("summary_table", "in_memory")
         summary_table = arcpy.CreateTable_management("in_memory",
-                                                     "summary_table")
+                                                     valid_table_name)
         arcpy.MakeTableView_management(summary_table, "tableview")
 
         for fldname in feature_details[0]:
@@ -192,10 +195,9 @@ def tabulate_intersection(featureset, feature_type, area_of_interset,
                              " number of fields are found.")
 
             for flds in fields_names:
-
-                sum_table_name = (flds) + "_sumtable"
-                sum_table_path = "in_memory" + os.sep + sum_table_name
-
+                valid_table_name = arcpy.ValidateTableName(flds + "_sumtable",
+                                                           "in_memory")
+                sum_table_path = os.path.join("in_memory", valid_table_name)
                 zone_field = arcpy.Describe(area_of_interset).OIDFieldName
 
                 #   Summarising values of fields using Tabulate Intersection
