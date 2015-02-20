@@ -145,7 +145,7 @@ define(["dojo/_base/declare",
                         this._infoX = mapPoint.geometry.x;
                         this._infoY = mapPoint.geometry.y;
                         this._infoWindowObjID = mapPoint.attributes.OBJECTID;
-                        this._infoWindowLayerID = mapPoint.layer.QueryLayerId;
+                        this._infoWindowLayerID = mapPoint.layer.Title + "_" + mapPoint.layer.QueryLayerId;
                     } else {
                         this._infoX = mapPoint.x;
                         this._infoY = mapPoint.y;
@@ -233,7 +233,7 @@ define(["dojo/_base/declare",
                         if (graphicDetails.SHOWINFO === "true") {
                             var evt, pointGeometry;
                             evt = {};
-                            pointGeometry = new Point(graphicDetails.INFOX, graphicDetails.INFOY, new esri.SpatialReference({
+                            pointGeometry = new Point(Number(graphicDetails.INFOX), Number(graphicDetails.INFOY), new esri.SpatialReference({
                                 "wkid": this.map.spatialReference.wkid
                             }));
                             evt.mapPoint = pointGeometry;
@@ -495,7 +495,7 @@ define(["dojo/_base/declare",
                 this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
                 this._setSliderProperties(graphicDetails);
                 dijit.byId("horizontalSlider").setValue(parseFloat(graphicDetails.SD));
-                pointGeometry = new Point(graphicDetails.X, graphicDetails.Y, new esri.SpatialReference({
+                pointGeometry = new Point(Number(graphicDetails.X), Number(graphicDetails.Y), new esri.SpatialReference({
                     "wkid": this.map.spatialReference.wkid
                 }));
                 if (graphicDetails.STYLE === "queryFeature") {
@@ -724,7 +724,7 @@ define(["dojo/_base/declare",
                     this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
                     if (graphicDetails.TAB === dojo.configData.CoordinatesTab.Title) {
                         //get the mapPoint from shared point geometry values
-                        pointGeometry = new Point(graphicDetails.CX, graphicDetails.CY, new esri.SpatialReference({
+                        pointGeometry = new Point(Number(graphicDetails.CX), Number(graphicDetails.CY), new esri.SpatialReference({
                             "wkid": this.map.spatialReference.wkid
                         }));
                         if ((graphicDetails.LAT) && (graphicDetails.LONG)) {
@@ -785,7 +785,7 @@ define(["dojo/_base/declare",
         _displayGeoLocationData: function (graphicDetails) {
             try {
                 var pointGeometry;
-                pointGeometry = new Point(graphicDetails.X, graphicDetails.Y, new esri.SpatialReference({
+                pointGeometry = new Point(Number(graphicDetails.X), Number(graphicDetails.Y), new esri.SpatialReference({
                     "wkid": this.map.spatialReference.wkid
                 }));
                 this._addGraphic(pointGeometry, graphicDetails);
@@ -842,7 +842,7 @@ define(["dojo/_base/declare",
         _displayLocatorData: function (graphicDetails) {
             try {
                 var pointGeometry, polygon;
-                pointGeometry = new Point(graphicDetails.X, graphicDetails.Y, new esri.SpatialReference({
+                pointGeometry = new Point(Number(graphicDetails.X), Number(graphicDetails.Y), new esri.SpatialReference({
                     "wkid": this.map.spatialReference.wkid
                 }));
                 this._setSliderProperties(graphicDetails);

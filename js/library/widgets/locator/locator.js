@@ -59,8 +59,6 @@ define([
         isShowDefaultPushPin: true,
         selectedGraphic: null,
         graphicsLayerId: null,
-        configSearchSettings: null,
-
 
         /**
         * display locator widget
@@ -122,20 +120,6 @@ define([
         },
 
         /**
-        * set the searchSettings as per the layers availavle on map
-        * @memberOf widgets/locator/locator
-        */
-        _setSearchSettings: function () {
-            var i;
-            this.configSearchSettings = [];
-            for (i = 0; i < dojo.configData.SearchSettings.length; i++) {
-                if (dojo.configData.SearchSettings[i].QueryURL) {
-                    this.configSearchSettings.push(dojo.configData.SearchSettings[i]);
-                }
-            }
-        },
-
-        /**
         * set default value of locator textbox as specified in configuration file
         * @memberOf widgets/locator/locator
         * @param {} node
@@ -157,15 +141,12 @@ define([
                 this._locateAddress(true);
             })));
             this.own(on(this.txtAddress, "keyup", lang.hitch(this, function (evt) {
-                domStyle.set(this.close, "display", "block");
                 this._submitAddress(evt);
             })));
             this.own(on(this.txtAddress, "paste", lang.hitch(this, function (evt) {
-                domStyle.set(this.close, "display", "block");
                 this._submitAddress(evt, true);
             })));
             this.own(on(this.txtAddress, "cut", lang.hitch(this, function (evt) {
-                domStyle.set(this.close, "display", "block");
                 this._submitAddress(evt, true);
             })));
             this.own(on(this.txtAddress, "dblclick", lang.hitch(this, function (evt) {
@@ -175,9 +156,6 @@ define([
                 this._replaceDefaultText(evt);
             })));
             this.own(on(this.txtAddress, "focus", lang.hitch(this, function () {
-                if (domStyle.get(this.imgSearchLoader, "display") === "none") {
-                    domStyle.set(this.close, "display", "block");
-                }
                 domClass.add(this.txtAddress, "esriCTColorChange");
             })));
             this.own(on(this.close, "click", lang.hitch(this, function () {
@@ -272,7 +250,6 @@ define([
                 /**
                 * call locator service if search text is not empty
                 */
-                this._toggleTexBoxControls(true);
                 this._locateAddress(false);
             }
         },
@@ -284,6 +261,7 @@ define([
         _locateAddress: function (launchImmediately) {
             var searchText = lang.trim(this.txtAddress.value);
             if (launchImmediately || this.lastSearchString !== searchText) {
+                this._toggleTexBoxControls(true);
                 this.lastSearchString = searchText;
 
                 // Clear any staged search
@@ -367,11 +345,8 @@ define([
                 * @param {object} candidates Contains results from locator service
                 */
                 deferredArray = [];
-                if (!this.configSearchSettings || !this.preLoaded) {
-                    this._setSearchSettings();
-                }
-                for (index = 0; index < this.configSearchSettings.length; index++) {
-                    this._layerSearchResults(searchText, deferredArray, this.configSearchSettings[index]);
+                for (index = 0; index < dojo.configSearchSettings.length; index++) {
+                    this._layerSearchResults(searchText, deferredArray, dojo.configSearchSettings[index]);
                 }
                 locatorDef = locator.addressToLocations(options);
                 locator.on("address-to-locations-complete", lang.hitch(this, function (candidates) {
@@ -395,8 +370,8 @@ define([
                         if (result.length > 0) {
                             for (num = 0; num < result.length; num++) {
                                 if (result[num][0] === true) {
-                                    if (this.configSearchSettings[num] && this.configSearchSettings[num].UnifiedSearch.toLowerCase() === "true") {
-                                        key = this.configSearchSettings[num].SearchDisplayTitle;
+                                    if (dojo.configSearchSettings[num] && dojo.configSearchSettings[num].UnifiedSearch.toLowerCase() === "true") {
+                                        key = dojo.configSearchSettings[num].SearchDisplayTitle;
                                         nameArray[key] = [];
                                         if (result[num][1].features) {
                                             for (order = 0; order < result[num][1].features.length; order++) {
@@ -410,10 +385,10 @@ define([
                                                 }
                                                 if (nameArray[key].length < this.locatorSettings.MaxResults) {
                                                     nameArray[key].push({
-                                                        name: string.substitute(this.configSearchSettings[num].SearchDisplayFields, resultAttributes),
+                                                        name: string.substitute(dojo.configSearchSettings[num].SearchDisplayFields, resultAttributes),
                                                         attributes: resultAttributes,
                                                         fields: result[num][1].fields,
-                                                        layer: this.configSearchSettings[num],
+                                                        layer: dojo.configSearchSettings[num],
                                                         geometry: result[num][1].features[order].geometry
                                                     });
                                                 }
@@ -452,7 +427,7 @@ define([
                 queryLayer = new Query();
                 queryLayer.where = string.substitute(layerobject.SearchExpression, [searchText.toUpperCase()]) + " AND " + currentTime.getTime().toString() + "=" + currentTime.getTime().toString();
                 queryLayer.outSpatialReference = this.map.spatialReference;
-                queryLayer.returnGeometry = true;
+                queryLayer.returnGeometry = layerobject.objectIDField ? false : true;
                 queryLayer.outFields = ["*"];
                 deferred = new Deferred();
                 queryTask.execute(queryLayer, lang.hitch(this, function (featureSet) {
@@ -616,24 +591,51 @@ define([
                 _this._hideAddressContainer();
                 if (_this.isShowDefaultPushPin) {
                     if (candidate.attributes.location) {
-                        _this.mapPoint = new Point(domAttr.get(this, "x"), domAttr.get(this, "y"), _this.map.spatialReference);
+                        _this.mapPoint = new Point(Number(domAttr.get(this, "x")), Number(domAttr.get(this, "y")), _this.map.spatialReference);
                         _this._locateAddressOnMap(_this.mapPoint);
+                        _this.candidateClicked(candidate);
                     } else {
                         if (candidateArray[domAttr.get(candidateAddress, "index", index)]) {
-                            layer = candidateArray[domAttr.get(candidateAddress, "index", index)].layer.QueryURL;
-                            for (infoIndex = 0; infoIndex < _this.configSearchSettings.length; infoIndex++) {
-                                if (_this.configSearchSettings[infoIndex] && _this.configSearchSettings[infoIndex].QueryURL === layer) {
-                                    _this._showFeatureResultsOnMap(candidate);
-                                    topic.publish("hideProgressIndicator");
+                            layer = candidateArray[domAttr.get(candidateAddress, "index", index)].layer;
+                            for (infoIndex = 0; infoIndex < dojo.configSearchSettings.length; infoIndex++) {
+                                if (dojo.configSearchSettings[infoIndex] && dojo.configSearchSettings[infoIndex].QueryURL === layer.QueryURL) {
+
+                                    if (!candidate.geometry) {
+                                        _this._getSelectedCandidateGeometry(layer, candidate);
+                                    }
+                                    else {
+                                        _this._showFeatureResultsOnMap(candidate);
+                                        topic.publish("hideProgressIndicator");
+                                        _this.candidateClicked(candidate);
+                                    }
                                 }
                             }
                         }
                     }
                 }
-                _this.candidateClicked(candidate);
+
             };
         },
 
+        _getSelectedCandidateGeometry: function (layerobject, candidate) {
+            var queryTask, queryLayer, currentTime;
+            if (layerobject.QueryURL) {
+                currentTime = new Date();
+                queryTask = new QueryTask(layerobject.QueryURL);
+                queryLayer = new Query();
+                queryLayer.where = layerobject.objectIDField + " =" + candidate.attributes[layerobject.objectIDField] + " AND " + currentTime.getTime().toString() + "=" + currentTime.getTime().toString();
+                queryLayer.outSpatialReference = this.map.spatialReference;
+                queryLayer.returnGeometry = true;
+                queryTask.execute(queryLayer, lang.hitch(this, function (featureSet) {
+                    this._showFeatureResultsOnMap(candidate);
+                    candidate.geometry = featureSet.features[0].geometry;
+                    this.candidateClicked(candidate);
+                    topic.publish("hideProgressIndicator");
+                }), function (err) {
+                    alert(err.message);
+                });
+            }
+        },
 
         /**
         * handler for candidate address click

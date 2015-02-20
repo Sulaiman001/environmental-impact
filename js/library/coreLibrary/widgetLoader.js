@@ -271,26 +271,32 @@ define([
         */
         _filterRedundantBasemap: function (bmLayers, baseMapArray, isWorkFlowBasemap) {
             var i, bmLayerData, multiBasemap = [];
-            bmLayerData = bmLayers.itemData.baseMap.baseMapLayers;
-            if (bmLayerData[0].layerType === "OpenStreetMap" || bmLayerData[0].type === "OpenStreetMap") {
-                bmLayerData[0].url = bmLayerData[0].id;
-            }
-            if (this._isUniqueBasemap(baseMapArray, bmLayerData, isWorkFlowBasemap)) {
-                if (isWorkFlowBasemap) {
-                    dojo.selectedBasemapIndex = baseMapArray.length;
-                } else if (bmLayerData[0].visibility) {
-                    dojo.selectedBasemapIndex = baseMapArray.length;
+            if (bmLayers.itemData.baseMap) {
+                if (bmLayers.itemData.baseMap.baseMapLayers) {
+                    bmLayerData = bmLayers.itemData.baseMap.baseMapLayers;
+                } else {
+                    bmLayerData = [];
+                    bmLayerData.push(bmLayers);
                 }
-                if (bmLayerData.length === 1) {
-                    this._setBasemapAttribute(baseMapArray, bmLayerData[0], bmLayers, isWorkFlowBasemap);
-                } else if (bmLayerData.length > 1) {
-                    for (i = 0; i < bmLayerData.length; i++) {
-                        this._setBasemapAttribute(multiBasemap, bmLayerData[i], bmLayers, isWorkFlowBasemap);
+                if (bmLayerData[0].layerType === "OpenStreetMap" || bmLayerData[0].type === "OpenStreetMap") {
+                    bmLayerData[0].url = bmLayerData[0].id;
+                }
+                if (this._isUniqueBasemap(baseMapArray, bmLayerData, isWorkFlowBasemap)) {
+                    if (isWorkFlowBasemap) {
+                        dojo.selectedBasemapIndex = baseMapArray.length;
+                    } else if (bmLayerData[0].visibility) {
+                        dojo.selectedBasemapIndex = baseMapArray.length;
                     }
-                    baseMapArray.push(multiBasemap);
+                    if (bmLayerData.length === 1) {
+                        this._setBasemapAttribute(baseMapArray, bmLayerData[0], bmLayers, isWorkFlowBasemap);
+                    } else if (bmLayerData.length > 1) {
+                        for (i = 0; i < bmLayerData.length; i++) {
+                            this._setBasemapAttribute(multiBasemap, bmLayerData[i], bmLayers, isWorkFlowBasemap);
+                        }
+                        baseMapArray.push(multiBasemap);
+                    }
                 }
             }
-
         },
 
         /**

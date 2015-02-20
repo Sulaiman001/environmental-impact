@@ -1,20 +1,20 @@
 ﻿/*global define,dojo,dijit,dojoConfig,alert,esri */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4 */
 /*
- | Copyright 2013 Esri
- |
- | Licensed under the Apache License, Version 2.0 (the "License");
- | you may not use this file except in compliance with the License.
- | You may obtain a copy of the License at
- |
- |    http://www.apache.org/licenses/LICENSE-2.0
- |
- | Unless required by applicable law or agreed to in writing, software
- | distributed under the License is distributed on an "AS IS" BASIS,
- | WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- | See the License for the specific language governing permissions and
- | limitations under the License.
- */
+| Copyright 2013 Esri
+|
+| Licensed under the Apache License, Version 2.0 (the "License");
+| you may not use this file except in compliance with the License.
+| You may obtain a copy of the License at
+|
+|    http://www.apache.org/licenses/LICENSE-2.0
+|
+| Unless required by applicable law or agreed to in writing, software
+| distributed under the License is distributed on an "AS IS" BASIS,
+| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+| See the License for the specific language governing permissions and
+| limitations under the License.
+*/
 //============================================================================================================================//
 define([
     "dojo/_base/declare",
@@ -52,8 +52,9 @@ define([
     "esri/symbols/SimpleFillSymbol",
     "dojo/string",
     "dojo/_base/Color",
+    "esri/request",
     "dojo/domReady!"
-], function (declare, domConstruct, domStyle, lang, esriUtils, dom, domAttr, query, domClass, _WidgetBase, sharedNls, esriMap, ImageParameters, FeatureLayer, GraphicsLayer, BaseMapGallery, Legends, GeometryExtent, HomeButton, Deferred, DeferredList, topic, on, InfoWindow, template, ArcGISDynamicMapServiceLayer, ArcGISTiledMapServiceLayer, OpenStreetMapLayer, array, Graphic, SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol, string, Color) {
+], function (declare, domConstruct, domStyle, lang, esriUtils, dom, domAttr, query, domClass, _WidgetBase, sharedNls, esriMap, ImageParameters, FeatureLayer, GraphicsLayer, BaseMapGallery, Legends, GeometryExtent, HomeButton, Deferred, DeferredList, topic, on, InfoWindow, template, ArcGISDynamicMapServiceLayer, ArcGISTiledMapServiceLayer, OpenStreetMapLayer, array, Graphic, SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol, string, Color, esriRequest) {
 
     //========================================================================================================================//
 
@@ -69,6 +70,7 @@ define([
         operationalLayers: [],
         _mapLoaded: false,
         _widgetsInitialized: false,
+        _legendPanelLoaded: false,
         setExtent: false,
         _operationLayersLoaded: false,
         operationLayersCount: 0,
@@ -80,14 +82,14 @@ define([
         * @name widgets/mapSettings/mapSettings
         */
         postCreate: function () {
-            var mapDeferred, layer, i, windowWidth, LegendWidthChange;
+            var mapDeferred, layer, i;
             dojo.operationLayerSettings = [];
+            dojo.configSearchSettings = [];
             topic.publish("showProgressIndicator");
             topic.subscribe("setInfoWindowOnMap", lang.hitch(this, function (infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count) {
                 this._onSetInfoWindowPosition(infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count);
             }));
 
-            topic.subscribe("widgetInitialized", lang.hitch(this, this._setLoatorInstance));
             /**
             * load map
             * @param {string} dojo.configData.BaseMapLayers Basemap settings specified in configuration file
@@ -105,7 +107,7 @@ define([
                     topic.subscribe("getWebMapResponse", lang.hitch(this, function () {
                         topic.publish("webMapResponse", response);
                     }));
-                    clearTimeout(this.stagedSearch);
+                    clearTimeout(this.stagedAddLyer);
                     this.map = response.map;
                     dojo.selectedBasemapIndex = null;
                     if (response.itemInfo.itemData.baseMap.baseMapLayers) {
@@ -138,11 +140,6 @@ define([
                     this._mapOnLoad();
                     this._mapLoaded = true;
                     this._dependeciesLoadedEventHandler();
-                    if (dojo.configData.ShowLegend) {
-                        setTimeout(lang.hitch(this, function () {
-                            this._addLayerLegend();
-                        }), 2000);
-                    }
                 }));
                 dojo.selectedBasemapIndex = 0;
                 if (!dojo.configData.BaseMapLayers[0].length) {
@@ -160,55 +157,21 @@ define([
                 }
                 this._mapEvents();
             }
+            on(window, "resize", lang.hitch(this, function () {
+                topic.publish("mapResized", 1000);
+            }));
 
-            if (window.orientation !== undefined && window.orientation !== null) {
-                on(window, "orientationchange", lang.hitch(this, function () {
-                    if (this.prevOrientation !== window.orientation) {
-                        this.prevOrientation = window.orientation;
-                        topic.publish("resizeAOIPanel", 500);
-                        topic.publish("resizeReportsPanel");
-                        topic.publish("resizeDialogBox");
+            topic.subscribe("legendBoxCreated", lang.hitch(this, function (evt) {
+                this._legendPanelLoaded = true;
+                this._dependeciesLoadedEventHandler();
+            }));
 
-                        setTimeout(lang.hitch(this, function () {
-                            windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-                            if (dojo.setLegnedWidth) {
-                                domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (windowWidth + 2) + 'px');
-                            } else {
-                                LegendWidthChange = windowWidth - parseInt(document.getElementById('esriCTAOIContainer').clientWidth, 10);
-                                domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (LegendWidthChange + 2) + 'px');
-                            }
-
-                        }), 1000);
-                    }
-                }));
-            } else {
-                on(window, "resize", lang.hitch(this, function () {
-                    if (this.prevOrientation !== window.orientation || window.orientation === undefined || window.orientation === null) {
-                        this.prevOrientation = window.orientation;
-                        topic.publish("resizeAOIPanel", 500);
-                        topic.publish("resizeReportsPanel");
-                        topic.publish("resizeDialogBox");
-
-                        setTimeout(lang.hitch(this, function () {
-                            windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-                            if (dojo.setLegnedWidth && dojo.query('.esriCTHeaderReportContainer').length > 0) {
-                                domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (windowWidth + 4) + 'px');
-                            } else {
-                                LegendWidthChange = windowWidth - parseInt(document.getElementById('esriCTAOIContainer').clientWidth, 10);
-                                if (dojo.query('.esriCTdivLegendbox').length > 0) {
-                                    domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (LegendWidthChange + 2) + 'px');
-
-                                }
-                            }
-                        }), 1000);
-
-                    }
-                }));
-            }
             topic.subscribe("widgetInitialized", lang.hitch(this, function (evt) {
                 this._widgetsInitialized = true;
                 this._dependeciesLoadedEventHandler();
+                this._setLoatorInstance();
             }));
+
             topic.subscribe("displayInfoWindow", lang.hitch(this, function (evt) {
                 this.setExtent = true;
                 this._displayInfoWindow(evt);
@@ -229,11 +192,11 @@ define([
         },
 
         /**
-        * check if application is fully loaded with all widgets, operation layers and map
+        * check if application is fully loaded with map, all widgets, operation layers and legendPanel
         * @memberOf widgets/mapSettings/mapSettings
         */
         _dependeciesLoadedEventHandler: function () {
-            if (this._mapLoaded && this._widgetsInitialized && this._operationLayersLoaded) {
+            if (this._mapLoaded && this._widgetsInitialized && this._operationLayersLoaded && this._legendPanelLoaded) {
                 topic.publish("modulesLoaded");
             }
         },
@@ -315,6 +278,11 @@ define([
             dojo.locatorSelectFeature = true;
         },
 
+        /**
+        * create list of all the available operational layers in case of webmap
+        * @param {array} layers operational layers collection of webmap
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _createWebmapLegendLayerList: function (layers) {
             var i, webMapLayers = [], webmapLayerList = {}, hasLayers = false;
             for (i = 0; i < layers.length; i++) {
@@ -327,9 +295,9 @@ define([
                     }
                 }
             }
-
             this._addLayerLegendWebmap(webMapLayers, webmapLayerList, hasLayers);
         },
+
         /**
         * set default id for basemaps
         * @memberOf widgets/mapSettings/mapSettings
@@ -362,6 +330,12 @@ define([
 
         },
 
+        /**
+        * webmap operational layers are collected in an array
+        * for each layer available on webmap, popup info and searchSettings are set
+        * @param {object} response response of webmap loading
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _fetchWebMapData: function (response) {
             var i, j, k, webMapDetails, layerInfo;
             webMapDetails = response.itemInfo.itemData;
@@ -403,9 +377,14 @@ define([
                     }
                 }
             }
+            this._createSearchSettings();
         },
 
-        //create operation layer object depending on the default visibility of layer and populate in an array
+        /**
+        * set an url, layer id, layer title and Searchsettings for each webmap operationlayer and populate the layer object in an array
+        * @param {object} layer webmap operational layer
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _createWebmapOperationLayer: function (layer) {
             var url, urlArray, lastIndex, i, j, operationLayer, searchSettings = dojo.configData.SearchSettings;
             urlArray = layer.url.split('/');
@@ -426,7 +405,7 @@ define([
                 for (i = 0; i < layer.layerObject.layerInfos.length; i++) {
                     operationLayer = {};
                     //check the operation layer default visibility
-                    if (layer.layerObject.layerInfos[i].defaultVisibility) {
+                    if (array.indexOf(layer.visibleLayers, layer.layerObject.layerInfos[i].id) !== -1) {
                         //set the opertaion layer title
                         operationLayer.layerTitle = lang.trim(layer.title);
                         //set the opertaion layer ID
@@ -465,11 +444,14 @@ define([
                 }
                 dojo.operationLayerSettings.push(operationLayer);
             }
-            this._operationLayersLoaded = true;
-            this._dependeciesLoadedEventHandler();
         },
 
-        //set infoWindow fields in an array in infoWindow content
+        /**
+        * set infoWindow header and fields in infoWindow content in case of webmap
+        * @param {object} layerInfo webmap operational layerInfo
+        * @param {object} infoWindowData popupInfo object of a layer
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _createWebMapInfoWindowData: function (layerInfo, infoWindowData) {
             var i, infoWindowHeaderField, field;
             //set infowWindow header field with title and attribute
@@ -502,6 +484,141 @@ define([
             }
         },
 
+        /**
+        * create searchSettings collection for layers available on map
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _createSearchSettings: function () {
+            var i, j, k, deferredArray = [], deferredListResult;
+            for (i = 0; i < dojo.configData.SearchSettings.length; i++) {
+                if (dojo.configData.SearchSettings[i].QueryURL) {
+                    deferredArray.push(this._getLayerInfo(dojo.configData.SearchSettings[i], dojo.configData.SearchSettings[i].QueryURL + "?f=json"));
+                }
+            }
+            deferredListResult = new DeferredList(deferredArray);
+            deferredListResult.then(lang.hitch(this, function (result) {
+                for (j = 0; j < result.length; j++) {
+                    if (result[j][0]) {
+                        for (k = 0; k < dojo.configData.SearchSettings.length; k++) {
+                            if (dojo.configData.SearchSettings[k].QueryURL && result[j][1].QueryURL === dojo.configData.SearchSettings[k].QueryURL) {
+                                this._validateStatisticField(dojo.configData.SearchSettings[k]);
+                                dojo.configSearchSettings.push(dojo.configData.SearchSettings[k]);
+                                break;
+                            }
+                        }
+                    }
+                }
+                this._operationLayersLoaded = true;
+                this._dependeciesLoadedEventHandler();
+            }));
+        },
+
+        /**
+        * set objectIDField in searchsettings of a layer
+        * @param {object} settingsObject searchSettings object of a layer
+        * @param {object} url layer url
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _getLayerInfo: function (settingsObject, url) {
+            var i, deferred, requestHandle = esriRequest({
+                "url": url
+            });
+            deferred = new Deferred();
+            requestHandle.then(lang.hitch(this, function (response) {
+                //set objectIDField in searchSetting of a layer
+                if (!response.objectIDField) {
+                    for (i = 0; i < response.fields.length; i++) {
+                        if (response.fields[i].type === "esriFieldTypeOID") {
+                            settingsObject.objectIDField = response.fields[0].name;
+                            break;
+                        }
+                    }
+                } else {
+                    settingsObject.objectIDField = response.objectIDField;
+                }
+                deferred.resolve(settingsObject);
+            }), lang.hitch(this, function (error) {
+                alert(sharedNls.errorMessages.getLayerInfoError + settingsObject.Title);
+                deferred.reject(error);
+            }));
+            return deferred;
+        },
+
+        /**
+        * validate if the statistic field value and unit value are configured correctly
+        * @param {object} searchSetting searchSettings object of a layer
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _validateStatisticField: function (searchSetting) {
+            if (searchSetting.SummaryStatisticField && searchSetting.SummaryStatisticField !== "") {
+                if (!this._validateStatisticFieldUnit(searchSetting.SummaryStatisticFieldUnits)) {
+                    alert(sharedNls.errorMessages.incorrectStatisticFieldUnit + searchSetting.SearchDisplayTitle);
+                }
+            }
+        },
+
+        /**
+        * validate if the statistic field unit value is configured correctly
+        * @param {object} searchSetting searchSettings object of a layer
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _validateStatisticFieldUnit: function (unit) {
+            var isValid = false;
+            switch (unit) {
+            //area units
+            case "SQUARE_FEET":
+                isValid = true;
+                break;
+            case "SQUARE_KILOMETERS":
+                isValid = true;
+                break;
+            case "SQUARE_METERS":
+                isValid = true;
+                break;
+            case "SQUARE_MILES":
+                isValid = true;
+                break;
+            case "SQUARE_YARDS":
+                isValid = true;
+                break;
+            case "HECTARES":
+                isValid = true;
+                break;
+            case "ACRES":
+                isValid = true;
+                break;
+            case "ARES":
+                isValid = true;
+                break;
+            //length units
+            case "YARDS":
+                isValid = true;
+                break;
+            case "FEET":
+                isValid = true;
+                break;
+            case "KILOMETERS":
+                isValid = true;
+                break;
+            case "METERS":
+                isValid = true;
+                break;
+            case "MILES":
+                isValid = true;
+                break;
+            case "NAUTICAL_MILES":
+                isValid = true;
+                break;
+            default:
+                break;
+            }
+            return isValid;
+        },
+
+        /**
+        * map events
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _mapEvents: function () {
             this.map.on("extent-change", lang.hitch(this, function () {
                 this._onSetMapTipPosition(dojo.selectedMapPoint, this.map, this.infoWindowPanel);
@@ -509,9 +626,15 @@ define([
             this.map.on("click", lang.hitch(this, function (evt) {
                 this._displayInfoWindow(evt);
             }));
+            this.map.on("resize", lang.hitch(this, function (evt) {
+                topic.publish("mapResized", 1000);
+            }));
         },
 
-        // This function is used to display info window
+        /**
+        * display infoWindow on map
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _displayInfoWindow: function (evt) {
             try {
                 if (!dojo.activatedDrawTool && !dojo.locateInitialCoordinates && !dojo.selectFeatureEnabled) {
@@ -524,8 +647,13 @@ define([
             }
         },
 
+        /**
+        * on map load, default extent of map is set, basemap gallary is created and operational graphical layers are added on map
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _mapOnLoad: function () {
             var home, extentPoints, mapDefaultExtent, i, imgCustomLogo, imgSource, graphicsLayer, extent, searchSettings;
+            this.operationalLayers = [];
             searchSettings = dojo.configData.SearchSettings;
             /**
             * set map extent to default extent specified in configuration file
@@ -580,18 +708,21 @@ define([
             graphicsLayer.id = this.tempGraphicsLayerId;
             graphicsLayer.spatialReference = this.map.extent.spatialReference;
             this.map.addLayer(graphicsLayer);
-
             graphicsLayer = new GraphicsLayer();
             graphicsLayer.id = this.tempBufferLayer;
             this.map.addLayer(graphicsLayer);
             graphicsLayer.on("graphic-add", lang.hitch(this, function () {
                 topic.publish("showClearGraphicsIcon");
             }));
-            this.map.on("resize", lang.hitch(this, function (evt) {
-                topic.publish("resizeAOIPanel", 1000);
-            }));
         },
 
+        /**
+        * when map extent is changed, infoWindow is adjusted as per new point location on map
+        * @param {object} selectedPoint new map point
+        * @param {object} map map object
+        * @param {object} infoWindow infoWindow to be adjusted
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _onSetMapTipPosition: function (selectedPoint, map, infoWindow) {
             if (selectedPoint) {
                 var screenPoint = map.toScreen(selectedPoint);
@@ -600,6 +731,15 @@ define([
             }
         },
 
+        /**
+        * infowWindow panel show hide and resize activities on extent change
+        * @param {object} infoTitle infoWindow title
+        * @param {object} divInfoDetailsTab infoWindow details
+        * @param {object} screenPoint new map point
+        * @param {object} infoPopupWidth width of infoWindow
+        * @param {object} infoPopupHeight height of infoWindow
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _onSetInfoWindowPosition: function (infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight) {
             this.infoWindowPanel.resize(infoPopupWidth, infoPopupHeight);
             this.infoWindowPanel.hide();
@@ -611,6 +751,11 @@ define([
             }
         },
 
+        /**
+        * for the selected map point, available layer queries are made and query result is collected
+        * @param {object} mapPoint selected map point for infowWindow display
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _showInfoWindowOnMap: function (mapPoint) {
             var index, deferredListResult,
                 onMapFeaturArray = [],
@@ -625,7 +770,6 @@ define([
             deferredListResult = new DeferredList(onMapFeaturArray);
             deferredListResult.then(lang.hitch(this, function (result) {
                 var j, i;
-
                 if (result) {
                     for (j = 0; j < result.length; j++) {
                         if (result[j][0] === true) {
@@ -647,6 +791,13 @@ define([
             });
         },
 
+        /**
+        * query an operational layer for features
+        * @param {index} index index of operationLayerSettings array
+        * @param {object} addr selected query result
+        * @param {array} onMapFeaturArray collection of query deferred objects
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _executeQueryTask: function (index, mapPoint, onMapFeaturArray) {
             var queryTask, queryParams, layerIndex = index, isLayerVisible, currentTime = new Date().getTime() + index.toString(),
                 deferred = new Deferred();
@@ -671,22 +822,33 @@ define([
             onMapFeaturArray.push(deferred);
         },
 
+        /**
+        * query an operational layer for features where objectID is available
+        * @param {object} mapPoint selected map point for infowWindow display
+        * @param {array} featureIDArray collection of objectIDs
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _executeQueryForObjectID: function (mapPoint, featureIDArray) {
-            var queryTask, queryParams, featureArray = [], isLayerVisible, currentTime = new Date().getTime() + featureIDArray[1].toString(),
+            var i, queryTask, queryParams, layerInfoArray, featureArray = [], isLayerVisible, currentTime = new Date().getTime() + featureIDArray[1].toString(),
                 deferred = new Deferred();
-            queryTask = new esri.tasks.QueryTask(dojo.operationLayerSettings[featureIDArray[1]].layerURL);
+            layerInfoArray = featureIDArray[1].split("_");
+            for (i = 0; i < dojo.operationLayerSettings.length; i++) {
+                if (dojo.operationLayerSettings[i].layerID === Number(layerInfoArray[1]) && dojo.operationLayerSettings[i].layerTitle === layerInfoArray[0]) {
+                    queryTask = new esri.tasks.QueryTask(dojo.operationLayerSettings[i].layerURL);
+                    isLayerVisible = this._checkLayerVisibility(dojo.operationLayerSettings[i].layerURL);
+                    break;
+                }
+            }
             queryParams = new esri.tasks.Query();
             queryParams.outSpatialReference = this.map.spatialReference;
             queryParams.returnGeometry = false;
             queryParams.geometry = mapPoint;
             queryParams.outFields = ["*"];
-            isLayerVisible = this._checkLayerVisibility(dojo.operationLayerSettings[featureIDArray[1]].layerURL);
             if (isLayerVisible) {
                 queryParams.where = currentTime + "=" + currentTime;
             } else {
                 queryParams.where = "OBJECTID" + "=" + featureIDArray[0];
             }
-
             queryTask.execute(queryParams, lang.hitch(this, function (result) {
                 result.layerIndex = featureIDArray[1];
                 featureArray.push({
@@ -701,10 +863,9 @@ define([
         },
 
         /**
-        * Description
-        * @method _checkLayerVisibility
-        * @param {} layerUrl
-        * @return returnVal
+        * checks if an operational layer is visible on current map extent
+        * @param {object} operational layerUrl
+        * @memberOf widgets/mapSettings/mapSettings
         */
         _checkLayerVisibility: function (layerUrl) {
             var layer, lastChar, mapLayerUrl, layerUrlIndex = layerUrl.split('/'),
@@ -725,10 +886,15 @@ define([
                             mapLayerUrl = this.map._layers[layer].url + "/" + layerUrlIndex;
                         }
                         if (mapLayerUrl === layerUrl) {
-                            if (this.map._layers[layer].visibleLayers.indexOf(parseInt(layerUrlIndex, 10)) !== -1) {
+                            if (array.indexOf(this.map._layers[layer].visibleLayers, parseInt(layerUrlIndex, 10)) !== -1) {
                                 if (this.map._layers[layer].visibleAtMapScale) {
                                     if (this.map._layers[layer].dynamicLayerInfos) {
                                         if (this.map.__LOD.scale < this.map._layers[layer].dynamicLayerInfos[parseInt(layerUrlIndex, 10)].minScale) {
+                                            returnVal = true;
+                                            break;
+                                        }
+                                    } else if (this.map._layers[layer].layerInfos) {
+                                        if (this.map.__LOD.scale < this.map._layers[layer].layerInfos[parseInt(layerUrlIndex, 10)].minScale) {
                                             returnVal = true;
                                             break;
                                         }
@@ -748,6 +914,11 @@ define([
             return returnVal;
         },
 
+        /**
+        * get extent geometry from selected point
+        * @param {object} point selected mapPoint
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _extentFromPoint: function (point) {
             var tolerance, screenPoint, pnt1, pnt2, mapPoint1, mapPoint2;
             tolerance = 9;
@@ -759,6 +930,12 @@ define([
             return new esri.geometry.Extent(mapPoint1.x, mapPoint1.y, mapPoint2.x, mapPoint2.y, this.map.spatialReference);
         },
 
+        /**
+        * set infoWindow creation as per the results available in featureQuery results collection
+        * @param {object} mapPoint selected mapPoint
+        * @param {array} featureArray feature query results collection
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _fetchQueryResults: function (mapPoint, featureArray) {
             var _this = this;
 
@@ -783,6 +960,12 @@ define([
             }
         },
 
+        /**
+        * set infoWindow creation of next page in multipages infoWindow
+        * @param {object} mapPoint selected mapPoint
+        * @param {array} featureArray feature query results collection
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _nextInfoContent: function (mapPoint, featureArray) {
             if (this.count < featureArray.length) {
                 this.count++;
@@ -792,6 +975,12 @@ define([
             }
         },
 
+        /**
+        * set infoWindow creation of previous page in multipages infoWindow
+        * @param {object} mapPoint selected mapPoint
+        * @param {array} featureArray feature query results collection
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _previousInfoContent: function (mapPoint, featureArray) {
             if (this.count !== 0 && this.count < featureArray.length) {
                 this.count--;
@@ -801,6 +990,11 @@ define([
             }
         },
 
+        /**
+        * checks the url for the specific keyWord, in this case checking for map extent
+        * @param {string} a key value from the url used for seperation
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _getQueryString: function (key) {
             var extentValue = "", regex, qs;
             regex = new RegExp("[\\?&]" + key + "=([^&#]*)");
@@ -811,9 +1005,13 @@ define([
             return extentValue;
         },
 
+        /**
+        * push the operationLayer URL in respective layer's searchSettings
+        * @param {array} operationLayers collection given in configuration file
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _generateLayerURL: function (operationalLayers) {
             var searchSettings, i, str, layerTitle, layerId, index;
-
             searchSettings = dojo.configData.SearchSettings;
             for (i = 0; i < operationalLayers.length; i++) {
                 if (dojo.configData.WebMapId && lang.trim(dojo.configData.WebMapId).length !== 0) {
@@ -856,6 +1054,11 @@ define([
             return home;
         },
 
+        /**
+        * create and display basemap gallary
+        * @return {object} basemapSwitcher widget
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _showBaseMapGallery: function () {
             var basMapGallery = new BaseMapGallery({
                 map: this.map
@@ -864,7 +1067,7 @@ define([
         },
 
         /**
-        * load and add operational layers depending on their LoadAsServiceType specified in configuration file
+        * operational layers depending on their LoadAsServiceType specified in configuration file
         * @param {int} index Layer order specified in configuration file
         * @param {object} layerInfo Layer settings specified in configuration file
         * @memberOf widgets/mapSettings/mapSettings
@@ -877,9 +1080,13 @@ define([
             }
         },
 
+        /**
+        * get the layerTitle of a dynamic service and add service on map
+        * @param {object} layerInfo Layer settings specified in configuration file
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _addDynamicLayerService: function (layerInfo) {
             var str, lastIndex, layerTitle;
-
             str = layerInfo.ServiceURL.split('/');
             lastIndex = str[str.length - 1];
             if (isNaN(lastIndex) || lastIndex === "") {
@@ -891,15 +1098,21 @@ define([
             } else {
                 layerTitle = str[str.length - 3];
             }
-            this.stagedSearch = setTimeout(lang.hitch(this, function () {
+            this.stagedAddLyer = setTimeout(lang.hitch(this, function () {
                 this._addServiceLayers(layerTitle, layerInfo.ServiceURL);
             }), 500);
         },
 
+        /**
+        * check if the operational layer is of dynamic service or hosted service type
+        * @param {object} layerTitle operation layer title
+        * @param {object} layerURL operation layer URL
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _addServiceLayers: function (layerTitle, layerURL) {
             var dynamicLayer, imageParams, lastIndex, dynamicLayerId;
-
             imageParams = new ImageParameters();
+            imageParams.format = "png32";
             lastIndex = layerURL.lastIndexOf('/');
             dynamicLayerId = layerURL.substr(lastIndex + 1);
             if (isNaN(dynamicLayerId) || dynamicLayerId === "") {
@@ -913,7 +1126,6 @@ define([
                 } else {
                     this._createDynamicServiceLayer(dynamicLayer, imageParams, layerTitle);
                 }
-
             } else {
                 imageParams.layerIds = [dynamicLayerId];
                 dynamicLayer = layerURL.substring(0, lastIndex + 1);
@@ -925,6 +1137,13 @@ define([
             }
         },
 
+        /**
+        * load feature service layer on map
+        * @param {int} index Layer order specified in configuration file
+        * @param {object} layerInfo Layer settings specified in configuration file
+        * @param {object} layerURL operation layer URL
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _createFeatureServiceLayer: function (index, layerInfo, layerURL) {
             var featureLayer = new FeatureLayer(layerURL, {
                 id: index,
@@ -938,7 +1157,12 @@ define([
 
         },
 
-        //Add hosted services to the map
+        /**
+        * load hosted services layer to the map
+        * @param {object} layerURL operation layer URL
+        * @param {object} layerId operation layer ID
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _addHostedServices: function (layerURL, layerId) {
             var self = this, p, lyr;
             esri.request({
@@ -955,6 +1179,14 @@ define([
             });
         },
 
+        /**
+        * load dynamic service layer to the map
+        * @param {object} dynamicLayer operation layer to be added on map
+        * @param {object} imageParams operation layer image parameters
+        * @param {object} layerURL operation layer URL
+        * @param {object} layerId operation layer ID
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _createDynamicServiceLayer: function (dynamicLayer, imageParams, layerTitle, layerId) {
             layerId = layerId || "";
             var dynamicMapService = new ArcGISDynamicMapServiceLayer(dynamicLayer, {
@@ -972,9 +1204,15 @@ define([
             }));
         },
 
+        /**
+        * set an url, layer title and layer id for each operational layer
+        * @param {object} layer webmap operational layer
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _createOperationLayer: function (layer) {
             var urlArray, lastIndex, tempUrl, url, i, title, searchSettings, infoWindowSettings;
             this.operationLayersCount++;
+            this.operationalLayers.push(layer);
             searchSettings = dojo.configData.SearchSettings;
             infoWindowSettings = dojo.configData.InfoWindowSettings;
             urlArray = layer.url.split('/');
@@ -999,17 +1237,31 @@ define([
                     url = tempUrl + parseInt(layer.visibleLayers[i], 10);
                     this._populateOperationLayerFields(layer, url, title, layer.visibleLayers[i]);
                 }
+                if (this.operationLayersCount === dojo.configData.OperationalLayers.length) {
+                    this._createSearchSettings();
+                }
             } else {
                 //layer is added as feature service
                 this._populateOperationLayerFields(layer, tempUrl, title, urlArray[urlArray.length - 1]);
+                if (this.operationLayersCount === dojo.configData.OperationalLayers.length) {
+                    this._createSearchSettings();
+                    this._addLayerLegend(this.operationalLayers);
+                }
             }
         },
 
+        /**
+        * populate searchSettings and infoWindow data if available in the operational layer object
+        * @param {object} layer webmap operational layer
+        * @param {object} url operation layer URL
+        * @param {object} title operation layer title
+        * @param {object} id operation layer ID
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _populateOperationLayerFields: function (layer, url, title, id) {
             var j, operationLayer = {}, searchSettings, infoWindowSettings;
             searchSettings = dojo.configData.SearchSettings;
             infoWindowSettings = dojo.configData.InfoWindowSettings;
-
             //set the opertaion layer title
             operationLayer.layerTitle = title;
             //set the opertaion layer ID
@@ -1034,25 +1286,26 @@ define([
                 }
             }
             dojo.operationLayerSettings.push(operationLayer);
-            if (this.operationLayersCount === dojo.configData.OperationalLayers.length) {
-                this._operationLayersLoaded = true;
-                this._dependeciesLoadedEventHandler();
-            }
+
         },
 
-        _addLayerLegend: function () {
+        /**
+        * create the list of all available operational layer URLs to display the legends panel
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _addLayerLegend: function (operationalLayers) {
             var mapServerArray = [], i, legendObject;
-            for (i in dojo.configData.OperationalLayers) {
-                if (dojo.configData.OperationalLayers.hasOwnProperty(i)) {
-                    if (dojo.configData.OperationalLayers[i].ServiceURL) {
-                        mapServerArray.push(dojo.configData.OperationalLayers[i].ServiceURL);
-                    }
-                }
+            for (i = 0; i < operationalLayers.length; i++) {
+                mapServerArray.push({ "url": operationalLayers[i].url, "title": operationalLayers[i].name });
             }
             legendObject = this._addLegendBox();
             legendObject.startup(mapServerArray);
         },
 
+        /**
+        * create legend object
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _addLegendBox: function () {
             this.legendObject = new Legends({
                 map: this.map,
@@ -1061,6 +1314,12 @@ define([
             return this.legendObject;
         },
 
+        /**
+        * create the list of all available operational layer URLs to display the legends panel for Webmap
+        * @param {array} webMapLayers collection of webmap operational layers object
+        * @param {object} webmapLayerList operation layer URLs list
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _addLayerLegendWebmap: function (webMapLayers, webmapLayerList, hasLayers) {
             var mapServerArray = [], i, j, legendObject, layer;
             for (j = 0; j < webMapLayers.length; j++) {
@@ -1070,22 +1329,21 @@ define([
                             layer = webMapLayers[j].url + "/" + webMapLayers[j].layers[i].id;
                             if (webMapLayers[j].layers[i].layerDefinition && webMapLayers[j].layers[i].layerDefinition.drawingInfo) {
                                 hasLayers = true;
-                                //  webmapLayerList.push(layer);
                                 webmapLayerList[layer] = webMapLayers[j].layers[i];
                             } else {
-                                mapServerArray.push(layer);
+                                mapServerArray.push({ "url": layer, "title": webMapLayers[j].layers[i].name });
                             }
                         }
                     } else if (webMapLayers[j].layerObject.layerInfos) {
                         for (i = 0; i < webMapLayers[j].layerObject.layerInfos.length; i++) {
                             layer = webMapLayers[j].url + "/" + webMapLayers[j].layerObject.layerInfos[i].id;
-                            mapServerArray.push(layer);
+                            mapServerArray.push({ "url": layer, "title": webMapLayers[j].layerObject.layerInfos[i].name });
                         }
                     } else {
-                        mapServerArray.push(webMapLayers[j].url);
+                        mapServerArray.push({ "url": webMapLayers[j].url, "title": webMapLayers[j].title });
                     }
                 } else {
-                    mapServerArray.push(webMapLayers[j].url);
+                    mapServerArray.push({ "url": webMapLayers[j].url, "title": webMapLayers[j].title });
                 }
             }
             if (!hasLayers) {
@@ -1096,6 +1354,18 @@ define([
             topic.publish("setMaxLegendLength");
         },
 
+        /**
+        * create infoWindow fields and set values for display
+        * @param {object} anchorPoint selected mapPoint
+        * @param {object} geometry selected graphic layer geometry
+        * @param {object} attributes attributes of a selected graphics layer
+        * @param {object} fields fields of a selected graphics layer
+        * @param {int} infoIndex Layer order specified in operationLayerSettings collection
+        * @param {array} featureArray feature query results collection
+        * @param {int} count index of the feature of a featureArray
+        * @param {boolean} zoomToFeature value sepecifying whether to zoom on the selected graphics or not
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _createInfoWindowContent: function (anchorPoint, geometry, attributes, fields, infoIndex, featureArray, count, zoomToFeature) {
             try {
                 var infoPopupFieldsCollection, infoPopupHeight, infoPopupWidth, fieldInfos,
@@ -1170,7 +1440,6 @@ define([
                                 }
                             }
                         }
-
                         for (j = 0; j < fields.length; j++) {
                             if (fields[j].type === "esriFieldTypeDate") {
                                 if (attributes[fields[j].name]) {
@@ -1184,7 +1453,6 @@ define([
                                 }
                             }
                         }
-
                         if (fieldInfos.typeIdField && attributes[fieldInfos.typeIdField]) {
                             for (k = 0; k < fieldInfos.types.length; k++) {
                                 if (attributes[fieldInfos.typeIdField] === fieldInfos.types[k].id) {
@@ -1209,7 +1477,6 @@ define([
                                 }
                             }
                         }
-
                         for (key = 0; key < infoPopupFieldsCollection.length; key++) {
                             divInfoRow = domConstruct.create("div", {
                                 "className": "esriCTDisplayRow"
@@ -1235,10 +1502,7 @@ define([
                                 this.divInfoFieldValue.innerHTML = fieldNames;
                             }
                         }
-
-
                     }
-
                 }
                 if (dojo.operationLayerSettings[infoIndex].infoWindowData && dojo.operationLayerSettings[infoIndex].infoWindowData.infoWindowHeader) {
                     infoTitle = string.substitute(dojo.operationLayerSettings[infoIndex].infoWindowData.infoWindowHeader, attributes);
@@ -1253,6 +1517,11 @@ define([
             }
         },
 
+        /**
+        * set infoWindow fields values of an operational layer
+        * @param {object} queryURL operation layer URL
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _getLayerFieldsInfo: function (queryURL) {
             var layerId, lastIndex, layerIndex, layerURLwithSlash, layerURL, layerFieldsInfo = {};
             layerFieldsInfo.isLayerAvailable = false;
@@ -1283,22 +1552,10 @@ define([
             return layerFieldsInfo;
         },
 
-        _validateAvailableLayers: function (queryURL, layer) {
-            var lastIndex, layerIndex, layerURLwithSlash, layerURL, isLayerAvailable = false;
-            lastIndex = queryURL.lastIndexOf('/');
-            layerIndex = queryURL.substr(lastIndex + 1);
-            layerURLwithSlash = queryURL.substring(0, lastIndex + 1);
-            layerURL = queryURL.substring(0, lastIndex);
-            if (layer.url) {
-                if (queryURL === layer.url) {
-                    isLayerAvailable = true;
-                } else if ((layerURL === layer.url || layerURLwithSlash === layer.url) && array.indexOf(layer.visibleLayers, parseInt(layerIndex, 10)) > -1) {
-                    isLayerAvailable = true;
-                }
-            }
-            return isLayerAvailable;
-        },
-
+        /**
+        * open the URL displayed in infoWindow
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _openDetailWindow: function () {
             var link = domAttr.get(this, "link");
             window.open(link);
@@ -1312,6 +1569,17 @@ define([
             return new Date(localTimestamp.getTime() + (localTimestamp.getTimezoneOffset() * 60000));
         },
 
+        /**
+        * change the map extent as per the selected infoWindow mapPoint and set infoWindow position
+        * @param {object} mapPoint selected mapPoint
+        * @param {object} infoTitle title of an infoWindow
+        * @param {div} divInfoDetailsTab div element of infoWindow
+        * @param {object} infoPopupWidth width of an infoWindow given in configuration file
+        * @param {int} infoPopupHeight height of an infoWindow given in configuration file
+        * @param {int} count index of the feature of a featureArray
+        * @param {boolean} zoomToFeature value sepecifying whether or not to zoom the map on the selected graphics
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _setInfoWindowZoomLevel: function (mapPoint, infoTitle, divInfoDetailsTab, infoPopupWidth, infoPopupHeight, count, zoomToFeature) {
             var extentChanged, screenPoint, zoomDeferred;
             if (this.map.getLevel() !== dojo.configData.ZoomLevel && zoomToFeature) {
@@ -1338,9 +1606,13 @@ define([
             }
         },
 
+        /**
+        * get the map extent fron given point
+        * @param {object} mapPoint selected mapPoint
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _calculateCustomMapExtent: function (mapPoint) {
             var width, height, ratioHeight, totalYPoint, infoWindowHeight, xmin, ymin, xmax, ymax;
-
             width = this.map.extent.getWidth();
             height = this.map.extent.getHeight();
             ratioHeight = height / this.map.height;
@@ -1353,7 +1625,11 @@ define([
             return new esri.geometry.Extent(xmin, ymin, xmax, ymax, this.map.spatialReference);
         },
 
-        //Fetch the geometry type of the mapPoint
+        /**
+        * get the mapPoint from different types of selected geometry
+        * @param {object} geometry selected geometry
+        * @memberOf widgets/mapSettings/mapSettings
+        */
         _getMapPoint: function (geometry) {
             var selectedMapPoint, mapPoint, rings, points;
             if (geometry.type === "point") {
@@ -1374,6 +1650,7 @@ define([
             }
             return selectedMapPoint;
         },
+
         /**
         * return current map instance
         * @return {object} Current map instance

@@ -19,6 +19,7 @@ html
 {
 	height:100%;
 	width:100%;
+	overflow: hidden;
 }
 
 body
@@ -91,7 +92,6 @@ body
 .modelBody
 {
     position:relative !important;
-    overflow: hidden;
     margin-top: 0px !important;
 }
 
@@ -216,6 +216,12 @@ body
     height: 48px;
     padding: 5px 0 2px 5px;
     float: left;
+}
+
+.esriCTApplicationIcon
+{
+    height: 48px;
+    width: 50px;
 }
 
 /* End of Application Header */
@@ -1212,7 +1218,7 @@ body
 .esriCTDisplayField
 {
     color: #6e6e6e;
-    width: 50%;
+    width: 49%;
     vertical-align: top;
     font-size: 11px !important;
     float: left;
@@ -1221,10 +1227,11 @@ body
 .esriCTValueField
 {
     color: #6e6e6e;
-    width: 50%;
+    width: 49%;
     font-size: 11px !important;
     vertical-align: top;
     float: right;
+    margin-left: 5px;
 }
 
 .esriCTInfoDetailsTab
@@ -2117,6 +2124,18 @@ span .dijitReset .dijitInline .dijitButtonText
     border-width: medium 0 0;
     height: 20px;
     padding: 7px 7px 4px;
+}
+
+.claro .dijitDialogTitle
+{
+    padding: 0 1px;
+    font-size: 1.091em;
+    color: #000000;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 260px;
+    display: inline-block;
 }
 
 .esriCTSelect
