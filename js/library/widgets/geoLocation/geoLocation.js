@@ -95,7 +95,7 @@ define([
             * @param {object} position Co-ordinates of device location in spatialReference of wkid:4326
             */
             navigator.geolocation.getCurrentPosition(lang.hitch(this, function (position) {
-                mapPoint = new Point(position.coords.longitude, position.coords.latitude, new SpatialReference({
+                mapPoint = new Point(Number(position.coords.longitude), Number(position.coords.latitude), new SpatialReference({
                     wkid: 4326
                 }));
 

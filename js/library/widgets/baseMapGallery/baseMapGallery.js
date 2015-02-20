@@ -30,8 +30,12 @@ define([
     "dijit/_WidgetsInTemplateMixin",
     "esri/layers/ArcGISTiledMapServiceLayer",
     "esri/layers/OpenStreetMapLayer",
-    "dojo/topic"
-], function (declare, domConstruct, array, lang, on, dom, query, template, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, ArcGISTiledMapServiceLayer, OpenStreetMapLayer, topic) {
+    "dojo/topic",
+    "esri/layers/ArcGISDynamicMapServiceLayer",
+    "esri/layers/ArcGISImageServiceLayer",
+    "esri/layers/ImageParameters",
+    "esri/layers/ImageServiceParameters"
+], function (declare, domConstruct, array, lang, on, dom, query, template, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, ArcGISTiledMapServiceLayer, OpenStreetMapLayer, topic, ArcGISDynamicMapServiceLayer, ArcGISImageServiceLayer, ImageParameters, ImageServiceParameters) {
 
     //========================================================================================================================//
 
@@ -148,6 +152,19 @@ define([
                 this.enableToggling = false;
                 if (basemapLayers.layerType === "OpenStreetMap") {
                     layer = new OpenStreetMapLayer({ id: basemapLayerId, visible: true });
+                } else if (basemapLayers.layerType === "ArcGISMapServiceLayer") {
+                    imageParameters = new ImageParameters();
+                    layer = new ArcGISDynamicMapServiceLayer(basemapLayers.MapURL, {
+                        "imageParameters": imageParameters,
+                        id: basemapLayerId
+                    });
+                } else if (basemapLayers.layerType === "ArcGISImageServiceLayer") {
+                    params = new ImageServiceParameters();
+                    layer = new ArcGISImageServiceLayer(basemapLayers.MapURL, {
+                        imageServiceParameters: params,
+                        id: basemapLayerId,
+                        opacity: 0.75
+                    });
                 } else {
                     layer = new ArcGISTiledMapServiceLayer(basemapLayers.MapURL, { id: basemapLayerId, visible: true });
                 }

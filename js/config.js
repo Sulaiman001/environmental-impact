@@ -106,12 +106,13 @@ define([], function () {
 
         // Draw tab AOI definition labels
         // Title: Draw tab title
-        // AddressSearchHintLabel: Specifty text to display as a hint above addres search
+        // AddressSearchHintLabel: Specify text to display as a hint above address search
         // DefineAOILabel: Specify text to display as a hint to define AOI
         DrawTab: {
             Title: "Draw",
             AddressSearchHintLabel: "Navigate to geography",
-            DefineAOILabel: "Use the Drawing tools to define your AOI"
+            DefineAOILabel: "Use the Drawing tools to define your AOI",
+            SelectFeaturesLabel: "Select features from the map"
         },
 
         // Shapefile tab AOI definition labels
@@ -142,7 +143,7 @@ define([], function () {
         // Configure operational layers  below. The order of displaying layers is reversed on map. The last configured layer is displayed on top.
         // ServiceURL: URL of the layer.
         // LoadAsServiceType: Field to specify if the operational layers should be added as dynamic map service layer or feature layer.
-        // Supported service types are 'dynamic' or 'feature'.
+        //                    Supported service types are 'dynamic' or 'feature'.
         OperationalLayers: [{
             ServiceURL: "http://54.241.236.56:6080/arcgis/rest/services/EIAPoly/MapServer/0",
             LoadAsServiceType: "feature"
@@ -165,7 +166,11 @@ define([], function () {
         // SearchExpression: Configure the query expression to be used for search.
         // QuickSummaryReportFields: Specify fields to summarize on in the quick summary report.
         // SummaryStatisticField: Specify field name containing area for polygon layer, length for polyline layer and empty string for point layer. Ignored for point layers.
+        // SummaryStatisticFieldUnits: Specify units for SummaryStatisticField. Supported units are as listed below:
+        //                             Length units: "YARDS", "FEET", "KILOMETERS", "METERS", "MILES", "NAUTICAL_MILES"
+        //                             Area units: "SQUARE_FEET", "SQUARE_KILOMETERS", "SQUARE_METERS", "SQUARE_MILES", "SQUARE_YARDS", "HECTARES", "ACRES", "ARES"
         // DetailSummaryReportFields:  Specify fields to summarize on in the detailed summary report.
+        // UnifiedSearch: Specify a Boolean value true/false which indicates whether to include the layer in Unified search or not.
 
         SearchSettings: [{
             Title: "EIAPoly",
@@ -175,6 +180,7 @@ define([], function () {
             SearchExpression: "UPPER(FEATURE_NA) LIKE UPPER('%${0}%')",
             QuickSummaryReportFields: ["COUNTY_NAM"],
             SummaryStatisticField: "",
+            SummaryStatisticFieldUnits: "",
             DetailSummaryReportFields: ["COUNTY_NUM"],
             UnifiedSearch: "true"
         }, {
@@ -185,6 +191,7 @@ define([], function () {
             SearchExpression: "UPPER(MANAME) LIKE UPPER('%${0}%')",
             QuickSummaryReportFields: ["MANAME", "MAJORMA"],
             SummaryStatisticField: "Shape_Area",
+            SummaryStatisticFieldUnits: "SQUARE_METERS",
             DetailSummaryReportFields: ["COUNTY", "MGRCITY"],
             UnifiedSearch: "true"
         }],
@@ -391,12 +398,12 @@ define([], function () {
         GeometryService: "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer",
 
         // Set GP service for creating AOI from shapefile and uploading shapefile for analysis
-        ShapefileTools: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_5/EnvironmentalImpactTools/GPServer/ShapefileTools",
+        ShapefileTools: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_6/EnvironmentalImpactTools/GPServer/ShapefileTools",
 
         // ReportDownloadSettings: Settings for downloading quick and detailed summary reports in PDF format
         // GPServiceURL: url to geoprocessing service
         ReportDownloadSettings: {
-            GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_5/EnvironmentalImpactTools/GPServer/GeneratePDFReport",
+            GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_6/EnvironmentalImpactTools/GPServer/GeneratePDFReport",
             ReportSettings: [
                 {
                     Type: "Quick",
@@ -419,19 +426,19 @@ define([], function () {
                 Enabled: true,
                 Label: "Excel",
                 Format: "Excel",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_5/EnvironmentalImpactTools/GPServer/ClipToExcel"
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_6/EnvironmentalImpactTools/GPServer/ClipToExcel"
             },
             {
                 Enabled: true,
                 Label: "File GDB",
                 Format: "File Geodatabase - GDB - .gdb",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_5/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_6/EnvironmentalImpactTools/GPServer/ClipZipandShip"
             },
             {
                 Enabled: true,
                 Label: "Shapefile",
                 Format: "Shapefile - SHP - .shp",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_5/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_6/EnvironmentalImpactTools/GPServer/ClipZipandShip"
             }
         ],
 
@@ -452,8 +459,6 @@ define([], function () {
         //------------------------------------------------------------------------------------------------------------------------
         // Set widgets settings such as widget title, widgetPath, mapInstanceRequired to be displayed in header panel
         // WidgetPath: path of the widget respective to the widgets package.
-        // MapInstanceRequired: true if widget is dependent on the map instance.
-
         AppHeaderWidgets: [{
             WidgetPath: "widgets/locator/locator"
         }, {
@@ -465,6 +470,5 @@ define([], function () {
         }, {
             WidgetPath: "widgets/help/help"
         }]
-
     };
 });

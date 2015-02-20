@@ -74,7 +74,6 @@ define({
         legendLoadingText: "@it@ Loading...",
         noLegend: "@it@ No Legend Available",
         sliderDisplayText: "@it@ Show results within ${defaultDistance}",
-        selectFeaturesText: "@it@ Select features from the map",
         bufferSliderText: "@it@ Buffer distance (Optional for polygon AOIs)",
         orText: "@it@ OR",
         latitude: "@it@ Latitude",
@@ -94,7 +93,7 @@ define({
         widgetNotLoaded: "@it@ Unable to load widgets.",
         shareFailed: "@it@ Unable to share.",
         emptyInfoWindowTitle: "@it@ No feature details",
-        emptyInfoWindowContent: "@it@ InfoWindow is disabled for the selected layer in webmap.",
+        emptyInfoWindowContent: "@it@ InfoWindow is disabled for the selected layer.",
         bufferSliderValue: "@it@ Buffer slider should not be set to zero distance",
         addLatitudeValue: "@it@ Please enter valid Latitude",
         addLongitudeValue: "@it@ Please enter valid Longitude.",
@@ -118,7 +117,13 @@ define({
         portalUrlNotFound: "@it@ Portal URL cannot be empty",
 	    queryRequestStringExceeded : "@it@ The length of the query string for this request exceeds the configured maxQueryStringLength value.",
 	    defineStartPointMessage : "@it@ Please define start point",
-        unableToShareURL : "@it@ Application could not be shared with current data"
+        unableToShareURL : "@it@ Application could not be shared with current data",
+        getLayerInfoError: "@it@ Unable to get layer info for layer",
+        simplifyGeometryFailed: "@it@ Failed to simplify geometry",
+        incorrectFields: "@it@ Incorrect fields configured",
+        noFieldsConfigured: "@it@ No fields configured",
+        incorrectStatisticFieldUnit: "@it@ Incorrect Statistic field unit specified for ",
+        unionGeometryFailed: "@it@ Failed to union geometry"
     },
     // End of shared nls
 

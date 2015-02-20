@@ -75,6 +75,7 @@ define([
         */
         postCreate: function () {
             this._createLegendContainerUI();
+            topic.publish("legendBoxCreated");
             var currentExtentLegend, legendDefaultExtent, LegendWidthChange;
             this.logoContainer = query(".esriControlsBR")[0];
             if (!this.logoContainer) {
@@ -86,6 +87,10 @@ define([
 
             topic.subscribe("setLegendPositionDown", lang.hitch(this, function () {
                 this._setLegendPositionDown();
+            }));
+
+            topic.subscribe("setLegendWidth", lang.hitch(this, function () {
+                this._resetLegendContainer();
             }));
 
             if (window.location.toString().split("?extent=").length > 1) {
@@ -109,7 +114,7 @@ define([
                     this._updateLegend(evt.extent);
                 }));
             }
-            if (dojo.query('.esriCTdivLegendbox').length > 0 && dojo.query('.esriCTHeaderReportContainer').length > 0) {
+            if (dojo.query('.esriCTdivLegendbox').length > 0 && dojo.query('.esriCTHeaderReportContainer').length > 0 && dojo.query('.esriCTReportsImgSelected').length > 0) {
                 LegendWidthChange = document.body.clientWidth - parseInt(dojo.query('.esriCTHeaderReportContainer')[0].clientWidth, 10);
                 domStyle.set(dojo.query('.esriCTdivLegendbox')[0], "width", (LegendWidthChange + 2) + 'px');
             }
@@ -117,11 +122,10 @@ define([
 
         _updateLegend: function (geometry) {
             var defQueryArray = [], queryResult, resultListArray = [], queryDefList, i;
-
             this.rendererArray = [];
             this.legendListWidth = [];
-            this._resetLegendContainer();
             domConstruct.empty(this.divlegendContainer);
+            this._resetLegendContainer();
             this._addlegendListWidth(this.legendListWidth);
             domStyle.set(this.divRightArrow, "display", "none");
             domStyle.set(query(".esriCTLeftArrow")[0], "display", "none");
@@ -152,11 +156,11 @@ define([
                             resultListArray.push(result[i][1]);
                             if (result[i][1].hasDrawingInfo) {
                                 if (this.rendererArray[i].drawingInfo) {
-                                    this._createLegendSymbol(this.rendererArray[i].drawingInfo, this.rendererArray[i].name);
+                                    this._createLegendSymbol(this.rendererArray[i].drawingInfo, this.rendererArray[i].title);
                                 } else if (this.rendererArray[i].layerDefinition) {
                                     this._createLegendSymbol(this.rendererArray[i].layerDefinition.drawingInfo, this.rendererArray[i].title);
                                 } else {
-                                    this._createLegendSymbol(this.rendererArray[i], this.rendererArray[i].renderer.label);
+                                    this._createLegendSymbol(this.rendererArray[i], this.rendererArray[i].title);
                                 }
                             } else {
                                 this._addLegendSymbol(this.rendererArray[i], this._layerCollection[this.rendererArray[i].layerUrl].layerName);
@@ -199,6 +203,7 @@ define([
                             if (rendererObject && rendererObject.length) {
                                 for (index = 0; index < rendererObject.length; index++) {
                                     rendererObject[index].layerUrl = layer;
+                                    rendererObject[index].title = layerArray[layer].layerName;
                                     this.rendererArray.push(rendererObject[index]);
 
                                     if (layerObject.rendererType === "uniqueValue") {
@@ -220,7 +225,8 @@ define([
                                     this._executeQueryTask(layer, defQueryArray, queryResult, hasDrawingInfo);
                                 }
                             }
-                        } else {
+                        }
+                        else {
                             if (layerObject.drawingInfo) {
                                 rendererObject = layerObject.drawingInfo.renderer;
                             } else {
@@ -229,7 +235,7 @@ define([
 
                             if (rendererObject.type === "uniqueValue") {
                                 for (i = 0; i < rendererObject.uniqueValueInfos.length; i++) {
-                                    this.rendererArray.push({ "renderer": rendererObject.uniqueValueInfos[i] });
+                                    this.rendererArray.push({ "renderer": rendererObject.uniqueValueInfos[i], "title": layerObject.title });
                                     if (layerObject.fieldType === "esriFieldTypeString") {
                                         fieldValue = "'" + rendererObject.uniqueValueInfos[i].value + "'";
                                     } else {
@@ -244,7 +250,7 @@ define([
                                 }
                             } else if (rendererObject.type === "classBreaks") {
                                 for (i = 0; i < rendererObject.classBreakInfos.length; i++) {
-                                    this.rendererArray.push({ "renderer": rendererObject.classBreakInfos[i] });
+                                    this.rendererArray.push({ "renderer": rendererObject.classBreakInfos[i], "title": layerObject.title });
                                     queryResult.where = layerObject.fieldName + ">=" + rendererObject.classBreakInfos[i].minValue + " AND " + layerObject.fieldName + "<=" + rendererObject.classBreakInfos[i].maxValue + " AND " + currentTime.getTime().toString() + "=" + currentTime.getTime().toString();
                                     this._executeQueryTask(layer, defQueryArray, queryResult, hasDrawingInfo);
                                 }
@@ -286,8 +292,7 @@ define([
                             mapLayerUrl = this.map._layers[layer].url + "/" + layerUrlIndex;
                         }
                         if (mapLayerUrl === layerUrl) {
-                            if (this.map._layers[layer].visibleLayers.indexOf(parseInt(layerUrlIndex, 10)) !== -1) {
-
+                            if (array.indexOf(this.map._layers[layer].visibleLayers, parseInt(layerUrlIndex, 10)) !== -1) {
                                 if (this.isExtentBasedLegend && this.map._layers[layer].visibleAtMapScale) {
                                     if (this.map._layers[layer].dynamicLayerInfos) {
                                         if (this.map.__LOD.scale < this.map._layers[layer].dynamicLayerInfos[parseInt(layerUrlIndex, 10)].minScale) {
@@ -482,10 +487,8 @@ define([
             hostedLayers = this._filterHostedFeatureServices(layerArray);
             for (i = 0; i < hostedLayers.length; i++) {
                 params = {
-                    url: hostedLayers[i],
-                    content: {
-                        f: "json"
-                    },
+                    url: hostedLayers[i].url,
+                    content: { f: "json" },
                     handleAs: "json",
                     callbackParamName: "callback"
                 };
@@ -504,23 +507,26 @@ define([
                         }
                     }
                     for (i = 0; i < result.length; i++) {
-                        this.hostedLayersJSON[hostedLayers[i]] = result[i][1];
+                        this.hostedLayersJSON[hostedLayers[i].url] = result[i][1];
+                        this.hostedLayersJSON[hostedLayers[i].url].title = hostedLayers[i].title;
                     }
                     this._displayHostedLayerRenderer();
                     this._addlegendListWidth(this.legendListWidth);
                 }));
             }
             for (index = 0; index < layerArray.length; index++) {
-                if (layerArray[index].match("/FeatureServer")) {
-                    featureLayerUrl = layerArray[index];
-                    layerArray[index] = layerArray[index].replace("/FeatureServer", "/MapServer");
-
+                if (layerArray[index].url.match("/FeatureServer")) {
+                    featureLayerUrl = layerArray[index].url;
+                    layerArray[index].url = layerArray[index].url.replace("/FeatureServer", "/MapServer");
                 } else {
                     featureLayerUrl = null;
                 }
-                mapServerURL = layerArray[index].split("/");
+                mapServerURL = layerArray[index].url.split("/");
                 layerIndex = mapServerURL[mapServerURL.length - 1];
                 if (isNaN(layerIndex) || layerIndex === "") {
+                    if (layerIndex == "") {
+                        mapServerURL.splice(mapServerURL.length - 1, 1);
+                    }
                     mapServerURL = mapServerURL.join("/");
                     this.mapServerArray.push({ "url": mapServerURL, "featureLayerUrl": featureLayerUrl, "all": true });
                     //this.indexesForLayer.push("all");
@@ -555,7 +561,7 @@ define([
                 legendCreated = [];
                 for (index = 0; index < result.length; index++) {
                     if (result[index][1]) {
-                        legendCreated.push(this._createLegendList(result[index][1], this.mapServerArray[index]));
+                        legendCreated.push(this._createLegendList(result[index][1], this.mapServerArray[index], layerArray));
                     }
                 }
                 if (!legendCreated.length) {
@@ -670,16 +676,23 @@ define([
                 this.divLegendlist.appendChild(divLegendImage);
             } else {
                 divSymbol = document.createElement("div");
-                if (color.a) {
-                    bgColor = 'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + color.a + ')';
-                    divSymbol.style.background = bgColor;
+                if (color.r || color.r === 0) {
+                    if (color.a || color.a === 0) {
+                        bgColor = 'rgba(' + color.r + ',' + color.g + ',' + color.b + ',' + color.a + ')';
+                    } else {
+                        bgColor = 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')';
+                    }
                 } else {
                     if (Color.fromArray(color).toHex()) {
-                        divSymbol.style.backgroundColor = Color.fromArray(color).toHex();
+                        bgColor = Color.fromArray(color).toHex();
                     } else {
-                        divSymbol.style.backgroundColor = Color.fromArray([255, 0, 255, 5]).toHex();
+                        bgColor = Color.fromArray([255, 0, 255]).toHex();
+                    }
+                    if (color.length > 3) {
+                        divSymbol.style.opacity = color[3];
                     }
                 }
+                divSymbol.style.background = bgColor;
                 divSymbol.style.height = height + "px";
                 divSymbol.style.width = width + "px";
                 divSymbol.style.marginTop = "8px";
@@ -702,8 +715,8 @@ define([
         _filterHostedFeatureServices: function (layerArray) {
             var hostedLayers = [], layerDetails, index;
             for (index = 0; index < layerArray.length; index++) {
-                if (layerArray[index].match("/FeatureServer")) {
-                    layerDetails = layerArray[index].split("/");
+                if (layerArray[index].url.match("/FeatureServer")) {
+                    layerDetails = layerArray[index].url.split("/");
                     if (layerDetails[5] && layerDetails[5].toLowerCase && layerDetails[5].toLowerCase() === "rest") {
                         hostedLayers.push(layerArray[index]);
                         layerArray.splice(index, 1);
@@ -823,8 +836,8 @@ define([
         * create legend list
         * @memberOf widgets/legends/legends
         */
-        _createLegendList: function (layerList, mapServerUrl) {
-            var layerURL, i, j, isLegendCreated = false, layerUrl;
+        _createLegendList: function (layerList, mapServerUrl, layerArray) {
+            var layerURL, i, j, isLegendCreated = false, layerUrl, layerName;
             if (layerList && layerList.layers && layerList.layers.length > 0) {
                 for (i = 0; i < layerList.layers.length; i++) {
                     layerList.layers[i].featureLayerUrl = mapServerUrl.featureLayerUrl;
@@ -838,10 +851,10 @@ define([
                         } else {
                             layerUrl = layerURL;
                         }
-                        if (this._checkLayerVisibility(layerUrl)) {
-                            for (j = 0; j < layerList.layers[i].legend.length; j++) {
-                                this._addLegendSymbol(layerList.layers[i].legend[j], layerList.layers[i].layerName);
-                            }
+
+                        layerName = this._getLayerTitle(layerURL, layerArray);
+                        if (layerName) {
+                            this._layerCollection[layerURL].layerName = layerName;
                         }
                     }
                 }
@@ -850,6 +863,20 @@ define([
             return isLegendCreated;
         },
 
+        /**
+        * get layer title from layerArray
+        * @param {string} layerUrl
+        * @param {array} layerArray
+        * @memberOf widgets/legends/legends
+        */
+        _getLayerTitle: function (layerUrl, layerArray) {
+            var i;
+            for (i = 0; i < layerArray.length; i++) {
+                if (layerArray[i].url === layerUrl) {
+                    return layerArray[i].title;
+                }
+            }
+        },
         /**
         * set legend container width
         * @memberOf widgets/legends/legends
