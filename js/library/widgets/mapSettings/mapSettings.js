@@ -405,7 +405,7 @@ define([
                 for (i = 0; i < layer.layerObject.layerInfos.length; i++) {
                     operationLayer = {};
                     //check the operation layer default visibility
-                    if (array.indexOf(layer.visibleLayers, layer.layerObject.layerInfos[i].id) !== -1) {
+                    if (array.indexOf(layer.layerObject.visibleLayers, layer.layerObject.layerInfos[i].id) !== -1) {
                         //set the opertaion layer title
                         operationLayer.layerTitle = lang.trim(layer.title);
                         //set the opertaion layer ID
@@ -652,9 +652,8 @@ define([
         * @memberOf widgets/mapSettings/mapSettings
         */
         _mapOnLoad: function () {
-            var home, extentPoints, mapDefaultExtent, i, imgCustomLogo, imgSource, graphicsLayer, extent, searchSettings;
+            var home, extentPoints, mapDefaultExtent, i, imgCustomLogo, imgSource, graphicsLayer, extent;
             this.operationalLayers = [];
-            searchSettings = dojo.configData.SearchSettings;
             /**
             * set map extent to default extent specified in configuration file
             * @param {string} dojo.configData.DefaultExtent Default extent of map specified in configuration file
@@ -1210,11 +1209,9 @@ define([
         * @memberOf widgets/mapSettings/mapSettings
         */
         _createOperationLayer: function (layer) {
-            var urlArray, lastIndex, tempUrl, url, i, title, searchSettings, infoWindowSettings;
+            var urlArray, lastIndex, tempUrl, url, i, title;
             this.operationLayersCount++;
             this.operationalLayers.push(layer);
-            searchSettings = dojo.configData.SearchSettings;
-            infoWindowSettings = dojo.configData.InfoWindowSettings;
             urlArray = layer.url.split('/');
             lastIndex = urlArray[urlArray.length - 1];
             //create a temp service url
@@ -1237,16 +1234,13 @@ define([
                     url = tempUrl + parseInt(layer.visibleLayers[i], 10);
                     this._populateOperationLayerFields(layer, url, title, layer.visibleLayers[i]);
                 }
-                if (this.operationLayersCount === dojo.configData.OperationalLayers.length) {
-                    this._createSearchSettings();
-                }
             } else {
                 //layer is added as feature service
                 this._populateOperationLayerFields(layer, tempUrl, title, urlArray[urlArray.length - 1]);
-                if (this.operationLayersCount === dojo.configData.OperationalLayers.length) {
-                    this._createSearchSettings();
-                    this._addLayerLegend(this.operationalLayers);
-                }
+            }
+            if (this.operationLayersCount === dojo.configData.OperationalLayers.length) {
+                this._createSearchSettings();
+                this._addLayerLegend(this.operationalLayers);
             }
         },
 
