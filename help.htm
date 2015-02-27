@@ -35,28 +35,39 @@
 <body>
  	<div style="z-index: 1000; left: 5%; overflow: visible; width: 90%; position: absolute; top: 20px; height: 500px">
 	 <h1>Online Help:</h1>
-	    <p>The<b> Environmental Impact Assessment</b> application allows the public and individuals within an organization to determine potential impacts of development on the natural environment.</p>
+	    <p>The<b> Environmental Impact</b> application helps environmental agencies and organizations evaluate and report on the potential impact of development, research, or other activities on the natural environment, sensitive species, and other important factors. Access to this information facilitates better decisions and helps to ensure that investments in the area are sustainable and minimize disruption to the natural environment.</p>
         <h4><u>Finding Information</u></h4>
-        <p>Individuals and organizations can use the Environmental Impact Assessment application to define an area of interest based on a particular development project, and generate a report of what environmental features may be impacted by that project.  Results can be viewed directly within the application, or can be downloaded for further distribution and use.</p>
+        <p>Use the Environmental Impact application to define an area of interest based for particular project or activity, then generate a report of what environmental features may be impacted.  Results can be viewed directly within the application, or can be downloaded as PDF reports for further distribution and use.</p>
         <h4><u>Map Based Navigation</u></h4>
         <p>There are several ways to interact with the map:</p>
             <ol>
-                <li>Tap a point of interest you&#39;d like to see</li>
-                <li>Hold down the shift key and drag a box on the map to zoom in</li>
-                <li>Hold down Ctrl+Shift to zoom out</li>
-                <li>Roll your mouse roller to zoom in/out</li>
+                <li>Tap a point of interest you&#39;d like to see.</li>
+                <li>Hold down the shift key and drag a box on the map to zoom in.</li>
+                <li>Hold down Ctrl+Shift to zoom out.</li>
+                <li>Roll your mouse roller to zoom in/out.</li>
+                <li>On touch devices, use standard pan and pinch gestures to navigate.</li>
             </ol> 
-        <h4><u>Searching</u></h4>
-        <p>Define your area of interest (AOI) to discover environmental features:</p>
+        <h4><u>Define Area of Interest (AOI)</u></h4>
+        <p>Define your area of interest to discover environmental features:</p>
             <ul>
-                <li>Use the Placename option to define your area of interest using an address</li>
-                <li>Use drawing tools or select features to define your area of interest</li>
-                <li>Define your area of interest by uploading a zipped shapefile</li>
-                <li>Use coordinates and a series of bearings and distances to define your area of interest</li>
+                <li>Use the Placename option to search using an address, then specify a buffer distance to define your area of interest.</li>
+                <li>Use drawing tools or select features to define your area of interest.  To select features, draw lines, or draw polygons, single-click on the map to start, then double-click on the map to finish.</li>
+                <li>Define your area of interest by uploading a zipped shapefile.  The shapefile contents must be at the root location in the zipped folder and contain spatial reference information.</li>
+                <li>Use coordinates and a series of bearings and distances, then specify a buffer distance to define your area of interest.</li>
             </ul>
-        <p>Click on the Report panel to view a summary of environmental features that may be affected by development in your defined AOI.  View results directly in the application, or download summary reports for further distribution and use.</p>
-        <h4><u>Browser Compatibility</u></h4>
-        <p>The Environmental Impact Assessment application is supported on desktops and tablet devices with the following browsers: Microsoft Internet Explorer 8/9/10/11, Mozilla Firefox, Google Chrome, and Apple Safari.<br/><br/></p>
+        <h4><u>Generate Report</u></h4>
+        <p>Once you have defined your AOI, click on the Report panel to view a summary of environmental features that may be affected in your defined AOI.  View results directly in the application, or download summary reports for further distribution and use.</p>
+         <ul>
+             <li>The Quick Summary option will report the total area, length or count of environmental features that intersect with the defined AOI.</li>
+             <li>The Detailed Summary option will calculate the extent to which the AOI intersects with each environmental feature and report the potentially impacted area, length or count for each.</li>
+         </ul>
+         <h4><u>Export Data</u></h4>
+         <p>Optionally, download data from the application to support further analyses.</p>
+         <ul>
+             <li>Use the Excel option to download tabular information for each of the impacted layers in Microsoft Excel format.</li>
+             <li>Use the File GDB (file geodatabase) option to download a file geodatabase containing feature classes for each environmental layer.  Note that the download will include environmental layers even if they are not impacted by the defined AOI.</li>
+             <li>Use the Shapefile option to download information for each environmental layer in shapefile format.  Note that the download will include environmental layers even if they are not impacted by the defined AOI.</li>
+         </ul>
     </div>
 </body>
 </html>
