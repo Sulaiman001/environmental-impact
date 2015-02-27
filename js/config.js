@@ -37,7 +37,7 @@ define([], function () {
         // GENERAL SETTINGS
         // ------------------------------------------------------------------------------------------------------------------------
         // Set application title
-        ApplicationName: "Environmental Impact",
+        ApplicationName: "Environmental Impact (Water)",
 
         // Set application icon path
         ApplicationIcon: "/js/library/themes/images/logoGreen.png",
@@ -56,7 +56,7 @@ define([], function () {
 
         // Set splash window content - Message that appears when the application starts
         SplashScreen: {
-            SplashScreenContent: "Lorem ipsum dolor sit er elit lamet, consectetaur cillium adipisicing pecu, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Nam liber te conscient to factor tum poen legum odioque civiuda. Lorem ipsum dolor sit er elit lamet, consectetaur cillium adipisicing pecu, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Nam liber te conscient to factor tum poen legum odioque civiuda.",
+            SplashScreenContent: "The Environmental Impact application helps environmental agencies and organizations evaluate and report on the potential impact of development, research, or other activities on the natural environment, sensitive species, and other important factors. Access to this information facilitates better decisions and helps to ensure that investments in the area are sustainable and minimize disruption to the natural environment.<br><br>Search for a location, define a project area by drawing on the map, uploading a shapefile, or entering a traverse, and generate reports that can be shared with others.",
             IsVisible: true
         },
 
@@ -85,13 +85,13 @@ define([], function () {
         DefaultExtent: "-9136659, 3233348, -9123608, 3239559",
 
         // Choose if you want to use WebMap or Map Services for operational layers. If using WebMap, specify WebMapId within quotes, otherwise leave this empty and configure operational layers
-        WebMapId: "",
+        WebMapId: "173483cc9e3b494a8cc22dfeded6670d",
 
         // Set Area Of Interest Tab Text
-        AOITabText: "Area of Interest",
+        AOITabText: "1. Area of Interest",
 
         // Set Report Tab Text
-        ReportTabText: "Report",
+        ReportTabText: "2. Report",
 
         // ------------------------------------------------------------------------------------------------------------------------
         // AOI TAB SETTINGS
@@ -144,13 +144,7 @@ define([], function () {
         // ServiceURL: URL of the layer.
         // LoadAsServiceType: Field to specify if the operational layers should be added as dynamic map service layer or feature layer.
         //                    Supported service types are 'dynamic' or 'feature'.
-        OperationalLayers: [{
-            ServiceURL: "http://54.241.236.56:6080/arcgis/rest/services/EIAPoly/MapServer/0",
-            LoadAsServiceType: "feature"
-        }, {
-            ServiceURL: "http://54.241.236.56:6080/arcgis/rest/services/EIAPoly/MapServer/7",
-            LoadAsServiceType: "feature"
-        }],
+        OperationalLayers: [],
 
         // ------------------------------------------------------------------------------------------------------------------------
         // SEARCH SETTINGS
@@ -173,26 +167,81 @@ define([], function () {
         // UnifiedSearch: Specify a Boolean value true/false which indicates whether to include the layer in Unified search or not.
 
         SearchSettings: [{
-            Title: "EIAPoly",
-            QueryLayerId: "0",
-            SearchDisplayTitle: "Placenames in Florida",
-            SearchDisplayFields: "${FEATURE_NA}",
-            SearchExpression: "UPPER(FEATURE_NA) LIKE UPPER('%${0}%')",
-            QuickSummaryReportFields: ["COUNTY_NAM"],
-            SummaryStatisticField: "",
-            SummaryStatisticFieldUnits: "",
-            DetailSummaryReportFields: ["COUNTY_NUM"],
+            Title: "EnvironmentalImpact",
+            QueryLayerId: "2",
+            SearchDisplayTitle: "Seagrass Areas",
+            SearchDisplayFields: "${DESCRIPT}",
+            SearchExpression: "UPPER(DESCRIPT) LIKE UPPER('%${0}%')",
+            QuickSummaryReportFields: ["DESCRIPT"],
+            SummaryStatisticField: "SHAPE_Area",
+			SummaryStatisticFieldUnits: "SQUARE_METERS",
+            DetailSummaryReportFields: ["DESCRIPT", "SOURCEDT"],
+            UnifiedSearch: "false"
+        },{
+            Title: "EnvironmentalImpact",
+            QueryLayerId: "3",
+            SearchDisplayTitle: "Tidal Flats",
+            SearchDisplayFields: "${DESCRIPT}",
+            SearchExpression: "UPPER(DESCRIPT) LIKE UPPER('%${0}%')",
+            QuickSummaryReportFields: ["DESCRIPT"],
+            SummaryStatisticField: "SHAPE_Area",
+			SummaryStatisticFieldUnits: "SQUARE_METERS",
+            DetailSummaryReportFields: ["DESCRIPT", "SOURCEDT"],
+            UnifiedSearch: "false"
+        },{
+            Title: "EnvironmentalImpact",
+            QueryLayerId: "4",
+            SearchDisplayTitle: "Coral Hardbottom Areas",
+            SearchDisplayFields: "${DESCRIPT}",
+            SearchExpression: "UPPER(DESCRIPT) LIKE UPPER('%${0}%')",
+            QuickSummaryReportFields: ["DESCRIPT"],
+            SummaryStatisticField: "SHAPE_Area",
+			SummaryStatisticFieldUnits: "SQUARE_METERS",
+            DetailSummaryReportFields: ["DESCRIPT", "SOURCEDT"],
+            UnifiedSearch: "false"
+        },{
+            Title: "EnvironmentalImpact",
+            QueryLayerId: "5",
+            SearchDisplayTitle: "Mangrove Areas",
+            SearchDisplayFields: "${DESCRIPT}",
+            SearchExpression: "UPPER(DESCRIPT) LIKE UPPER('%${0}%')",
+            QuickSummaryReportFields: ["DESCRIPT"],
+            SummaryStatisticField: "SHAPE_Area",
+			SummaryStatisticFieldUnits: "SQUARE_METERS",
+            DetailSummaryReportFields: ["DESCRIPT", "SOURCEDT"],
+            UnifiedSearch: "false"
+        },{
+            Title: "EnvironmentalImpact",
+            QueryLayerId: "6",
+            SearchDisplayTitle: "Salt Marsh Areas",
+            SearchDisplayFields: "${DESCRIPT}",
+            SearchExpression: "UPPER(DESCRIPT) LIKE UPPER('%${0}%')",
+            QuickSummaryReportFields: ["DESCRIPT"],
+            SummaryStatisticField: "SHAPE_Area",
+			SummaryStatisticFieldUnits: "SQUARE_METERS",
+            DetailSummaryReportFields: ["DESCRIPT", "SOURCEDT"],
+            UnifiedSearch: "false"
+        },{
+            Title: "EnvironmentalImpact",
+            QueryLayerId: "7",
+            SearchDisplayTitle: "Conservation Areas",
+            SearchDisplayFields: "${NAME}",
+            SearchExpression: "UPPER(NAME) LIKE UPPER('%${0}%')",
+            QuickSummaryReportFields: ["NAME", "MANAGER", "MGRINST"],
+            SummaryStatisticField: "Shape_Area",
+			SummaryStatisticFieldUnits: "SQUARE_METERS",
+            DetailSummaryReportFields: ["SITEID", "NAME", "AREATYPE", "OWNER", "COUNTY", "MANAGER", "MGRINST", "MGRCITY", "MGRPHONE"],
             UnifiedSearch: "true"
         }, {
-            Title: "EIAPoly",
-            QueryLayerId: "7",
-            SearchDisplayTitle: "Florida Managed Areas",
-            SearchDisplayFields: "${MANAME}",
-            SearchExpression: "UPPER(MANAME) LIKE UPPER('%${0}%')",
-            QuickSummaryReportFields: ["MANAME", "MAJORMA"],
+            Title: "EnvironmentalImpact",
+            QueryLayerId: "8",
+            SearchDisplayTitle: "Marine Protected Areas",
+            SearchDisplayFields: "${NAME}",
+            SearchExpression: "UPPER(NAME) LIKE UPPER('%${0}%')",
+            QuickSummaryReportFields: ["NAME", "MGMTAGENCY"],
             SummaryStatisticField: "Shape_Area",
-            SummaryStatisticFieldUnits: "SQUARE_METERS",
-            DetailSummaryReportFields: ["COUNTY", "MGRCITY"],
+			SummaryStatisticFieldUnits: "SQUARE_METERS",
+            DetailSummaryReportFields: ["SITEID", "NAME", "GOVBODY", "MGMTAGENCY"],
             UnifiedSearch: "true"
         }],
 
@@ -279,59 +328,7 @@ define([], function () {
         //                    These fields should be present in the layer referenced by 'QueryLayerId' specified under section 'SearchSettings'
         // DisplayText: Caption to be displayed instead of field alias names. Set this to empty string ("") if you wish to display field alias names as captions.
         // FieldName: Field used for displaying the value
-        InfoWindowSettings: [{
-            Title: "EIAPoly",
-            QueryLayerId: "0",
-            InfoWindowHeaderField: "${FEATURE_ID}",
-            InfoWindowData: [{
-                DisplayText: "Feature Name:",
-                FieldName: "${FEATURE_NA}"
-            }, {
-                DisplayText: "Feature Class:",
-                FieldName: "${FEATURE_CL}"
-            }, {
-                DisplayText: "County_Name:",
-                FieldName: "${COUNTY_NAM}"
-            }, {
-                DisplayText: "County Number:",
-                FieldName: "${COUNTY_NUM}"
-            }, {
-                DisplayText: "Date Created:",
-                FieldName: "${DATE_CREAT}"
-            }]
-        }, {
-            Title: "EIAPoly",
-            QueryLayerId: "7",
-            InfoWindowHeaderField: "${MANAME}",
-            InfoWindowData: [{
-                DisplayText: "Name:",
-                FieldName: "${MANAME}"
-            }, {
-                DisplayText: "Type:",
-                FieldName: "${MATYPE}"
-            }, {
-                DisplayText: "Major Name:",
-                FieldName: "${MAJORMA}"
-            }, {
-                DisplayText: "Managing Agency:",
-                FieldName: "${MANAGING_A}"
-            }, {
-                DisplayText: "Owner:",
-                FieldName: "${OWNER}"
-            }, {
-                DisplayText: "Co-owners:",
-                FieldName: "${COOWNERS}"
-            }, {
-                DisplayText: "Comments 1:",
-                FieldName: "${COMMENTS1}"
-            }, {
-                DisplayText: "Comments 2:",
-                FieldName: "${COMMENTS2}"
-            }, {
-                DisplayText: "Manager City:",
-                FieldName: "${MGRCITY}"
-            }]
-        }],
+        InfoWindowSettings: [],
 
         // ------------------------------------------------------------------------------------------------------------------------
         // ADDRESS SEARCH SETTINGS
@@ -364,9 +361,9 @@ define([], function () {
                 height: 35
             },
             DisplayText: "Address",
-            LocatorDefaultAddress: "Grandview Ln N, Bismarck, ND, 58503",
-            LocatorDefaultPlaceNameSearchAddress: "Mulberry, Florida",
-            LocatorDefaultAOIAddress: "Mulberry, Florida",
+            LocatorDefaultAddress: "SE 13th St, Miami, FL",
+            LocatorDefaultPlaceNameSearchAddress: "Largo, Florida",
+            LocatorDefaultAOIAddress: "Sun City, Florida",
             LocatorDefaultAOIBearingAddress: "Mulberry, Florida",
             LocatorParameters: {
                 SearchField: "SingleLine",
@@ -398,12 +395,12 @@ define([], function () {
         GeometryService: "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer",
 
         // Set GP service for creating AOI from shapefile and uploading shapefile for analysis
-        ShapefileTools: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_6/EnvironmentalImpactTools/GPServer/ShapefileTools",
+        ShapefileTools: "http://50.18.115.76:6080/arcgis/rest/services/ShapefileTools/GPServer/ShapefileTools",
 
         // ReportDownloadSettings: Settings for downloading quick and detailed summary reports in PDF format
         // GPServiceURL: url to geoprocessing service
         ReportDownloadSettings: {
-            GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_6/EnvironmentalImpactTools/GPServer/GeneratePDFReport",
+            GPServiceURL: "http://50.18.115.76:6080/arcgis/rest/services/GenerateImpactReport/GPServer/GenerateImpactReport",
             ReportSettings: [
                 {
                     Type: "Quick",
@@ -426,19 +423,19 @@ define([], function () {
                 Enabled: true,
                 Label: "Excel",
                 Format: "Excel",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_6/EnvironmentalImpactTools/GPServer/ClipToExcel"
+                GPServiceURL: "http://50.18.115.76:6080/arcgis/rest/services/ClipToExcel/GPServer/ClipToExcel"
             },
             {
                 Enabled: true,
                 Label: "File GDB",
                 Format: "File Geodatabase - GDB - .gdb",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_6/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+                GPServiceURL: "http://50.18.115.76:6080/arcgis/rest/services/ExtractDataTask/GPServer/Extract%20Data%20Task"
             },
             {
                 Enabled: true,
                 Label: "Shapefile",
                 Format: "Shapefile - SHP - .shp",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_6/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+                GPServiceURL: "http://50.18.115.76:6080/arcgis/rest/services/ExtractDataTask/GPServer/Extract%20Data%20Task"
             }
         ],
 
