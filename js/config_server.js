@@ -187,6 +187,8 @@ define([], function () {
         // SearchExpression: Configure the query expression to be used for search.
         // QuickSummaryReportFields: Specify fields to summarize on in the quick summary report.
         // SummaryStatisticField: Specify field name containing area for polygon layer, length for polyline layer and empty string for point layer. Ignored for point layers.
+	//                        When using the sample data, if you loaded it into a geodatabase format other than file geodatabase for publication, verify that the 
+	//                        SummaryStatisticField matches the field name containing the shape’s area value (e.g. shape_area, shape.area(), etc)
         // SummaryStatisticFieldUnits: Specify units for SummaryStatisticField. Supported units are as listed below:
         //                             Length units: "YARDS", "FEET", "KILOMETERS", "METERS", "MILES", "NAUTICAL_MILES"
         //                             Area units: "SQUARE_FEET", "SQUARE_KILOMETERS", "SQUARE_METERS", "SQUARE_MILES", "SQUARE_YARDS", "HECTARES", "ACRES", "ARES"
