@@ -85,7 +85,7 @@ define([], function () {
         DefaultExtent: "-9136659, 3233348, -9123608, 3239559",
 
         // Choose if you want to use WebMap or Map Services for operational layers. If using WebMap, specify WebMapId within quotes, otherwise leave this empty and configure operational layers
-        WebMapId: "5e9a7f410dff4091860ebdcf2425b21a",
+        WebMapId: "",
 
         // Set Area Of Interest Tab Text
         AOITabText: "1. Area of Interest",
@@ -144,7 +144,34 @@ define([], function () {
         // ServiceURL: URL of the layer.
         // LoadAsServiceType: Field to specify if the operational layers should be added as dynamic map service layer or feature layer.
         //                    Supported service types are 'dynamic' or 'feature'.
-        OperationalLayers: [],
+        OperationalLayers: [{
+            ServiceURL: "http://tryitlive.arcgis.com/arcgis/rest/services/EnvironmentalImpactWater/MapServer/8",
+            LoadAsServiceType: "dynamic"
+        }, {
+            ServiceURL: "http://tryitlive.arcgis.com/arcgis/rest/services/EnvironmentalImpactWater/MapServer/7",
+            LoadAsServiceType: "dynamic"
+        }, {
+            ServiceURL: "http://tryitlive.arcgis.com/arcgis/rest/services/EnvironmentalImpactWater/MapServer/6",
+            LoadAsServiceType: "dynamic"
+        }, {
+            ServiceURL: "http://tryitlive.arcgis.com/arcgis/rest/services/EnvironmentalImpactWater/MapServer/5",
+            LoadAsServiceType: "dynamic"
+        }, {
+            ServiceURL: "http://tryitlive.arcgis.com/arcgis/rest/services/EnvironmentalImpactWater/MapServer/4",
+            LoadAsServiceType: "dynamic"
+        }, {
+            ServiceURL: "http://tryitlive.arcgis.com/arcgis/rest/services/EnvironmentalImpactWater/MapServer/3",
+            LoadAsServiceType: "dynamic"
+        }, {
+            ServiceURL: "http://tryitlive.arcgis.com/arcgis/rest/services/EnvironmentalImpactWater/MapServer/2",
+            LoadAsServiceType: "dynamic"
+        }, {
+            ServiceURL: "http://tryitlive.arcgis.com/arcgis/rest/services/EnvironmentalImpactWater/MapServer/1",
+            LoadAsServiceType: "dynamic"
+        }, {
+            ServiceURL: "http://tryitlive.arcgis.com/arcgis/rest/services/EnvironmentalImpactWater/MapServer/0",
+            LoadAsServiceType: "dynamic"
+        }],
 
         // ------------------------------------------------------------------------------------------------------------------------
         // SEARCH SETTINGS
@@ -328,7 +355,190 @@ define([], function () {
         //                    These fields should be present in the layer referenced by 'QueryLayerId' specified under section 'SearchSettings'
         // DisplayText: Caption to be displayed instead of field alias names. Set this to empty string ("") if you wish to display field alias names as captions.
         // FieldName: Field used for displaying the value
-        InfoWindowSettings: [],
+        InfoWindowSettings: [{
+            Title: "EnvironmentalImpactWater",
+            QueryLayerId: "0",
+            InfoWindowHeaderField: "Boat Ramp",
+            InfoWindowData: [{
+		DisplayText: "Site ID:",
+		FieldName: "${SITEID}"
+	    }, {
+		DisplayText: "Park Name:",
+		FieldName: "${NAME}"
+	    }, {
+		DisplayText: "County",
+		FieldName: "${COUNTY}"
+	    }, {
+		DisplayText: "Management Unit:",
+		FieldName: "${MANAGEUNIT}"
+	    }, {
+		DisplayText: "Waterbody Name:",
+		FieldName: "${WATERBODY}"
+	    }, {
+		DisplayText: "Owned By:",
+		FieldName: "${OWNEDBY}"
+	    }, {
+		DisplayText: "Managed By:",
+		FieldName: "${MAINTBY}"
+	    }]
+		}, {
+            Title: "EnvironmentalImpactWater",
+            QueryLayerId: "1",
+            InfoWindowHeaderField: "Marina",
+            InfoWindowData:[{
+		DisplayText: "Site ID:",
+		FieldName: "${SITEID}"
+	    },{
+		DisplayText: "Park Name:",
+		FieldName: "${NAME}"
+	    },{
+		DisplayText: "Phone Number:",
+		FieldName: "${POCPHONE}"
+	    },{
+		DisplayText: "County:",
+		FieldName: "${COUNTY}"
+	    },{
+		DisplayText: "Waterbody Type:",
+		FieldName: "${WATERBODY}"
+	    },{
+		DisplayText: "Website:",
+		FieldName: "${WATERURL}"
+	    },{
+		DisplayText: "Owned By:",
+		FieldName: "${OWNEDBY}"
+	    },{
+		DisplayText: "Managed By:",
+		FieldName: "${MAINTBY}"
+	    }]
+		}, {
+            Title: "EnvironmentalImpactWater",
+            QueryLayerId: "2",
+            InfoWindowHeaderField: "Seagrass",
+            InfoWindowData:[{
+		DisplayText: "Description:",
+		FieldName: "${DESCRIPT}"
+	    },{
+		DisplayText: "Source Date:",
+		FieldName: "${SOURCEDT}"
+	    }]
+		}, {
+            Title: "EnvironmentalImpactWater",
+            QueryLayerId: "3",
+            InfoWindowHeaderField: "Tidal Flat",
+            InfoWindowData:[{
+		DisplayText: "Description:",
+		FieldName: "${DESCRIPT}"
+	    },{
+		DisplayText: "Source Date:",
+		FieldName: "${SOURCEDT}"
+	    }]
+		}, {
+            Title: "EnvironmentalImpactWater",
+            QueryLayerId: "4",
+            InfoWindowHeaderField: "Coral Hardbottom",
+            InfoWindowData:[{
+		DisplayText: "Description:",
+		FieldName: "${DESCRIPT}"
+	    },{
+		DisplayText: "Source Date:",
+		FieldName: "${SOURCEDT}"
+	    }]
+		}, {
+            Title: "EnvironmentalImpactWater",
+            QueryLayerId: "5",
+            InfoWindowHeaderField: "Mangrove",
+            InfoWindowData:[{
+		DisplayText: "Description:",
+		FieldName: "${DESCRIPT}"
+	    },{
+		DisplayText: "Source Date:",
+		FieldName: "${SOURCEDT}"
+	    }]
+		}, {
+            Title: "EnvironmentalImpactWater",
+            QueryLayerId: "6",
+            InfoWindowHeaderField: "Salt Marsh",
+            InfoWindowData:[{
+		DisplayText: "Description:",
+		FieldName: "${DESCRIPT}"
+	    },{
+		DisplayText: "Source Date:",
+		FieldName: "${SOURCEDT}"
+	    }]
+		}, {
+            Title: "EnvironmentalImpactWater",
+            QueryLayerId: "7",
+            InfoWindowHeaderField: "Conservation Area",
+            InfoWindowData:[{
+		DisplayText: "Site ID:",
+		FieldName: "${SITEID}"
+	    },{
+		DisplayText: "Name:",
+		FieldName: "${NAME}"
+	    },{
+		DisplayText: "Type:",
+		FieldName: "${AREATYPE}"
+	    },{
+		DisplayText: "Owner:",
+		FieldName: "${OWNER}"
+	    },{
+		DisplayText: "Total Acres:",
+		FieldName: "${TOTACRES}"
+	    },{
+		DisplayText: "County:",
+		FieldName: "${COUNTY}"
+	    },{
+		DisplayText: "Manager Name:",
+		FieldName: "${MANAGER}"
+	    },{
+		DisplayText: "Managing Institution:",
+		FieldName: "${MGRINST}"
+	    },{
+		DisplayText: "Managing City:",
+		FieldName: "${MGRCITY}"
+	    },{
+		DisplayText: "Phone Number:",
+		FieldName: "${MGRPHONE}"
+	    },{
+		DisplayText: "Website:",
+		FieldName: "${WEBSITE}"
+	    }]
+		}, {
+            Title: "EnvironmentalImpactWater",
+            QueryLayerId: "8",
+            InfoWindowHeaderField: "Marine Protected Area",
+            InfoWindowData:[{
+		DisplayText: "Site ID:",
+		FieldName: "${SITEID}"
+	    },{
+		DisplayText: "Site Name:",
+		FieldName: "${NAME}"
+	    },{
+		DisplayText: "Area (sq km):",
+		FieldName: "${AREAKM}"
+	    },{
+		DisplayText: "Government Level:",
+		FieldName: "${GOVBODY}"
+	    },{
+		DisplayText: "Management Plan:",
+		FieldName: "${MGMTPLAN}"
+	    },{
+		DisplayText: "Management Agency:",
+		FieldName: "${MGMTAGENCY}"
+	    },{
+		DisplayText: "Conservation Focus:",
+		FieldName: "${CONFOCUS}"
+	    },{
+		DisplayText: "Conservation Target:",
+		FieldName: "${CONTARGET}"
+	    },{
+		DisplayText: "Year Established:",
+		FieldName: "${ESTYEAR}"
+	    },{
+		DisplayText: "Website:",
+		FieldName: "${URL}"
+	    }]
+		}],
 
         // ------------------------------------------------------------------------------------------------------------------------
         // ADDRESS SEARCH SETTINGS
