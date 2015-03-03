@@ -1,0 +1,218 @@
+﻿<div class="esriCTHeaderReportContainer" data-dojo-attach-point="applicationHeaderReportContainer">
+    <div class="esriCTRightPanel">
+        <div class="esriCTAreaOfInterestTab" data-dojo-attach-point="areaOfInterestTab">
+            <div data-dojo-attach-point="esriCTClearAOIButton" title="${sharedNls.tooltips.clearAOI}"
+                class="esriCTClearAOIButton">
+            </div>
+            <div class="esriCTAreaOfInterestTabLabel">
+                ${configData.AOITabText}</div>
+        </div>
+        <div class="esriCTReportTab" data-dojo-attach-point="reportTab">
+            <span>${configData.ReportTabText}</span>
+        </div>
+    </div>
+    <div class="esriCTAreaOfInterestContainer esriCTHideContainerHeight" data-dojo-attach-point="areaOfInterestContainer">
+        <div class="esriCTAOIContent" data-dojo-attach-point="areaOfInterestContent" id="esriCTAOIContainer">
+            <div class="esriCTLinkContainerDiv">
+                <div data-dojo-attach-point="divLinkContainer" class="esriCTLinkContainer">
+                </div>
+            </div>
+            <div data-dojo-attach-point="placeNameSearch" id="placeNameSearch">
+                <div data-dojo-attach-point="divplaceNameSearchContainer" class="esriCTAddressResultContainerReport">
+                    <div class="esriCTNavigateHeader">
+                        ${configData.PlacenameTab.DefineAOILabel}</div>
+                    <div class="esriCTFullWidth">
+                        <div data-dojo-attach-point="divplaceNameSearch" class="esriCTCursorDefault" align="left">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div data-dojo-attach-point="areaOfInterestDrawTools">
+                <div data-dojo-attach-point="divAOIAddressContent" class="esriCTAOIAddressContent"
+                    style="display: none" id="divAOIAddressContent">
+                    <div data-dojo-attach-point="divAddressResultContainer" class="esriCTAddressResultContainerReport">
+                        <div class="esriCTNavigateHeader">
+                            ${configData.DrawTab.AddressSearchHintLabel}</div>
+                        <div class="esriCTFullWidth">
+                            <div data-dojo-attach-point="divDrawAddressSearch" class="esriCTCursorDefault" align="left">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <form enctype="multipart/form-data" method="post" id="uploadForm">
+                <div data-dojo-attach-point="divFileUploadContainer" class="esriCTUploadContainer"
+                    id="divFileUploadContainer">
+                    <div class="esriCTNavigateHeader">
+                        ${configData.ShapefileTab.DefineAOILabel}</div>
+                    <input type="text" id="fileName" readonly class="esriCTFileInputTextbox" />
+                    <div class="esriCTFileInputDiv">
+                        <div class="esriCTBrowseButton">
+                            <label>
+                                ${sharedNls.buttons.browse}</label>
+                            <input type="file" name="file" class="esriCTFileInputHidden" id="fileUploadContainer" />
+                        </div>
+                        <div class="esriCTUploadButton" data-dojo-attach-point="esriCTUploadButton">
+                            ${sharedNls.buttons.upload}</div>
+                    </div>
+                </div>
+                </form>
+                <div class="esriCTBufferDistance" data-dojo-attach-point="divBufferDistance">
+                    <div class="esriCTSlider" data-dojo-attach-point="divSliderContainer">
+                        <div class="esriCTHorizontalSliderText">
+                            ${sharedNls.messages.bufferSliderText}
+                        </div>
+                        <div class="esriCTSliderMessage" data-dojo-attach-point="sliderMessage">
+                            <span>${sharedNls.messages.sliderDisplayText}</span>
+                            <input data-dojo-attach-point="spanSliderValueTextBox" type="text" id="spanSliderValueTextBox"
+                                data-dojo-props="intermediateChanges:true" class="sliderValueText" />
+                            <span data-dojo-attach-point="spanSliderUnitValue" class="esriCTSliderValueText"
+                                id="spanSliderUnitValue"></span>
+                        </div>
+                        <div class="esriCTHorizontalSliderContainer" data-dojo-attach-point="horizontalSliderContainer">
+                            <div data-dojo-type="dijit/form/HorizontalRule" container="bottomDecoration" count="2"
+                                style="height: 5px;">
+                            </div>
+                            <ol data-dojo-type="dijit/form/HorizontalRuleLabels" container="bottomDecoration"
+                                style="height: 1em; font-size: 75%; color: gray;">
+                                <li data-dojo-attach-point="sliderStartValue"></li>
+                                <li data-dojo-attach-point="sliderEndValue"></li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                <div data-dojo-attach-point="divRadioButtonContainer">
+                </div>
+                <div data-dojo-attach-point="divBearingContainer" style="display: none" id="divBearingContainer">
+                    <div class="esriCTBearingLableConatiner">
+                        <div>
+                            ${configData.CoordinatesTab.DefineStartPointAddressLabel}</div>
+                    </div>
+                    <div data-dojo-attach-point="divAOIBearingAddressContent" class="esriCTAOIAddressContent">
+                        <div data-dojo-attach-point="divAddressResultContainer" class="esriCTAddressResultContainerReport">
+                            <div class="esriCTFullWidth">
+                                <div data-dojo-attach-point="divBearingAddressSearch" class="esriCTCursorDefault"
+                                    align="left">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="esriCTBearingConatiner">
+                        <div class="esriCTOrLabel">
+                            ${sharedNls.messages.orText}</div>
+                        <div>
+                            <div class="esriCTStartPoint">
+                                ${configData.CoordinatesTab.DefineStartPointMapClickLabel}</div>
+                            <div class="esriCTSelectionIconMapClick esriCTMapClickPoint" data-dojo-attach-point="divInitialCoordinates">
+                            </div>
+                        </div>
+                        <div data-dojo-attach-point="divBearingTextboxContainer" class="esriCTBearingTextboxContainer">
+                            <div class="esriCTBearingTextboxLabel">
+                                <div class="esriCTBearingFirstColumn">
+                                    ${sharedNls.messages.latitude}</div>
+                                <div class="esriCTBearingSecondColumn">
+                                    <input type="text" data-dojo-attach-point="addLatitudeValue" class="esriCTaddLatitudeValue"
+                                        id="addLatitudeValue" />
+                                </div>
+                                <div class="esriCTBearingThirdColumn">
+                                    ${sharedNls.messages.longitude}</div>
+                                <div class="esriCTBearingFourthColumn">
+                                    <input type="text" data-dojo-attach-point="addLongitudeValue" class="esriCTaddLongitudeValue"
+                                        id="addLongitudeValue" />
+                                </div>
+                                <div class="esriCTBearingFifthColumn">
+                                    <a href="#" class="esriCTAddTextboxButton" data-dojo-attach-point="locateLatLongValue">
+                                        ${sharedNls.buttons.locate}</a>
+                                </div>
+                            </div>
+                            <div class="esriCTBearinghead">
+                                ${configData.CoordinatesTab.EnterBearingDistanceLabel}</div>
+                            <div class="esriCTBearingTextbox">
+                                <div class="esriCTBearingFirstColumn">
+                                    ${sharedNls.messages.bearing}<br />
+                                    ${sharedNls.messages.bearingValue}
+                                </div>
+                                <div class="esriCTBearingSecondColumn">
+                                    <input type="text" data-dojo-attach-point="addBearingValue" class="esriCTaddBearingValue"
+                                        id="addBearingValue" />
+                                </div>
+                                <div class="esriCTBearingThirdColumn">
+                                    <div class="esriCTBearingFourthColumn">
+                                        ${sharedNls.messages.distance}<br />
+                                        (${configData.BearingDistanceUnit})</div>
+                                </div>
+                                <div class="esriCTBearingFourthColumn">
+                                    <input type="text" data-dojo-attach-point="addDistanceMiles" class="esriCTaddDistanceMiles"
+                                        id="addDistanceMiles" /></div>
+                                <div class="esriCTBearingFifthColumn" data-dojo-attach-point="addBearingTextBox">
+                                    <a href="#" class="esriCTAddTextboxButton">${sharedNls.buttons.add}</a></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="esriCTReportContainer" data-dojo-attach-point="reportContainer">
+        <div class="esriCTReportHeader">
+            ${sharedNls.messages.reportPanelHeader}
+        </div>
+        <div class="esriCTReportDisplayPanel" data-dojo-attach-point="reportContent">
+            <div class="esriCTReportScrollContent" data-dojo-attach-point="reportScrollContent">
+            </div>
+        </div>
+    </div>
+    <div class="esriCTuploadShapeContainer" data-dojo-attach-point="divChangeUnit" style="display: none">
+        <div class="esriCTchangeUnit" data-dojo-attach-point="esriCTchangeStandardUnit" style="display: none">
+            <span>${sharedNls.titles.metricUnitLabel}</span><span class="esriCTUnitLabel">${sharedNls.titles.standardUnitLabel}</span>
+        </div>
+        <div class="esriCTchangeUnit" data-dojo-attach-point="esriCTchangeMetricUnit">
+            <span>${sharedNls.titles.metricUnitLabel}</span><span class="esriCTUnitLabel">${sharedNls.titles.unitLabel}</span>
+        </div>
+    </div>
+    <div class="esriCTuploadShapeContainer" data-dojo-attach-point="uploadAOIContainer"
+        style="display: none;">
+        <div class="esriCTUploadHeading">
+            ${sharedNls.titles.uploadShapeFile}</div>
+        <div>
+            ${sharedNls.titles.drawAOIBeforeUpload}</div>
+        <form enctype="multipart/form-data" method="post" id="uploadAnalysisForm">
+        <div class="esriCTUploadInputReportContainer">
+            <input type="text" id="analysisFileName" readonly class="esriCTFileInputTextbox" />
+            <div class="esriCTFileInputDiv">
+                <div class="esriCTBrowseButton">
+                    <label>
+                        ${sharedNls.buttons.browse}</label>
+                    <input type="file" name="file" class="esriCTFileInputHidden" id="analysisFileUploadContainer" />
+                </div>
+                <div class="esriCTUploadButton" data-dojo-attach-point="esriCTAnalysisUploadButton">
+                    <label>
+                        ${sharedNls.buttons.upload}</label></div>
+            </div>
+        </div>
+        </form>
+    </div>
+    <div class="esriCTuploadShapeContainer esriCTdownloadReportContainer" data-dojo-attach-point="downloadReportContainer">
+        <div class="esriCTUploadHeading">
+            ${sharedNls.titles.downLoadReport}</div>
+        <div class="esriCTDownloadReportRow">
+            <div class="esriCTlabel">
+                ${sharedNls.titles.summaryReportTitle}
+            </div>
+            <input type="text" data-dojo-attach-point="summaryReportTitle" data-dojo-props="intermediateChanges:true" class="esriCTReportTitleText" value="${sharedNls.titles.reportTitleValue}"/>
+        </div>
+        <div class="esriCTDownloadReportRow" data-dojo-attach-point="downloadReportType">
+            <div class="esriCTlabel">
+                ${sharedNls.titles.selectType}
+            </div>
+            <div class="esriCTDownloadReportRowValues" data-dojo-attach-point="downloadReportTypeValues">
+            </div>
+        </div>
+        <div class="esriCTDownloadReportRow" data-dojo-attach-point="downloadReportFormat">
+        </div>
+        <div class="esriCTDownloadReportRow">
+            <div class="esriCTDownloadButton" data-dojo-attach-point="downloadButton">
+                <label>
+                    ${sharedNls.buttons.downLoad}</label></div>
+        </div>
+    </div>
+</div>
