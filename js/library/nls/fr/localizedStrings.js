@@ -53,10 +53,10 @@ define({
         polygonToolText: "@fr@ Polygon",
         selectFeatureText: "@fr@ Select features",
         areaStandardUnit: "@fr@ acres",
-        lengthStandardUnit: "@fr@ Miles",
-        lengthMetricUnit: "@fr@ Kilometer",
-        areaMetricUnit: "@fr@ Sq.Km.",
-        lengthMetricUnitLabel: "@fr@ Km",
+        lengthStandardUnit: "@fr@ miles",
+        lengthMetricUnit: "@fr@ kilometer",
+        areaMetricUnit: "@fr@ sq.km.",
+        lengthMetricUnitLabel: "@fr@ km",
         standardUnitLabel: "@fr@ Standard Units",
         metricUnitLabel: "@fr@ Show areas in ",
         unitLabel: "@fr@ Metric Units",
@@ -68,11 +68,11 @@ define({
         summaryReportTitle: "@fr@ Summary Report Title:",
         distanceLabel: "@fr@ Distance",
         bearingLabel: "@fr@ Bearing",
-        reportTitleValue: "@fr@ Area of Interest (AOI) Information"
+        reportTitleValue: "@fr@ Area of Interest (AOI) Information",
+        attchementText: "@fr@ Attachments"
     },
     messages: {
         legendLoadingText: "@fr@ Loading...",
-        noLegend: "@fr@ No Legend Available",
         sliderDisplayText: "@fr@ Show results within",
         bufferSliderText: "@fr@ Buffer distance (Optional for polygon AOIs)",
         orText: "@fr@ OR",
@@ -111,6 +111,7 @@ define({
         browseFile: "@fr@ Please browse to a file.",
         noFeaturesInAOI: "@fr@ No features found in AOI.",
         noFieldsSelected: "@fr@ No fields selected.",
+        noConfigForImpactAnalysis: "@fr@ No layers configured for impact analysis",
         selectFeatureError: "@fr@ Please double click on map to complete the select Feature.",
         inValideNumericErrorMessage: "@fr@ Please enter valid inputs.",
         inValideZipFile: "@fr@ Incorrect File extension\n Should be zip",
@@ -119,11 +120,13 @@ define({
 	    defineStartPointMessage : "@fr@ Please define start point",
         unableToShareURL : "@fr@ Application could not be shared with current data",
         getLayerInfoError: "@fr@ Unable to get layer info for layer",
-        simplifyGeometryFailed: "@fr@ Failed to simplify geometry",
+        unabletToBuffer: "@fr@ Unable to buffer feature",
+        unableToUnion: "@fr@ Unable to union the features and create AOI",
         incorrectFields: "@fr@ Incorrect fields configured",
         noFieldsConfigured: "@fr@ No fields configured",
         incorrectStatisticFieldUnit: "@fr@ Incorrect Statistic field unit specified for ",
-        unionGeometryFailed: "@fr@ Failed to union geometry"
+        noLegend: "@fr@ No Legend Available",
+        noHeaderField: ""
     },
     // End of shared nls
 

@@ -1,4 +1,4 @@
-/*global define,dojo,dojoConfig,Modernizr,alert,esri */
+/*global define,dojo,dojoConfig,Modernizr,alert,esri,appGlobals */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4 */
 /*
  | Copyright 2013 Esri
@@ -22,6 +22,7 @@ define([
     "dojo/dom-construct",
     "dojo/on",
     "dojo/topic",
+    "dojo/query",
     "dijit/_WidgetBase",
     "esri/tasks/GeometryService",
     "esri/geometry/Point",
@@ -37,7 +38,7 @@ define([
     "esri/geometry/Polygon",
     "dojo/_base/array",
     "dojo/dom-style"
-], function (declare, lang, domConstruct, on, topic, _WidgetBase, GeometryService, Point, PictureMarkerSymbol, SpatialReference, Graphic, sharedNls, BufferParameters, SimpleFillSymbol, SimpleLineSymbol, Color, Polyline, Polygon, array, domStyle) {
+], function (declare, lang, domConstruct, on, topic, query, _WidgetBase, GeometryService, Point, PictureMarkerSymbol, SpatialReference, Graphic, sharedNls, BufferParameters, SimpleFillSymbol, SimpleLineSymbol, Color, Polyline, Polygon, array, domStyle) {
 
     //========================================================================================================================//
 
@@ -81,13 +82,13 @@ define([
 
         /**
         * get device location from geolocation service
-        * @param {string} dojo.configData.GeometryService Geometry service url specified in configuration file
+        * @param {string} appGlobals.configData.GeometryService Geometry service url specified in configuration file
         * @memberOf widgets/geoLocation/geoLocation
         */
 
         _showCurrentLocation: function () {
             var mapPoint, self = this, currentBaseMap, geometryServiceUrl, geometryService;
-            geometryServiceUrl = dojo.configData.GeometryService;
+            geometryServiceUrl = appGlobals.configData.GeometryService;
             geometryService = new GeometryService(geometryServiceUrl);
 
             /**
@@ -101,7 +102,7 @@ define([
 
                 /**
                 * projects the device location on the map
-                * @param {string} dojo.configData.ZoomLevel Zoom level specified in configuration file
+                * @param {string} appGlobals.configData.ZoomLevel Zoom level specified in configuration file
                 * @param {object} mapPoint Map point of device location in spatialReference of wkid:4326
                 * @param {object} newPoint Map point of device location in spatialReference of map
                 */
@@ -117,7 +118,7 @@ define([
                         }
                     }
                     mapPoint = newPoint[0];
-                    self.map.centerAndZoom(mapPoint, dojo.configData.ZoomLevel);
+                    self.map.centerAndZoom(mapPoint, appGlobals.configData.ZoomLevel);
                     self._addGraphic(mapPoint);
                     try {
                         this.emailSharingData = "TAB:" + "geolocation" + "$" + "X:" + mapPoint.x + "$" + "Y:" + mapPoint.y + "$" + "SD:" + null + "$" + "UV:" + null + "$" + "SB:" + false;
@@ -142,7 +143,7 @@ define([
         */
         _addGraphic: function (mapPoint) {
             var locatorMarkupSymbol, geoLocationPushpin, graphic;
-            geoLocationPushpin = dojoConfig.baseURL + dojo.configData.LocatorSettings.DefaultLocatorSymbol;
+            geoLocationPushpin = dojoConfig.baseURL + appGlobals.configData.LocatorSettings.DefaultLocatorSymbol;
             locatorMarkupSymbol = new PictureMarkerSymbol(geoLocationPushpin, "35", "35");
             graphic = new Graphic(mapPoint, locatorMarkupSymbol, null, null);
             if (!graphic.attributes) {
@@ -152,8 +153,7 @@ define([
             topic.publish("clearAllGraphics");
             this.map.getLayer("esriGraphicsLayerMapSettings").add(graphic);
             topic.publish("resetAOITab");
-            domStyle.set(dojo.query('.esriCTClearAOIButton')[0], "display", "block");
-            dojo.isGeoLocationEnabled = true;
+            domStyle.set(query('.esriCTClearAOIButton')[0], "display", "block");
         }
 
     });

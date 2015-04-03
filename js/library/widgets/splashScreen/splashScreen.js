@@ -1,4 +1,4 @@
-﻿/*global define,dojo */
+﻿/*global define,dojo,appGlobals */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4 */
 /*
  | Copyright 2013 Esri
@@ -20,6 +20,7 @@ define([
     "dojo/_base/declare",
     "dojo/dom-construct",
     "dojo/dom-style",
+    "dojo/window",
     "dojo/_base/lang",
     "dojo/dom-attr",
     "dojo/on",
@@ -30,7 +31,7 @@ define([
     "dijit/_WidgetsInTemplateMixin",
     "dojo/i18n!application/js/library/nls/localizedStrings",
     "../scrollBar/scrollBar"
-], function (declare, domConstruct, domStyle, lang, domAttr, on, template, _WidgetBase, _TemplatedMixin, domClass, _WidgetsInTemplateMixin, sharedNls, ScrollBar) {
+], function (declare, domConstruct, domStyle, win, lang, domAttr, on, template, _WidgetBase, _TemplatedMixin, domClass, _WidgetsInTemplateMixin, sharedNls, ScrollBar) {
     return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
         templateString: template,
         sharedNls: sharedNls,
@@ -58,19 +59,19 @@ define([
             domStyle.set(this.domNode, "display", "block");
             splashScreenContent = domConstruct.create("div", { "class": "esriGovtSplashContent" }, this.splashScreenScrollBarContainer);
             this.splashScreenScrollBarContainer.style.height = (this.splashScreenDialogContainer.offsetHeight - 70) + "px";
-            domAttr.set(splashScreenContent, "innerHTML", dojo.configData.SplashScreen.SplashScreenContent);
+            domAttr.set(splashScreenContent, "innerHTML", appGlobals.configData.SplashScreen.SplashScreenContent);
             this.splashScreenScrollbar = new ScrollBar({ domNode: this.splashScreenScrollBarContainer });
-            if (dojo.window.getBox().w >= 680) {
+            if (win.getBox().w >= 680) {
                 domClass.replace(this.splashScreenScrollbar._scrollBarContent, "scrollbar_content_splashScreen", "scrollbar_content");
             }
             this.splashScreenScrollbar.setContent(splashScreenContent);
             this.splashScreenScrollbar.createScrollBar();
-            dojo.isSplashScreenOn = true;
+            appGlobals.isSplashScreenOn = true;
         },
 
         _hideSplashScreenDialog: function () {
             domStyle.set(this.domNode, "display", "none");
-            dojo.isSplashScreenOn = false;
+            appGlobals.isSplashScreenOn = false;
         }
     });
 });

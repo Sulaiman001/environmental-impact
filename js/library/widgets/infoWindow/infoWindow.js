@@ -22,6 +22,7 @@ define([
     "dojo/dom-style",
     "dojo/_base/lang",
     "dojo/on",
+    "dojo/window",
     "../scrollBar/scrollBar",
     "dojo/dom",
     "dojo/dom-class",
@@ -34,7 +35,7 @@ define([
     "dojo/i18n!application/js/library/nls/localizedStrings",
     "dijit/_WidgetsInTemplateMixin",
     "dojo/topic"
-], function (declare, domConstruct, domStyle, lang, on, ScrollBar, dom, domClass, domUtils, InfoWindowBase, template, _WidgetBase, _TemplatedMixin, query, sharedNls, _WidgetsInTemplateMixin, topic) {
+], function (declare, domConstruct, domStyle, lang, on, win, ScrollBar, dom, domClass, domUtils, InfoWindowBase, template, _WidgetBase, _TemplatedMixin, query, sharedNls, _WidgetsInTemplateMixin, topic) {
     return declare([InfoWindowBase, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
         templateString: template,
         sharedNls: sharedNls,
@@ -66,7 +67,7 @@ define([
             }
             this.divInfoDetailsScroll.appendChild(detailsTab);
             this.setLocation(screenPoint);
-            if (dojo.window.getBox().w >= 640) {
+            if (win.getBox().w >= 640) {
                 if (this.infoContainerScrollbar) {
                     domClass.add(this.infoContainerScrollbar._scrollBarContent, "esriCTZeroHeight");
                     this.infoContainerScrollbar.removeScrollBar();
@@ -82,7 +83,7 @@ define([
         },
 
         resize: function (width, height) {
-            if (dojo.window.getBox().w <= 640) {
+            if (win.getBox().w <= 640) {
                 this.infoWindowWidth = 180;
                 this.infoWindowHeight = 30;
                 domStyle.set(this.domNode, {

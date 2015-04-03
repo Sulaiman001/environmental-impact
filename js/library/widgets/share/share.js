@@ -1,4 +1,4 @@
-/*global define,dojo,alert,esri,dijit,unescape,dojoConfig */
+/*global define,dojo,alert,esri,dijit,unescape,dojoConfig,appGlobals */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4 */
 /*
  | Copyright 2013 Esri
@@ -33,7 +33,6 @@ define(["dojo/_base/declare",
     "dijit/_WidgetsInTemplateMixin",
     "dojo/i18n!application/js/library/nls/localizedStrings",
     "dojo/topic",
-    "esri/request",
     "esri/geometry/Polyline",
     "esri/geometry/Polygon",
     "esri/symbols/PictureMarkerSymbol",
@@ -42,20 +41,16 @@ define(["dojo/_base/declare",
     "esri/symbols/SimpleFillSymbol",
     "esri/symbols/SimpleLineSymbol",
     "esri/SpatialReference",
-    "esri/tasks/BufferParameters",
-    "esri/tasks/GeometryService",
     "esri/geometry/Point",
     "esri/graphic",
-    "dojo/_base/Color",
     "esri/geometry/Extent",
     "dojo/_base/array",
     "dojo/query",
-    "dojo/DeferredList",
     "widgets/share/commonShare"
 
-    ], function (declare, domConstruct, lang, domAttr, on, dom, domClass, domGeom, domStyle, string, html, template, _WidgetBase, _TemplatedMixin,
-    _WidgetsInTemplateMixin, sharedNls, topic, esriRequest, Polyline, Polygon, PictureMarkerSymbol, SimpleMarkerSymbol, Multipoint, SimpleFillSymbol, SimpleLineSymbol,
-    SpatialReference, BufferParameters, GeometryService, Point, Graphic, Color, GeometryExtent, array, query, DeferredList, commonShare) {
+], function (declare, domConstruct, lang, domAttr, on, dom, domClass, domGeom, domStyle, string, html, template, _WidgetBase, _TemplatedMixin,
+    _WidgetsInTemplateMixin, sharedNls, topic, Polyline, Polygon, PictureMarkerSymbol, SimpleMarkerSymbol, Multipoint, SimpleFillSymbol, SimpleLineSymbol,
+    SpatialReference, Point, Graphic, GeometryExtent, array, query, commonShare) {
     //========================================================================================================================//
     return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
         templateString: template,
@@ -144,7 +139,7 @@ define(["dojo/_base/declare",
                     if (mapPoint.attributes) {
                         this._infoX = mapPoint.geometry.x;
                         this._infoY = mapPoint.geometry.y;
-                        this._infoWindowObjID = mapPoint.attributes.OBJECTID;
+                        this._infoWindowObjID = mapPoint.attributes[mapPoint.layer.objectIDField];
                         this._infoWindowLayerID = mapPoint.layer.Title + "_" + mapPoint.layer.QueryLayerId;
                     } else {
                         this._infoX = mapPoint.x;
@@ -225,7 +220,6 @@ define(["dojo/_base/declare",
                 if (graphicDetails.length > 0) {
                     graphicDetails = this._getGraphicDetailsObject(graphicDetails);
                     if (graphicDetails) {
-
                         if (graphicDetails.BMI) {
                             topic.publish("setBaseMap", graphicDetails.BMI, graphicDetails.SBI, graphicDetails.PTI);
                         }
@@ -233,7 +227,7 @@ define(["dojo/_base/declare",
                         if (graphicDetails.SHOWINFO === "true") {
                             var evt, pointGeometry;
                             evt = {};
-                            pointGeometry = new Point(Number(graphicDetails.INFOX), Number(graphicDetails.INFOY), new esri.SpatialReference({
+                            pointGeometry = new Point(Number(graphicDetails.INFOX), Number(graphicDetails.INFOY), new SpatialReference({
                                 "wkid": this.map.spatialReference.wkid
                             }));
                             evt.mapPoint = pointGeometry;
@@ -253,16 +247,16 @@ define(["dojo/_base/declare",
                             case "geolocation":
                                 this._displayGeoLocationData(graphicDetails);
                                 break;
-                            case dojo.configData.PlacenameTab.Title:
+                            case appGlobals.configData.PlacenameTab.Title:
                                 this._displayPlaceNameData(graphicDetails);
                                 break;
-                            case dojo.configData.DrawTab.Title:
+                            case appGlobals.configData.DrawTab.Title:
                                 this._displayDrawData(graphicDetails);
                                 break;
-                            case dojo.configData.CoordinatesTab.Title:
+                            case appGlobals.configData.CoordinatesTab.Title:
                                 this._displayCoordinatesData(graphicDetails);
                                 break;
-                            case dojo.configData.ShapefileTab.Title:
+                            case appGlobals.configData.ShapefileTab.Title:
                                 this._displayShapefileData(graphicDetails);
                                 break;
                             }
@@ -442,30 +436,30 @@ define(["dojo/_base/declare",
         */
         _highlightTab: function (tabName, address) {
             try {
-                if (dojo.query(".esriCTAOILinkSelect")[0]) {
-                    domClass.remove(dojo.query(".esriCTAOILinkSelect")[0], "esriCTAOILinkSelect");
+                if (query(".esriCTAOILinkSelect")[0]) {
+                    domClass.remove(query(".esriCTAOILinkSelect")[0], "esriCTAOILinkSelect");
                 }
                 switch (tabName) {
-                case dojo.configData.PlacenameTab.Title:
+                case appGlobals.configData.PlacenameTab.Title:
                     domClass.add(dom.byId("divLinkplaceName"), "esriCTAOILinkSelect");
                     this._hideContainer();
                     dom.byId("placeNameSearch").style.display = "block";
-                    dojo.query(".esriCTTxtAddress")[1].value = (address === "") ? dojo.configData.LocatorSettings.LocatorDefaultPlaceNameSearchAddress : unescape(address);
+                    query(".esriCTTxtAddress")[1].value = (address === "") ? appGlobals.configData.LocatorSettings.LocatorDefaultPlaceNameSearchAddress : unescape(address);
                     break;
-                case dojo.configData.ShapefileTab.Title:
+                case appGlobals.configData.ShapefileTab.Title:
                     domClass.add(dom.byId("divLinkUpload"), "esriCTAOILinkSelect");
                     this._hideContainer();
                     dom.byId("divFileUploadContainer").style.display = "block";
                     break;
-                case dojo.configData.DrawTab.Title:
+                case appGlobals.configData.DrawTab.Title:
                     domClass.add(dom.byId("divLinkDrawTool"), "esriCTAOILinkSelect");
                     topic.publish("showDrawPanel");
-                    dojo.query(".esriCTTxtAddress")[2].value = (address === "") ? dojo.configData.LocatorSettings.LocatorDefaultAOIAddress : unescape(address);
+                    query(".esriCTTxtAddress")[2].value = (address === "") ? appGlobals.configData.LocatorSettings.LocatorDefaultAOIAddress : unescape(address);
                     break;
-                case dojo.configData.CoordinatesTab.Title:
+                case appGlobals.configData.CoordinatesTab.Title:
                     domClass.add(dom.byId("divLinkCoordinates"), "esriCTAOILinkSelect");
                     topic.publish("showCoordinatesPanel");
-                    dojo.query(".esriCTTxtAddress")[2].value = (address === "") ? dojo.configData.LocatorSettings.LocatorDefaultAOIBearingAddress : unescape(address);
+                    query(".esriCTTxtAddress")[2].value = (address === "") ? appGlobals.configData.LocatorSettings.LocatorDefaultAOIBearingAddress : unescape(address);
                     break;
                 }
             } catch (err) {
@@ -495,19 +489,19 @@ define(["dojo/_base/declare",
                 this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
                 this._setSliderProperties(graphicDetails);
                 dijit.byId("horizontalSlider").setValue(parseFloat(graphicDetails.SD));
-                pointGeometry = new Point(Number(graphicDetails.X), Number(graphicDetails.Y), new esri.SpatialReference({
+                pointGeometry = new Point(Number(graphicDetails.X), Number(graphicDetails.Y), new SpatialReference({
                     "wkid": this.map.spatialReference.wkid
                 }));
                 if (graphicDetails.STYLE === "queryFeature") {
                     //when point geometry is of query result feature
                     topic.publish("showFeatureResultsOnMap", pointGeometry);
                 } else {
-                    if (graphicDetails.TAB === dojo.configData.CoordinatesTab.Title) {
+                    if (graphicDetails.TAB === appGlobals.configData.CoordinatesTab.Title) {
                         //in coordinates tab, point geometry is an initial point
                         topic.publish("locateInitialPoint", pointGeometry);
                     } else {
                         this._addGraphic(pointGeometry, graphicDetails);
-                        if (graphicDetails.TAB !== dojo.configData.DrawTab.Title && parseFloat(graphicDetails.SD) > 0) {
+                        if (graphicDetails.TAB !== appGlobals.configData.DrawTab.Title && parseFloat(graphicDetails.SD) > 0) {
                             topic.publish("createBuffer", [pointGeometry], null);
                         }
                     }
@@ -531,7 +525,6 @@ define(["dojo/_base/declare",
         _setSliderProperties: function (graphicDetails) {
             this._setSliderMinAndMaxValue(this._convertSelectedValue(graphicDetails));
             domAttr.set(dom.byId("spanSliderValueTextBox"), "value", parseFloat(graphicDetails.SD));
-            domAttr.set(dom.byId("spanSliderUnitValue"), "innerHTML", this._convertSelectedValue(graphicDetails));
             //remove the highlighted distance unit if any
             array.forEach(query(".esriCTRadioBtnContent"), function (item) {
                 if (domClass.contains(item, "esriCTSelectedDistanceUnit")) {
@@ -573,67 +566,67 @@ define(["dojo/_base/declare",
         _setSliderMinAndMaxValue: function (selectedUnitValue) {
             try {
                 var index, sliderStartValue, sliderEndValue;
-                for (index = 0; index < dojo.configData.DistanceUnitSettings.length; index++) {
-                    if (dojo.configData.DistanceUnitSettings[index].DistanceUnitName === selectedUnitValue) {
+                for (index = 0; index < appGlobals.configData.DistanceUnitSettings.length; index++) {
+                    if (appGlobals.configData.DistanceUnitSettings[index].DistanceUnit === selectedUnitValue) {
                         switch (selectedUnitValue) {
                         case "Miles":
-                            if (dojo.configData.DistanceUnitSettings[index].MinimumValue >= 0) {
-                                sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue;
+                            if (appGlobals.configData.DistanceUnitSettings[index].MinimumValue >= 0) {
+                                sliderStartValue = appGlobals.configData.DistanceUnitSettings[index].MinimumValue;
                             } else {
-                                sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue = 0;
+                                sliderStartValue = appGlobals.configData.DistanceUnitSettings[index].MinimumValue = 0;
                             }
-                            if (dojo.configData.DistanceUnitSettings[index].MaximumValue >= 0) {
-                                sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue;
+                            if (appGlobals.configData.DistanceUnitSettings[index].MaximumValue >= 0) {
+                                sliderEndValue = appGlobals.configData.DistanceUnitSettings[index].MaximumValue;
                             } else {
-                                sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue = 100;
+                                sliderEndValue = appGlobals.configData.DistanceUnitSettings[index].MaximumValue = 100;
                             }
                             break;
                         case "Feet":
-                            if (dojo.configData.DistanceUnitSettings[index].MinimumValue >= 0) {
-                                sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue;
+                            if (appGlobals.configData.DistanceUnitSettings[index].MinimumValue >= 0) {
+                                sliderStartValue = appGlobals.configData.DistanceUnitSettings[index].MinimumValue;
                             } else {
-                                sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue = 0;
+                                sliderStartValue = appGlobals.configData.DistanceUnitSettings[index].MinimumValue = 0;
                             }
-                            if (dojo.configData.DistanceUnitSettings[index].MaximumValue >= 0) {
-                                sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue;
+                            if (appGlobals.configData.DistanceUnitSettings[index].MaximumValue >= 0) {
+                                sliderEndValue = appGlobals.configData.DistanceUnitSettings[index].MaximumValue;
                             } else {
-                                sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue = 100;
+                                sliderEndValue = appGlobals.configData.DistanceUnitSettings[index].MaximumValue = 100;
                             }
                             break;
                         case "Meters":
-                            if (dojo.configData.DistanceUnitSettings[index].MinimumValue >= 0) {
-                                sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue;
+                            if (appGlobals.configData.DistanceUnitSettings[index].MinimumValue >= 0) {
+                                sliderStartValue = appGlobals.configData.DistanceUnitSettings[index].MinimumValue;
                             } else {
-                                sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue = 0;
+                                sliderStartValue = appGlobals.configData.DistanceUnitSettings[index].MinimumValue = 0;
                             }
-                            if (dojo.configData.DistanceUnitSettings[index].MaximumValue >= 0) {
-                                sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue;
+                            if (appGlobals.configData.DistanceUnitSettings[index].MaximumValue >= 0) {
+                                sliderEndValue = appGlobals.configData.DistanceUnitSettings[index].MaximumValue;
                             } else {
-                                sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue = 100;
+                                sliderEndValue = appGlobals.configData.DistanceUnitSettings[index].MaximumValue = 100;
                             }
                             break;
                         case "Kilometers":
-                            if (dojo.configData.DistanceUnitSettings[index].MinimumValue >= 0) {
-                                sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue;
+                            if (appGlobals.configData.DistanceUnitSettings[index].MinimumValue >= 0) {
+                                sliderStartValue = appGlobals.configData.DistanceUnitSettings[index].MinimumValue;
                             } else {
-                                sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue = 0;
+                                sliderStartValue = appGlobals.configData.DistanceUnitSettings[index].MinimumValue = 0;
                             }
-                            if (dojo.configData.DistanceUnitSettings[index].MaximumValue >= 0) {
-                                sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue;
+                            if (appGlobals.configData.DistanceUnitSettings[index].MaximumValue >= 0) {
+                                sliderEndValue = appGlobals.configData.DistanceUnitSettings[index].MaximumValue;
                             } else {
-                                sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue = 100;
+                                sliderEndValue = appGlobals.configData.DistanceUnitSettings[index].MaximumValue = 100;
                             }
                             break;
                         default:
-                            if (dojo.configData.DistanceUnitSettings[index].MinimumValue >= 0) {
-                                sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue;
+                            if (appGlobals.configData.DistanceUnitSettings[index].MinimumValue >= 0) {
+                                sliderStartValue = appGlobals.configData.DistanceUnitSettings[index].MinimumValue;
                             } else {
-                                sliderStartValue = dojo.configData.DistanceUnitSettings[index].MinimumValue = 0;
+                                sliderStartValue = appGlobals.configData.DistanceUnitSettings[index].MinimumValue = 0;
                             }
-                            if (dojo.configData.DistanceUnitSettings[index].MaximumValue >= 0) {
-                                sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue;
+                            if (appGlobals.configData.DistanceUnitSettings[index].MaximumValue >= 0) {
+                                sliderEndValue = appGlobals.configData.DistanceUnitSettings[index].MaximumValue;
                             } else {
-                                sliderEndValue = dojo.configData.DistanceUnitSettings[index].MaximumValue = 100;
+                                sliderEndValue = appGlobals.configData.DistanceUnitSettings[index].MaximumValue = 100;
                             }
                             break;
                         }
@@ -659,22 +652,22 @@ define(["dojo/_base/declare",
                 horizontalSlider = dijit.byId("horizontalSlider");
                 polygon = new Polygon();
                 polygon.rings = JSON.parse(unescape(graphicDetails.GEOM));
-                polygon.spatialReference = new esri.SpatialReference({
+                polygon.spatialReference = new SpatialReference({
                     "wkid": this.map.spatialReference.wkid
                 });
                 this._setSliderProperties(graphicDetails);
                 //check if selected AOI panel tab is a shapefile
-                if (graphicDetails.TAB === dojo.configData.ShapefileTab.Title) {
+                if (graphicDetails.TAB === appGlobals.configData.ShapefileTab.Title) {
                     this._highlightTab(graphicDetails.TAB, "");
                     topic.publish("displayShapeFile", polygon, parseFloat(graphicDetails.SD));
                 } else {
                     this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
-                    if (graphicDetails.SN === "aOISearch" || graphicDetails.TAB === dojo.configData.PlacenameTab.Title) {
+                    if (graphicDetails.SN === "aOISearch" || graphicDetails.TAB === appGlobals.configData.PlacenameTab.Title) {
                         //if sourcename of geometry is aOISearch it is a query result feature of draw or coordinate tab
                         //polygon geometry in case of Placename tab is a query result Feature
                         topic.publish("showFeatureResultsOnMap", polygon);
                         //buffer will be drawn only in case of Placename tab
-                        if (parseFloat(graphicDetails.SD) > 0 && graphicDetails.TAB === dojo.configData.PlacenameTab.Title) {
+                        if (parseFloat(graphicDetails.SD) > 0 && graphicDetails.TAB === appGlobals.configData.PlacenameTab.Title) {
                             horizontalSlider.setValue(parseFloat(graphicDetails.SD));
                         } else {
                             topic.publish("disableDefaultSharingExtent");
@@ -713,18 +706,18 @@ define(["dojo/_base/declare",
                 //if GEOM parameter value is present, create a polyline with shared geometry data
                 if (graphicDetails.GEOM && graphicDetails.GEOM !== "undefined") {
                     polyline.paths = JSON.parse(unescape(graphicDetails.GEOM));
-                    polyline.spatialReference = new esri.SpatialReference({
+                    polyline.spatialReference = new SpatialReference({
                         "wkid": this.map.spatialReference.wkid
                     });
                 }
-                if (graphicDetails.TAB === dojo.configData.ShapefileTab.Title) {
+                if (graphicDetails.TAB === appGlobals.configData.ShapefileTab.Title) {
                     this._highlightTab(graphicDetails.TAB, "");
                     topic.publish("displayShapeFile", polyline, parseFloat(graphicDetails.SD));
                 } else {
                     this._highlightTab(graphicDetails.TAB, graphicDetails.ADDR);
-                    if (graphicDetails.TAB === dojo.configData.CoordinatesTab.Title) {
+                    if (graphicDetails.TAB === appGlobals.configData.CoordinatesTab.Title) {
                         //get the mapPoint from shared point geometry values
-                        pointGeometry = new Point(Number(graphicDetails.CX), Number(graphicDetails.CY), new esri.SpatialReference({
+                        pointGeometry = new Point(Number(graphicDetails.CX), Number(graphicDetails.CY), new SpatialReference({
                             "wkid": this.map.spatialReference.wkid
                         }));
                         if ((graphicDetails.LAT) && (graphicDetails.LONG)) {
@@ -765,7 +758,7 @@ define(["dojo/_base/declare",
                 var multipoint;
                 multipoint = new Multipoint();
                 multipoint.points = JSON.parse(unescape(graphicDetails.GEOM));
-                multipoint.spatialReference = new esri.SpatialReference({
+                multipoint.spatialReference = new SpatialReference({
                     "wkid": this.map.spatialReference.wkid
                 });
                 this._highlightTab(graphicDetails.TAB, "");
@@ -785,7 +778,7 @@ define(["dojo/_base/declare",
         _displayGeoLocationData: function (graphicDetails) {
             try {
                 var pointGeometry;
-                pointGeometry = new Point(Number(graphicDetails.X), Number(graphicDetails.Y), new esri.SpatialReference({
+                pointGeometry = new Point(Number(graphicDetails.X), Number(graphicDetails.Y), new SpatialReference({
                     "wkid": this.map.spatialReference.wkid
                 }));
                 this._addGraphic(pointGeometry, graphicDetails);
@@ -842,11 +835,11 @@ define(["dojo/_base/declare",
         _displayLocatorData: function (graphicDetails) {
             try {
                 var pointGeometry, polygon;
-                pointGeometry = new Point(Number(graphicDetails.X), Number(graphicDetails.Y), new esri.SpatialReference({
+                pointGeometry = new Point(Number(graphicDetails.X), Number(graphicDetails.Y), new SpatialReference({
                     "wkid": this.map.spatialReference.wkid
                 }));
                 this._setSliderProperties(graphicDetails);
-                domAttr.set(dojo.query(".esriCTTxtAddress")[0], "defaultAddress", unescape(graphicDetails.ADDR));
+                domAttr.set(query(".esriCTTxtAddress")[0], "defaultAddress", unescape(graphicDetails.ADDR));
                 //set the buffer value if present
                 if (parseFloat(graphicDetails.SD) > 0) {
                     dijit.byId("horizontalSlider").setValue(parseFloat(graphicDetails.SD));
@@ -862,7 +855,7 @@ define(["dojo/_base/declare",
                 } else {
                     polygon = new Polygon();
                     polygon.rings = JSON.parse(unescape(graphicDetails.GEOM));
-                    polygon.spatialReference = new esri.SpatialReference({
+                    polygon.spatialReference = new SpatialReference({
                         "wkid": this.map.spatialReference.wkid
                     });
                     topic.publish("sharedLocatorFeature", polygon, graphicDetails.ADDR);
@@ -902,10 +895,10 @@ define(["dojo/_base/declare",
         _addGraphic: function (mapPoint, graphicDetails) {
             try {
                 var locatorMarkupSymbol, geoLocationPushpin, graphic, attr;
-                geoLocationPushpin = dojoConfig.baseURL + dojo.configData.LocatorSettings.DefaultLocatorSymbol;
-                locatorMarkupSymbol = new esri.symbol.PictureMarkerSymbol(geoLocationPushpin, dojo.configData.LocatorSettings.MarkupSymbolSize.width, dojo.configData.LocatorSettings.MarkupSymbolSize.height);
-                if ((graphicDetails.TAB === dojo.configData.CoordinatesTab.Title) && (graphicDetails.CX) && (graphicDetails.CY)) {
-                    locatorMarkupSymbol.setOffset(dojo.configData.LocatorSettings.MarkupSymbolSize.width / 4, dojo.configData.LocatorSettings.MarkupSymbolSize.height / 2);
+                geoLocationPushpin = dojoConfig.baseURL + appGlobals.configData.LocatorSettings.DefaultLocatorSymbol;
+                locatorMarkupSymbol = new PictureMarkerSymbol(geoLocationPushpin, appGlobals.configData.LocatorSettings.MarkupSymbolSize.width, appGlobals.configData.LocatorSettings.MarkupSymbolSize.height);
+                if ((graphicDetails.TAB === appGlobals.configData.CoordinatesTab.Title) && (graphicDetails.CX) && (graphicDetails.CY)) {
+                    locatorMarkupSymbol.setOffset(appGlobals.configData.LocatorSettings.MarkupSymbolSize.width / 4, appGlobals.configData.LocatorSettings.MarkupSymbolSize.height / 2);
                 }
                 if (graphicDetails.STYLE === "drawnFeature") {
                     //shared point is drawn using draw tool of Draw tab
@@ -923,7 +916,7 @@ define(["dojo/_base/declare",
                 if (graphicDetails.SB === "false") {
                     attr = {};
                     //shared point is drawn using draw or coordinate tab or geolocation
-                    if (graphicDetails.TAB === dojo.configData.DrawTab.Title || graphicDetails.TAB === dojo.configData.CoordinatesTab.Title || graphicDetails.SN === "aOISearch") {
+                    if (graphicDetails.TAB === appGlobals.configData.DrawTab.Title || graphicDetails.TAB === appGlobals.configData.CoordinatesTab.Title || graphicDetails.SN === "aOISearch") {
                         attr.sourcename = "aOISearch";
                     } else if (graphicDetails.TAB === "geolocation" || graphicDetails.SN === "geoLocationSearch") {
                         attr.sourcename = "geoLocationSearch";
@@ -972,7 +965,7 @@ define(["dojo/_base/declare",
 
         /**
         * display sharing panel
-        * @param {array} dojo.configData.MapSharingOptions Sharing option settings specified in configuration file
+        * @param {array} appGlobals.configData.MapSharingOptions Sharing option settings specified in configuration file
         * @memberOf widgets/share/share
         */
         _shareLink: function () {
@@ -999,17 +992,15 @@ define(["dojo/_base/declare",
                 }
 
                 // Attempt the shrinking of the URL
-                this.getTinyUrl = commonShare.getTinyLink(urlStr, dojo.configData.MapSharingOptions.TinyURLServiceURL);
+                this.getTinyUrl = commonShare.getTinyLink(urlStr, appGlobals.configData.MapSharingOptions.TinyURLServiceURL);
             } catch (err) {
-
                 alert(err.message);
             }
         },
         /* show and hide share container
         * @memberOf widgets/share/share
         */
-        _showHideShareContainer: function (tinyUrl, urlStr) {
-
+        _showHideShareContainer: function () {
             if (html.coords(this.divAppContainer).h > 0) {
                 /**
                 * when user clicks on share icon in header panel, close the sharing panel if it is open
@@ -1032,7 +1023,6 @@ define(["dojo/_base/declare",
         * @memberOf widgets/share/share
         */
         _displayShareContainer: function (tinyUrl, urlStr) {
-
             /**
             * remove event handlers from sharing options
             */
@@ -1069,7 +1059,6 @@ define(["dojo/_base/declare",
         * @memberOf widgets/share/share
         */
         _share: function (site) {
-
             /*
             * hide share panel once any of the sharing options is selected
             */
@@ -1079,7 +1068,7 @@ define(["dojo/_base/declare",
             }
 
             // Do the share
-            commonShare.share(this.getTinyUrl, dojo.configData.MapSharingOptions, site);
+            commonShare.share(this.getTinyUrl, appGlobals.configData.MapSharingOptions, site);
         },
 
         /**
@@ -1112,13 +1101,13 @@ define(["dojo/_base/declare",
         _shareOptions: function (site, url) {
             switch (site) {
             case "facebook":
-                window.open(string.substitute(dojo.configData.MapSharingOptions.FacebookShareURL, [url]));
+                window.open(string.substitute(appGlobals.configData.MapSharingOptions.FacebookShareURL, [url]));
                 break;
             case "twitter":
-                window.open(string.substitute(dojo.configData.MapSharingOptions.TwitterShareURL, [url]));
+                window.open(string.substitute(appGlobals.configData.MapSharingOptions.TwitterShareURL, [url]));
                 break;
             case "email":
-                parent.location = string.substitute(dojo.configData.MapSharingOptions.ShareByMailLink, [url]);
+                parent.location = string.substitute(appGlobals.configData.MapSharingOptions.ShareByMailLink, [url]);
                 break;
             }
         }
