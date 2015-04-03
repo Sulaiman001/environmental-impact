@@ -242,8 +242,8 @@ def create_image_to_print(web_map_as_json):
         # Exporting web map as json into image
 
         webmap_img_path = arcpy.ExportWebMap_server(
-            str(converted_web_json), output_file, image_format, "",
-            "A4 Portrait")[0]
+            str(converted_web_json), output_file, image_format,
+            Layout_Template="A4 Portrait")[0]
 
         for img in os.listdir(SCRATCH):
             if img.endswith(".png"):
@@ -314,8 +314,8 @@ def extract_zip(zip_path):
 
 
 def clip_layers(detailed_fields, area_of_interest, report_units, zip_file_path):
-    """ This fucntion sends the valid layers and also valis shapefile from
-    uploaded zip for Clip ans Statistic Analysis """
+    """ This function sends the valid layers and also valid shapefile from
+    uploaded zip for Clip and Statistic Analysis """
     #   Check for report type provided, and set the output Units and build the
     #   expression required for CalculateField operation
     if report_units.upper() == "METRIC":
@@ -729,7 +729,7 @@ def get_quick_report_data(parts, quick_json):
                        "count" : "Count"}}
     try:
         #   Insert Summary Table
-        #parts.append(Spacer(0.20, 0.20 * inch))
+        parts.append(Spacer(0.20, 0.20 * inch))
         parts.append(Paragraph("Summary of Potential Impact",
                                STYLEHEADING))
         parts.append(Spacer(0.20, 0.20 * inch))
@@ -738,11 +738,11 @@ def get_quick_report_data(parts, quick_json):
         summary_header = ["Name", "Impact", "Count"]
         #   Insert headers of summary tables as per unit type provided
         for layer_item in quick_json:
-            if layer_item["summaryType"].upper() in ["AREA", "LENGTH", ""]:
+            if layer_item["summaryType"].upper() in ["AREA", "LENGTH", "COUNT"]:
                 if layer_item["summaryUnits"].upper() == "METRIC":
-                    summary_header += ["Area(SqKm)", "Length(Meter)"]
+                    summary_header += ["Area(SqKm)", "Length(Km)"]
                 elif layer_item["summaryUnits"].upper() in ["STANDARD", ""]:
-                    summary_header += ["Area(acres)", "Length(Miles)"]
+                    summary_header += ["Area(Acres)", "Length(Miles)"]
                 break
 
         summary_list.append(summary_header)
@@ -873,50 +873,15 @@ def on_first_page(canvas, doc):
     """ To draw header and footer on first page """
     canvas.saveState()
     header(canvas, doc)
-    now = time.strftime("%c")
+    now = time.strftime("%m/%d/%Y %H:%M %Z")
     doc_date = "Date: " + str(now)
     canvas.setFont("Helvetica", 11)
-    canvas.drawString(PAGE_WIDTH - 192, PAGE_HEIGHT - 85, doc_date)
-
-##    string_list = []
-##    start_index = 0
-##    limit = 75
-##    end_index = start_index + limit
-##
-##    batches = len(REPORT_SUBTITLE) / limit
-##    if len(REPORT_SUBTITLE) % limit > 0:
-##        batches += 1
-##
-##    for _ in xrange(batches):
-##        string_list.append(REPORT_SUBTITLE[start_index:end_index])
-##        start_index = end_index
-##        end_index = start_index + limit
-##        if end_index > len(REPORT_SUBTITLE):
-##            end_index = len(REPORT_SUBTITLE)
-##
-##    print string_list
-##
-##    canvas.setFont("Helvetica-Bold", 13)
-##    canvas.setFillColor("cornflowerblue")
-##
-##    text_y = doc.bottomMargin + 670
-##
-##    if len(string_list) > 2:
-##        string_list = string_list[:2]
-##    elif len(string_list) == 1:
-##        string_list += [string_list[0]]
-##        string_list[0] = " "
-##        text_y = doc.bottomMargin + 680
-##
-##    arcpy.AddMessage(string_list)
-##
-##    for batch_string in string_list:
-##        canvas.drawString(doc.leftMargin + 7, text_y, batch_string)
-##        text_y -= 17
-
+    # calculate the width the date string will occupy on page
+    dateStringWidth= canvas.stringWidth(doc_date, "Helvetica", 11)
+    canvas.drawString(PAGE_WIDTH - (dateStringWidth + 54),
+                        PAGE_HEIGHT - 85, doc_date)
     footer(canvas, doc)
     canvas.restoreState()
-
 
 def on_later_pages(canvas, doc):
     """ Draw header and footer on every other page """
@@ -1110,8 +1075,8 @@ def validate_quick_report(web_map_as_json, quick_summary_json,
         aoi_area = calculate_area(area_of_interest, unit_type)
 
         if not aoi_area:
-            arcpy.AddWarning("Failed to calculate web map area." +
-                             " It will not be shown on report.")
+            arcpy.AddWarning("Failed to calculate AOI area." +
+                             " It will not be shown in report.")
 
         #   If WebMapJSON is provided, include image in the PDF Report
         if web_map_as_json != "":
@@ -1140,9 +1105,10 @@ def check_summary_units(quick_summary_json):
     try:
         unit_found = False
         for layer in quick_summary_json:
-            if layer["summaryUnits"] != "":
-                unit_found = True
-                return layer["summaryUnits"]
+            if layer["summaryType"].upper() in ["AREA", "LENGTH", "COUNT"]:
+                if layer["summaryUnits"] not in ["", None, " "]:
+                    unit_found = True
+                    return layer["summaryUnits"]
 
         if not unit_found:
             return "standard"

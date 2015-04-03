@@ -1,4 +1,4 @@
-﻿/*global require,dojo,dojoConfig,esri,esriConfig,alert */
+﻿/*global require,dojo,dojoConfig,esri,esriConfig,alert,appGlobals */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4 */
 /*
  | Copyright 2013 Esri
@@ -26,11 +26,12 @@ require([
     //========================================================================================================================//
 
     try {
-        dojo.configData = config;
-        if (dojo.configData.ProxyUrl && (!dojo.configData.ProxyUrl.match("http://") && (!dojo.configData.ProxyUrl.match("https://")))) {
-            dojo.configData.ProxyUrl = dojoConfig.baseURL + dojo.configData.ProxyUrl;
+        appGlobals = {};
+        appGlobals.configData = config;
+        if (appGlobals.configData.ProxyUrl && (!appGlobals.configData.ProxyUrl.match("http://") && (!appGlobals.configData.ProxyUrl.match("https://")))) {
+            appGlobals.configData.ProxyUrl = dojoConfig.baseURL + appGlobals.configData.ProxyUrl;
         }
-        esriConfig.defaults.io.proxyUrl = dojo.configData.ProxyUrl;
+        esriConfig.defaults.io.proxyUrl = appGlobals.configData.ProxyUrl;
         esriConfig.defaults.io.timeout = 180000;
         /**
         * load application configuration settings from configuration file

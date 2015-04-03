@@ -381,7 +381,7 @@
 {
     .esriCTApplicationHeaderTextTD
     {
-        display: none;
+        display: block;
     }
 }
 

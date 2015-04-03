@@ -1,4 +1,4 @@
-﻿/*global define,dojo */
+﻿/*global define,dojo,appGlobals */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4 */
 /*
  | Copyright 2013 Esri
@@ -55,7 +55,7 @@ define([
         * @memberOf widgets/help/help
         */
         _showHelpPage: function () {
-            window.open(dojo.configData.HelpURL);
+            window.open(appGlobals.configData.HelpURL);
         }
     });
 });

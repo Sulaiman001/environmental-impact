@@ -1,4 +1,4 @@
-﻿/*global define,dojo,dijit,dojoConfig,alert,esri */
+﻿/*global define,dojo,dijit,dojoConfig,alert,esri,appGlobals */
 /*jslint browser:true,sloppy:true,nomen:true,unparam:true,plusplus:true,indent:4 */
 /*
 | Copyright 2013 Esri
@@ -26,6 +26,7 @@ define([
     "dojo/dom-attr",
     "dojo/query",
     "dojo/dom-class",
+    "dojo/date/locale",
     "dijit/_WidgetBase",
     "dojo/i18n!application/js/library/nls/localizedStrings",
     "esri/map",
@@ -37,7 +38,7 @@ define([
     "esri/geometry/Extent",
     "esri/dijit/HomeButton",
     "dojo/Deferred",
-    "dojo/DeferredList",
+    "dojo/promise/all",
     "dojo/topic",
     "dojo/on",
     "widgets/infoWindow/infoWindow",
@@ -54,26 +55,24 @@ define([
     "dojo/_base/Color",
     "esri/request",
     "dojo/domReady!"
-], function (declare, domConstruct, domStyle, lang, esriUtils, dom, domAttr, query, domClass, _WidgetBase, sharedNls, esriMap, ImageParameters, FeatureLayer, GraphicsLayer, BaseMapGallery, Legends, GeometryExtent, HomeButton, Deferred, DeferredList, topic, on, InfoWindow, template, ArcGISDynamicMapServiceLayer, ArcGISTiledMapServiceLayer, OpenStreetMapLayer, array, Graphic, SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol, string, Color, esriRequest) {
-
+], function (declare, domConstruct, domStyle, lang, esriUtils, dom, domAttr, query, domClass, locale, _WidgetBase, sharedNls, esriMap, ImageParameters, FeatureLayer, GraphicsLayer, BaseMapGallery, Legends, GeometryExtent, HomeButton, Deferred, all, topic, on, InfoWindow, template, ArcGISDynamicMapServiceLayer, ArcGISTiledMapServiceLayer, OpenStreetMapLayer, array, Graphic, SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol, string, Color, esriRequest) {
     //========================================================================================================================//
 
     return declare([_WidgetBase], {
-
         map: null,
         templateString: template,
         tempGraphicsLayerId: "esriGraphicsLayerMapSettings",
         tempBufferLayer: "tempBufferLayer",
         sharedNls: sharedNls,
         infoWindowPanel: null,
-        prevOrientation: window.orientation,
         operationalLayers: [],
+        selectedMapPoint: null,
+        operationLayersCount: 0,
+        _setExtent: false,
         _mapLoaded: false,
         _widgetsInitialized: false,
         _legendPanelLoaded: false,
-        setExtent: false,
         _operationLayersLoaded: false,
-        operationLayersCount: 0,
 
         /**
         * initialize map object
@@ -83,8 +82,8 @@ define([
         */
         postCreate: function () {
             var mapDeferred, layer, i;
-            dojo.operationLayerSettings = [];
-            dojo.configSearchSettings = [];
+            appGlobals.operationLayerSettings = [];
+            appGlobals.configSearchSettings = [];
             topic.publish("showProgressIndicator");
             topic.subscribe("setInfoWindowOnMap", lang.hitch(this, function (infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count) {
                 this._onSetInfoWindowPosition(infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count);
@@ -92,11 +91,11 @@ define([
 
             /**
             * load map
-            * @param {string} dojo.configData.BaseMapLayers Basemap settings specified in configuration file
+            * @param {string} appGlobals.configData.BaseMapLayers Basemap settings specified in configuration file
             */
-            this.infoWindowPanel = new InfoWindow({ infoWindowWidth: dojo.configData.InfoPopupWidth, infoWindowHeight: dojo.configData.InfoPopupHeight });
-            if (dojo.configData.WebMapId && lang.trim(dojo.configData.WebMapId).length !== 0) {
-                mapDeferred = esriUtils.createMap(dojo.configData.WebMapId, "esriCTParentDivContainer", {
+            this.infoWindowPanel = new InfoWindow({ infoWindowWidth: appGlobals.configData.InfoPopupWidth, infoWindowHeight: appGlobals.configData.InfoPopupHeight });
+            if (appGlobals.configData.WebMapId && lang.trim(appGlobals.configData.WebMapId).length !== 0) {
+                mapDeferred = esriUtils.createMap(appGlobals.configData.WebMapId, "esriCTParentDivContainer", {
                     mapOptions: {
                         slider: true,
                         showAttribution: true
@@ -109,7 +108,7 @@ define([
                     }));
                     clearTimeout(this.stagedAddLyer);
                     this.map = response.map;
-                    dojo.selectedBasemapIndex = null;
+                    appGlobals.selectedBasemapIndex = null;
                     if (response.itemInfo.itemData.baseMap.baseMapLayers) {
                         this._setBasemapLayerId(response.itemInfo.itemData.baseMap.baseMapLayers);
                     }
@@ -121,7 +120,7 @@ define([
                     this._dependeciesLoadedEventHandler();
                     this._mapOnLoad();
                     this._mapEvents();
-                    if (dojo.configData.ShowLegend) {
+                    if (appGlobals.configData.ShowLegend) {
                         setTimeout(lang.hitch(this, function () {
                             this._createWebmapLegendLayerList(response.itemInfo.itemData.operationalLayers);
                         }), 5000);
@@ -131,7 +130,7 @@ define([
                     alert(error.message);
                 }));
             } else {
-                this._generateLayerURL(dojo.configData.OperationalLayers);
+                this._generateLayerURL(appGlobals.configData.OperationalLayers);
                 this.map = esriMap("esriCTParentDivContainer", {
                     showAttribution: true
                 });
@@ -141,17 +140,17 @@ define([
                     this._mapLoaded = true;
                     this._dependeciesLoadedEventHandler();
                 }));
-                dojo.selectedBasemapIndex = 0;
-                if (!dojo.configData.BaseMapLayers[0].length) {
-                    if (dojo.configData.BaseMapLayers[0].layerType === "OpenStreetMap") {
+                appGlobals.selectedBasemapIndex = 0;
+                if (!appGlobals.configData.BaseMapLayers[0].length) {
+                    if (appGlobals.configData.BaseMapLayers[0].layerType === "OpenStreetMap") {
                         layer = new OpenStreetMapLayer({ id: "defaultBasemap", visible: true });
                     } else {
-                        layer = new ArcGISTiledMapServiceLayer(dojo.configData.BaseMapLayers[0].MapURL, { id: "defaultBasemap", visible: true });
+                        layer = new ArcGISTiledMapServiceLayer(appGlobals.configData.BaseMapLayers[0].MapURL, { id: "defaultBasemap", visible: true });
                     }
                     this.map.addLayer(layer, 0);
                 } else {
-                    for (i = 0; i < dojo.configData.BaseMapLayers[0].length; i++) {
-                        layer = new ArcGISTiledMapServiceLayer(dojo.configData.BaseMapLayers[0][i].MapURL, { id: "defaultBasemap" + i, visible: true });
+                    for (i = 0; i < appGlobals.configData.BaseMapLayers[0].length; i++) {
+                        layer = new ArcGISTiledMapServiceLayer(appGlobals.configData.BaseMapLayers[0][i].MapURL, { id: "defaultBasemap" + i, visible: true });
                         this.map.addLayer(layer, i);
                     }
                 }
@@ -169,23 +168,23 @@ define([
             topic.subscribe("widgetInitialized", lang.hitch(this, function (evt) {
                 this._widgetsInitialized = true;
                 this._dependeciesLoadedEventHandler();
-                this._setLoatorInstance();
+                this.setLocatorInstance();
             }));
 
             topic.subscribe("displayInfoWindow", lang.hitch(this, function (evt) {
-                this.setExtent = true;
+                this._setExtent = true;
                 this._displayInfoWindow(evt);
             }));
 
             topic.subscribe("showInfoWindowOnMap", lang.hitch(this, function (mapPoint, featureID) {
-                this.setExtent = true;
+                this._setExtent = true;
                 this._executeQueryForObjectID(mapPoint, featureID);
             }));
 
             topic.subscribe("sharedLocatorFeature", lang.hitch(this, this._addLocatorFeature));
 
             window.onkeydown = function (e) {
-                if ((e.keyCode === 9 || e.which === 9) && dojo.isSplashScreenOn) {
+                if ((e.keyCode === 9 || e.which === 9) && appGlobals.isSplashScreenOn) {
                     return false;
                 }
             };
@@ -205,10 +204,10 @@ define([
         * create a unified search locator instance and handle the address search events
         * @memberOf widgets/mapSettings/mapSettings
         */
-        _setLoatorInstance: function () {
+        setLocatorInstance: function () {
             var i, infoIndex, locatorInstance;
             locatorInstance = dijit.byId("locator");
-            dojo.locatorSelectFeature = false;
+            appGlobals.locatorSelectFeature = false;
             //address is selected from the address list
             locatorInstance.candidateClicked = lang.hitch(this, function (graphic) {
                 if (graphic.geometry) {
@@ -218,13 +217,15 @@ define([
                         topic.publish("infoWindowData", graphic);
                         topic.publish("infoWindowVisibilityStatus", true);
                         topic.publish("shareLocatorAddress", [graphic.geometry], false, graphic.name);
-                        for (i = 0; i < dojo.operationLayerSettings.length; i++) {
-                            if (parseInt(graphic.layer.QueryLayerId, 10) === parseInt(dojo.operationLayerSettings[i].layerID, 10) && graphic.layer.Title === dojo.operationLayerSettings[i].layerTitle) {
+                        for (i = 0; i < appGlobals.operationLayerSettings.length; i++) {
+                            if (parseInt(graphic.layer.QueryLayerId, 10) === parseInt(appGlobals.operationLayerSettings[i].layerID, 10) && graphic.layer.Title === appGlobals.operationLayerSettings[i].layerTitle) {
                                 infoIndex = i;
                                 break;
                             }
                         }
-                        this._createInfoWindowContent(null, graphic.geometry, graphic.attributes, graphic.fields, infoIndex, null, null, false);
+                        //set the width of infowindow title
+                        domClass.add(query(".esriCTHeaderPanelContent")[0], "esriCTSingleFeatureHeader");
+                        this._createInfoWindowContent(null, graphic.geometry, graphic.attributes, infoIndex, null, null, false);
                     } else {
                         //for polygon geometry, highlight the feature
                         this.map.setExtent(graphic.geometry.getExtent());
@@ -244,38 +245,46 @@ define([
             topic.subscribe("toggleWidget", lang.hitch(this, function (widget) {
                 //if address search textBox is blank, set the default address search value in the textbox
                 if (widget === "locator" && locatorInstance.lastSearchString === "") {
-                    topic.publish("setDefaultTextboxValue", locatorInstance.txtAddress, "defaultAddress", dojo.configData.LocatorSettings.LocatorDefaultAddress);
+                    topic.publish("setDefaultTextboxValue", locatorInstance.txtAddress, "defaultAddress", appGlobals.configData.LocatorSettings.LocatorDefaultAddress);
                 }
             }));
         },
 
         /**
         * highlight the polygon feature on map in case of locator query result selection
-        * @param {object} geometry geometry of feature
-        * @param {object} addr selected query result
+        * @param {object} geometry - geometry of feature
+        * @param {object} addr - selected query result
         * @memberOf widgets/mapSettings/mapSettings
         */
         _addLocatorFeature: function (geometry, addr) {
             var highlightGraphic, highlightSymbol;
-            highlightSymbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID,
-                new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
+            if (geometry.type === "polyline") {
+                highlightSymbol = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([
+                        parseInt(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[0], 10),
+                        parseInt(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[1], 10),
+                        parseInt(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[2], 10),
+                        parseFloat(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolTransparency.split(",")[0], 10)
+                ]), 2);
+            } else if (geometry.type === "polygon") {
+                highlightSymbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID, new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
                     new Color([
-                        parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[0], 10),
-                        parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[1], 10),
-                        parseInt(dojo.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[2], 10),
-                        parseFloat(dojo.configData.HighlightFeaturesSymbology.LineSymbolTransparency.split(",")[0], 10)
+                        parseInt(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[0], 10),
+                        parseInt(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[1], 10),
+                        parseInt(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[2], 10),
+                        parseFloat(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolTransparency.split(",")[0], 10)
                     ]), 2),
                 new Color([
-                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[0], 10),
-                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[1], 10),
-                    parseInt(dojo.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10),
-                    parseFloat(dojo.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)
+                    parseInt(appGlobals.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[0], 10),
+                    parseInt(appGlobals.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[1], 10),
+                    parseInt(appGlobals.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10),
+                    parseFloat(appGlobals.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)
                 ]));
+            }
             highlightGraphic = new Graphic(geometry, highlightSymbol);
             this.map.getLayer("esriGraphicsLayerMapSettings").add(highlightGraphic);
             topic.publish("shareLocatorAddress", [geometry], false, addr);
             topic.publish("showClearGraphicsIcon");
-            dojo.locatorSelectFeature = true;
+            appGlobals.locatorSelectFeature = true;
         },
 
         /**
@@ -311,7 +320,6 @@ define([
                     this._setBasemapId(baseMapLayers[i], defaultId + i);
                 }
             }
-
         },
 
         /**
@@ -327,7 +335,6 @@ define([
                 delete this.map._layers[basmap.id];
             }
             this.map.layerIds[layerIndex] = defaultId;
-
         },
 
         /**
@@ -337,47 +344,86 @@ define([
         * @memberOf widgets/mapSettings/mapSettings
         */
         _fetchWebMapData: function (response) {
-            var i, j, k, webMapDetails, layerInfo;
+            var i, j, k, webMapDetails, layerInfo, fieldInfos, layerURL, defArr;
             webMapDetails = response.itemInfo.itemData;
             for (i = 0; i < webMapDetails.operationalLayers.length; i++) {
-                if (webMapDetails.operationalLayers[i].visibility) {
+                if (webMapDetails.operationalLayers[i].visibility && webMapDetails.operationalLayers[i].url) {
                     //create operation layers array
                     this._createWebmapOperationLayer(webMapDetails.operationalLayers[i]);
                     //set infowWindowData for each operation layer
                     if (webMapDetails.operationalLayers[i].layers) {
-                        //Fetching infopopup data in case the layers are added as dynamic layers in the webmap
+                        defArr = [];
+                        //Fetching info popup data in case the layers are added as dynamic layers in the webmap
                         for (j = 0; j < webMapDetails.operationalLayers[i].layers.length; j++) {
                             layerInfo = webMapDetails.operationalLayers[i].layers[j];
                             //check the operation layer before creating the infoWindow data
-                            for (k = 0; k < dojo.operationLayerSettings.length; k++) {
-                                if (webMapDetails.operationalLayers[i].title === dojo.operationLayerSettings[k].layerTitle && dojo.operationLayerSettings[k].layerID === layerInfo.id) {
+                            for (k = 0; k < appGlobals.operationLayerSettings.length; k++) {
+                                if (webMapDetails.operationalLayers[i].title === appGlobals.operationLayerSettings[k].layerTitle && appGlobals.operationLayerSettings[k].layerID === layerInfo.id) {
                                     //set infoWindow content to operation layer
-                                    dojo.operationLayerSettings[k].infoWindowData = {};
+                                    if (layerInfo.popupInfo) {
+                                        appGlobals.operationLayerSettings[k].infoWindowData = {};
+                                        appGlobals.operationLayerSettings[k].webmapFieldInfo = layerInfo.popupInfo.fieldInfos;
+                                    }
+                                    layerURL = webMapDetails.operationalLayers[i].url + "/" + webMapDetails.operationalLayers[i].layers[j].id;
+                                    defArr.push(this._loadFeatureLayer(layerURL, webMapDetails.operationalLayers[i].layers[j], k));
                                     break;
                                 }
                             }
-                            if (dojo.operationLayerSettings[k] && dojo.operationLayerSettings[k].infoWindowData) {
-                                this._createWebMapInfoWindowData(layerInfo, dojo.operationLayerSettings[k].infoWindowData);
+                            if (appGlobals.operationLayerSettings[k] && appGlobals.operationLayerSettings[k].infoWindowData) {
+                                fieldInfos = this._getLayerFieldsInfo(appGlobals.operationLayerSettings[k].layerURL);
+                                this._createWebMapInfoWindowData(layerInfo, appGlobals.operationLayerSettings[k].infoWindowData, fieldInfos);
                             }
                         }
+                        this._setOperationalLayerDetails(defArr);
                     } else if (webMapDetails.operationalLayers[i].popupInfo) {
-                        //Fetching infopopup data in case the layers are added as feature layers in the webmap
+                        //Fetching info popup data in case the layers are added as feature layers in the webmap
                         layerInfo = webMapDetails.operationalLayers[i];
                         //check the operation layer before creating the infoWindow data
-                        for (k = 0; k < dojo.operationLayerSettings.length; k++) {
-                            if (dojo.operationLayerSettings[k].layerURL === webMapDetails.operationalLayers[i].url) {
+                        for (k = 0; k < appGlobals.operationLayerSettings.length; k++) {
+                            if (appGlobals.operationLayerSettings[k].layerURL === webMapDetails.operationalLayers[i].url) {
                                 //set infoWindow content to operation layer
-                                dojo.operationLayerSettings[k].infoWindowData = {};
+                                appGlobals.operationLayerSettings[k].infoWindowData = {};
+                                appGlobals.operationLayerSettings[k].webmapFieldInfo = layerInfo.popupInfo.fieldInfos;
+                                appGlobals.operationLayerSettings[k].layerDetails = layerInfo;
                                 break;
                             }
                         }
-                        if (dojo.operationLayerSettings[k] && dojo.operationLayerSettings[k].infoWindowData) {
-                            this._createWebMapInfoWindowData(layerInfo, dojo.operationLayerSettings[k].infoWindowData);
+                        if (appGlobals.operationLayerSettings[k] && appGlobals.operationLayerSettings[k].infoWindowData) {
+                            fieldInfos = this._getLayerFieldsInfo(appGlobals.operationLayerSettings[k].layerURL);
+                            this._createWebMapInfoWindowData(layerInfo, appGlobals.operationLayerSettings[k].infoWindowData, fieldInfos);
                         }
                     }
                 }
             }
             this._createSearchSettings();
+        },
+
+        _setOperationalLayerDetails: function (defArr) {
+            var p, q;
+            all(defArr).then(lang.hitch(this, function (results) {
+                for (p = 0; p < results.length; p++) {
+                    for (q = 0; q < appGlobals.operationLayerSettings.length; q++) {
+                        if (results[p]) {
+                            if (appGlobals.operationLayerSettings[q].layerURL === results[p].url) {
+                                appGlobals.operationLayerSettings[q].layerDetails = results[p];
+                            }
+                        }
+                    }
+                }
+            }));
+        },
+
+        _loadFeatureLayer: function (layerURL, layerObject, k) {
+            var fLayer, param = {}, def = new Deferred();
+            fLayer = new FeatureLayer(layerURL);
+            on(fLayer, "load", lang.hitch(this, function (evt) {
+                param = layerObject;
+                param.index = k;
+                param.url = layerURL;
+                param.layerObject = evt.layer;
+                def.resolve(param);
+            }));
+            return def;
         },
 
         /**
@@ -386,7 +432,7 @@ define([
         * @memberOf widgets/mapSettings/mapSettings
         */
         _createWebmapOperationLayer: function (layer) {
-            var url, urlArray, lastIndex, i, j, operationLayer, searchSettings = dojo.configData.SearchSettings;
+            var url, urlArray, lastIndex, i, j, operationLayer, searchSettings = appGlobals.configData.SearchSettings;
             urlArray = layer.url.split('/');
             lastIndex = urlArray[urlArray.length - 1];
             //create a temp service url
@@ -399,23 +445,24 @@ define([
             } else {
                 url = layer.url.substring(0, layer.url.lastIndexOf("/") + 1);
             }
-            //create an object of opertaion layer
+            //create an object of operation layer
             if (layer.layerObject.layerInfos) {
                 //layer is added as dynamic layer in the webmap
                 for (i = 0; i < layer.layerObject.layerInfos.length; i++) {
                     operationLayer = {};
                     //check the operation layer default visibility
                     if (array.indexOf(layer.layerObject.visibleLayers, layer.layerObject.layerInfos[i].id) !== -1) {
-                        //set the opertaion layer title
+                        //set the operation layer title
                         operationLayer.layerTitle = lang.trim(layer.title);
-                        //set the opertaion layer ID
+                        //set the operation layer ID
                         operationLayer.layerID = layer.layerObject.layerInfos[i].id;
-                        //set the opertaion layer service URL
+                        //set the operation layer service URL
                         if (isNaN(lastIndex) || lastIndex === "") {
                             operationLayer.layerURL = url + layer.layerObject.layerInfos[i].id;
                         } else {
                             operationLayer.layerURL = url;
                         }
+                        //  operationLayer.formatted = false;
                         //set searchSetting for operation layer if available
                         for (j = 0; j < searchSettings.length; j++) {
                             if (lang.trim(layer.title) === searchSettings[j].Title && layer.layerObject.layerInfos[i].id === parseInt((searchSettings[j].QueryLayerId), 10)) {
@@ -423,18 +470,19 @@ define([
                                 break;
                             }
                         }
-                        dojo.operationLayerSettings.push(operationLayer);
+                        appGlobals.operationLayerSettings.push(operationLayer);
                     }
                 }
             } else {
                 //layer is added as feature layer in webmap
                 operationLayer = {};
-                //set the opertaion layer title
+                //set the operation layer title
                 operationLayer.layerTitle = lang.trim(layer.title);
-                //set the opertaion layer ID
+                //set the operation layer ID
                 operationLayer.layerID = layer.layerObject.layerId;
-                //set the opertaion layer service URL
+                //set the operation layer service URL
                 operationLayer.layerURL = layer.url;
+                //  operationLayer.formatted = false;
                 //set searchSetting for operation layer if available
                 for (j = 0; j < searchSettings.length; j++) {
                     if (lang.trim(layer.title) === searchSettings[j].Title && layer.layerObject.layerId === parseInt((searchSettings[j].QueryLayerId), 10)) {
@@ -442,7 +490,7 @@ define([
                         break;
                     }
                 }
-                dojo.operationLayerSettings.push(operationLayer);
+                appGlobals.operationLayerSettings.push(operationLayer);
             }
         },
 
@@ -452,15 +500,10 @@ define([
         * @param {object} infoWindowData popupInfo object of a layer
         * @memberOf widgets/mapSettings/mapSettings
         */
-        _createWebMapInfoWindowData: function (layerInfo, infoWindowData) {
-            var i, infoWindowHeaderField, field;
+        _createWebMapInfoWindowData: function (layerInfo, infoWindowData, fieldInfos) {
+            var infoWindowHeaderField, field, typeField = {};
             //set infowWindow header field with title and attribute
-            if (layerInfo.popupInfo && layerInfo.popupInfo.title.split("{").length > 1) {
-                infoWindowHeaderField = lang.trim(layerInfo.popupInfo.title.split("{")[0]) + " ";
-                for (i = 1; i < layerInfo.popupInfo.title.split("{").length; i++) {
-                    infoWindowHeaderField += "${" + lang.trim(layerInfo.popupInfo.title.split("{")[i]);
-                }
-            } else if (layerInfo.popupInfo) {
+            if (layerInfo.popupInfo) {
                 if (lang.trim(layerInfo.popupInfo.title) !== "") {
                     infoWindowHeaderField = lang.trim(layerInfo.popupInfo.title);
                 } else {
@@ -468,9 +511,13 @@ define([
                 }
             }
             infoWindowData.infoWindowHeader = infoWindowHeaderField;
+            //set the infowWindow header typeIdField if available
+            typeField.typeIdField = fieldInfos.typeIdField || "";
+            typeField.types = fieldInfos.types || "";
+            infoWindowData.typeFieldSettings = typeField;
             //populate infoWindow fieldname and display text
             infoWindowData.infoWindowfields = [];
-            if (layerInfo.popupInfo) {
+            if (layerInfo.popupInfo && !layerInfo.popupInfo.description) {
                 for (field in layerInfo.popupInfo.fieldInfos) {
                     if (layerInfo.popupInfo.fieldInfos.hasOwnProperty(field)) {
                         if (layerInfo.popupInfo.fieldInfos[field].visible) {
@@ -485,24 +532,677 @@ define([
         },
 
         /**
+        * create infoWindow fields and set values for display
+        * @param {object} anchorPoint - selected mapPoint
+        * @param {object} geometry - selected graphic layer geometry
+        * @param {object} attributes - attributes of a selected graphics layer
+        * @param {int} infoIndex - Layer order specified in operationLayerSettings collection
+        * @param {array} featureArray - feature query results collection
+        * @param {int} count - index of the feature of a featureArray
+        * @param {boolean} zoomToFeature - value specifying whether to zoom on the selected graphics or not
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _createInfoWindowContent: function (anchorPoint, geometry, attributes, infoIndex, featureArray, count, zoomToFeature) {
+            try {
+                var infoPopupFieldsCollection, infoPopupHeight, infoPopupWidth, divInfoDetailsTab, divInfoRow, infoTitle, mapPoint, descriptionValue, formattedAttr;
+                this.map.infoWindow.hide();
+                mapPoint = anchorPoint || this._getMapPoint(geometry);
+                if (featureArray) {
+                    if (featureArray.length > 1 && count !== featureArray.length - 1) {
+                        domClass.add(query(".esriCTInfoWindowRightArrow")[0], "esriCTShowInfoRightArrow");
+                        domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", count);
+                    } else {
+                        domClass.remove(query(".esriCTInfoWindowRightArrow")[0], "esriCTShowInfoRightArrow");
+                        domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", "");
+                    }
+                    if (count > 0 && count < featureArray.length) {
+                        domClass.add(query(".esriCTInfoWindowLeftArrow")[0], "esriCTShowInfoLeftArrow");
+                        domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", count + 1);
+                    } else {
+                        domClass.remove(query(".esriCTInfoWindowLeftArrow")[0], "esriCTShowInfoLeftArrow");
+                        domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", count + 1);
+                    }
+                } else {
+                    domClass.remove(query(".esriCTInfoWindowRightArrow")[0], "esriCTShowInfoRightArrow");
+                    domClass.remove(query(".esriCTInfoWindowLeftArrow")[0], "esriCTShowInfoLeftArrow");
+                    domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", "");
+                    domAttr.set(query(".esriCTdivInfoTotalFeatureCount")[0], "innerHTML", "");
+                }
+                infoPopupHeight = appGlobals.configData.InfoPopupHeight;
+                infoPopupWidth = appGlobals.configData.InfoPopupWidth;
+                divInfoDetailsTab = domConstruct.create("div", {
+                    "class": "esriCTInfoDetailsTab"
+                }, null);
+                if (appGlobals.operationLayerSettings[infoIndex].infoWindowData) {
+                    formattedAttr = lang.clone(attributes);
+                    //infoWindow is configured, create the display structure
+                    this.divInfoDetailsContainer = domConstruct.create("div", {
+                        "class": "esriCTInfoDetailsContainer"
+                    }, divInfoDetailsTab);
+                    //check the configured popup type
+                    if (appGlobals.operationLayerSettings[infoIndex].layerDetails && appGlobals.operationLayerSettings[infoIndex].layerDetails.popupInfo && appGlobals.operationLayerSettings[infoIndex].layerDetails.popupInfo.description) {
+                        //custom popup is configured
+                        descriptionValue = this._getDescription(formattedAttr, appGlobals.operationLayerSettings[infoIndex].layerDetails);
+                        //create a div with pop up info description and add it to details div
+                        divInfoRow = domConstruct.create("div", { "class": "esriCTDisplayRow" }, this.divInfoDetailsContainer);
+                        domConstruct.create("div", {
+                            "innerHTML": descriptionValue,
+                            "class": "esriCTDisplayFieldCustomPopUp"
+                        }, divInfoRow);
+                    } else {
+                        infoPopupFieldsCollection = appGlobals.operationLayerSettings[infoIndex].infoWindowData.infoWindowfields;
+                        if (infoPopupFieldsCollection) {
+                            //set the date, domain coded values if available
+                            this._populatePopupFieldValues(appGlobals.operationLayerSettings[infoIndex].infoWindowData, formattedAttr, appGlobals.operationLayerSettings[infoIndex].layerDetails);
+                            //create and set the display of popup
+                            this._createPopupDisplay(infoPopupFieldsCollection, formattedAttr);
+                        } else {
+                            // no fields available
+                            this.divInfoDetailsContainer = domConstruct.create("div", {
+                                "class": "esriCTInfoDetailsContainerError",
+                                "innerHTML": "No fields Available"
+                            }, divInfoDetailsTab);
+                        }
+                    }
+                    //set the header of infoWindow
+                    if (appGlobals.operationLayerSettings[infoIndex].infoWindowData && appGlobals.operationLayerSettings[infoIndex].infoWindowData.infoWindowHeader) {
+                        try {
+                            if (!(appGlobals.configData.WebMapId && lang.trim(appGlobals.configData.WebMapId).length !== 0)) {
+                                infoTitle = string.substitute(appGlobals.operationLayerSettings[infoIndex].infoWindowData.infoWindowHeader, attributes);
+                            } else {
+                                infoTitle = this.getInfoPopupTitle(formattedAttr, appGlobals.operationLayerSettings[infoIndex], true);
+                            }
+                        } catch (ex) {
+                            infoTitle = sharedNls.errorMessages.noHeaderField;
+                        }
+                    } else {
+                        infoTitle = sharedNls.errorMessages.noHeaderField;
+                    }
+                    //Create Attachments if layer has attachments and showAttachments is set to true in pop-up configuration.
+                    if (appGlobals.operationLayerSettings[infoIndex].layerDetails.hasAttachments) {
+                        this._showAttachments(appGlobals.operationLayerSettings[infoIndex].layerDetails, attributes[appGlobals.operationLayerSettings[infoIndex].layerDetails.objectIdField], this.divInfoDetailsContainer);
+                    } else if (appGlobals.operationLayerSettings[infoIndex].layerDetails.layerObject && appGlobals.operationLayerSettings[infoIndex].layerDetails.layerObject.hasAttachments) {
+                        this._showAttachments(appGlobals.operationLayerSettings[infoIndex].layerDetails.layerObject, attributes[appGlobals.operationLayerSettings[infoIndex].layerDetails.layerObject.objectIdField], this.divInfoDetailsContainer);
+                    }
+                } else {
+                    //infoWindow is not configured
+                    this.divInfoDetailsContainer = domConstruct.create("div", {
+                        "class": "esriCTInfoDetailsContainerError",
+                        "innerHTML": sharedNls.errorMessages.emptyInfoWindowContent
+                    }, divInfoDetailsTab);
+                    infoTitle = sharedNls.errorMessages.emptyInfoWindowTitle;
+                }
+                this.selectedMapPoint = mapPoint;
+                this._setInfoWindowZoomLevel(mapPoint, infoTitle, divInfoDetailsTab, infoPopupWidth, infoPopupHeight, count, zoomToFeature);
+                topic.publish("hideProgressIndicator");
+            } catch (err) {
+                alert(err.message);
+            }
+        },
+
+
+        /**
+       * populate the attribute values with required display format for date and coded values
+       * @param{array} infoPopupFieldsCollection collection of fields configured for a popup
+       * @param{object} attributes - attributes of a popup
+       * @memberOf widgets/mapSettings/mapSettings
+       */
+        _populatePopupFieldValues: function (infoPopupData, attributes, layerObject) {
+            var i, j, k, l, attribute, domain, infoPopupFieldsCollection = infoPopupData.infoWindowfields, fieldInfo, fieldValue, popupInfoValue, domainValue;
+            for (i = 0; i < infoPopupFieldsCollection.length; i++) {
+                for (attribute in attributes) {
+                    if (attributes.hasOwnProperty(attribute)) {
+                        if (infoPopupFieldsCollection[i].FieldName && infoPopupFieldsCollection[i].FieldName !== "" && infoPopupFieldsCollection[i].FieldName.split("${")[1].split("}")[0] === attribute) {
+                            if (attributes[attribute] === null || attributes[attribute] === "" || attributes[attribute] === " ") {
+                                //set the blank or null value
+                                attributes[attribute] = sharedNls.showNullValue;
+                            } else if (infoPopupFieldsCollection[i].format && infoPopupFieldsCollection[i].format !== "") {
+                                if (infoPopupFieldsCollection[i].format.digitSeparator || infoPopupFieldsCollection[i].format.places) {
+                                    //format the number
+                                    attributes[attribute] = this._numberFormatCorverter(infoPopupFieldsCollection[i], Number(attributes[attribute]));
+                                } else {
+                                    //format the date
+                                    attributes[attribute] = this._setDateFormat(infoPopupFieldsCollection[i], Number(attributes[attribute]));
+                                }
+                            } else if (infoPopupFieldsCollection[i].domain && infoPopupFieldsCollection[i].domain !== "") {
+                                //set the coded values
+                                if (infoPopupFieldsCollection[i].domain.codedValues) {
+                                    for (j = 0; j < infoPopupFieldsCollection[i].domain.codedValues.length; j++) {
+                                        if (attributes[attribute] === infoPopupFieldsCollection[i].domain.codedValues[j].code) {
+                                            attributes[attribute] = infoPopupFieldsCollection[i].domain.codedValues[j].name;
+                                            break;
+                                        }
+                                    }
+                                }
+                            } else if (layerObject.popupInfo) {
+                                fieldInfo = this._isDateField(attribute, layerObject.layerObject);
+                                popupInfoValue = this._getPopupInfo(attribute, layerObject.popupInfo);
+                                if (fieldInfo && attributes[lang.trim(attribute)] !== sharedNls.showNullValue) {
+                                    //set date format
+                                    fieldValue = this._setDateFormat(popupInfoValue, attributes[lang.trim(attribute)]);
+                                    if (popupInfoValue.format) {
+                                        // Check whether format for digit separator is available
+                                        fieldValue = this._numberFormatCorverter(popupInfoValue, fieldValue);
+                                    }
+                                    attributes[attribute] = fieldValue;
+                                } else {
+                                    fieldInfo = this._hasDomainCodedValue(attribute, attributes, layerObject.layerObject);
+                                    if (fieldInfo) {
+                                        if (fieldInfo.isTypeIdField) {
+                                            attributes[attribute] = fieldInfo.name;
+                                        } else {
+                                            domainValue = this._domainCodedValues(fieldInfo, attributes[lang.trim(attribute)]);
+                                            attributes[attribute] = domainValue.domainCodedValue;
+                                        }
+                                    } else if (attributes[attribute] || attributes[attribute] === 0) {
+                                        // Check if the field is valid field or not, if it is valid then substitute its value.
+                                        if (popupInfoValue.format) {
+                                            // Check whether format for digit separator is available
+                                            attributes[attribute] = this._numberFormatCorverter(popupInfoValue, Number(attributes[attribute]));
+                                        }
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            //set the typeIdField value if available
+            if (infoPopupData.typeFieldSettings) {
+                for (attribute in attributes) {
+                    if (attributes.hasOwnProperty(attribute)) {
+                        if (infoPopupData.typeFieldSettings.typeIdField && attributes[infoPopupData.typeFieldSettings.typeIdField]) {
+                            for (k = 0; k < infoPopupData.typeFieldSettings.types.length; k++) {
+                                if (attributes[infoPopupData.typeFieldSettings.typeIdField] === infoPopupData.typeFieldSettings.types[k].id) {
+                                    attributes[infoPopupData.typeFieldSettings.typeIdField] = infoPopupData.typeFieldSettings.types[k].name;
+                                    if (infoPopupData.typeFieldSettings.types[k].domains) {
+                                        for (domain in infoPopupData.typeFieldSettings.types[k].domains) {
+                                            if (infoPopupData.typeFieldSettings.types[k].domains.hasOwnProperty(domain)) {
+                                                if (attributes[domain]) {
+                                                    if (infoPopupData.typeFieldSettings.types[k].domains[domain].codedValues) {
+                                                        for (l = 0; l < infoPopupData.typeFieldSettings.types[k].domains[domain].codedValues.length; l++) {
+                                                            if (attributes[domain] === infoPopupData.typeFieldSettings.types[k].domains[domain].codedValues[l].code) {
+                                                                attributes[domain] = infoPopupData.typeFieldSettings.types[k].domains[domain].codedValues[l].name;
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+
+        /**
+        * create the display of infoWindow fields and populate the values
+        * @param{array} infoPopupFieldsCollection - collection of fields configured for a popup
+        * @param{object} attributes - attributes of a popup
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _createPopupDisplay: function (infoPopupFieldsCollection, attributes) {
+            var key, link, divLink, divInfoRow, fieldNames;
+            for (key = 0; key < infoPopupFieldsCollection.length; key++) {
+                if (infoPopupFieldsCollection[key].FieldName && infoPopupFieldsCollection[key].FieldName !== "" && attributes[infoPopupFieldsCollection[key].FieldName.split("${")[1].split("}")[0]]) {
+                    divInfoRow = domConstruct.create("div", {
+                        "className": "esriCTDisplayRow"
+                    }, this.divInfoDetailsContainer);
+                    // Create the row's label
+                    this.divInfoDisplayField = domConstruct.create("div", {
+                        "className": "esriCTDisplayField",
+                        "innerHTML": infoPopupFieldsCollection[key].DisplayText
+                    }, divInfoRow);
+                    this.divInfoFieldValue = domConstruct.create("div", {
+                        "className": "esriCTValueField"
+                    }, divInfoRow);
+                    fieldNames = string.substitute(infoPopupFieldsCollection[key].FieldName, attributes);
+                    if (string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("http:") || string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("https:")) {
+                        link = fieldNames;
+                        divLink = domConstruct.create("div", {
+                            "class": "esriCTLink",
+                            "link": link,
+                            "innerHTML": sharedNls.buttons.link
+                        }, this.divInfoFieldValue);
+                        on(divLink, "click", this._openDetailWindow);
+                    } else {
+                        this.divInfoFieldValue.innerHTML = fieldNames;
+                    }
+                }
+            }
+        },
+
+        getInfoPopupTitle: function (featureSet, operationalLayer, isSetDateFormat) {
+            var i, j, titleField, fieldValue, domainValue, popupTitle, titleArray, headerValue, headerFieldArray, fieldInfo, popupInfoValue;
+            headerValue = null;
+            // split info popup header fields
+            popupTitle = operationalLayer.infoWindowData.infoWindowHeader.split("{");
+            headerFieldArray = [];
+            // if header contains more than 1 fields
+            if (popupTitle.length > 1) {
+                // get strings from header
+                titleField = lang.trim(popupTitle[0]);
+                for (i = 0; i < popupTitle.length; i++) {
+                    // insert remaining fields in an array
+                    titleArray = popupTitle[i].split("}");
+                    if (i === 0) {
+                        if (featureSet.hasOwnProperty(titleArray[0])) {
+                            fieldValue = featureSet[titleArray[0]];
+                            // concatenate string and first field from the header and insert in an array
+                            headerFieldArray.push(fieldValue);
+                        } else {
+                            headerFieldArray.push(titleField);
+                        }
+                    } else {
+                        for (j = 0; j < titleArray.length; j++) {
+                            if (j === 0) {
+                                if (featureSet.hasOwnProperty(titleArray[j])) {
+                                    //check for date type field in popup title
+                                    fieldInfo = this._isDateField(titleArray[j], operationalLayer.layerDetails.layerObject);
+                                    popupInfoValue = this._getPopupInfo(titleArray[j], operationalLayer.layerDetails.popupInfo);
+                                    fieldValue = featureSet[lang.trim(titleArray[j])];
+                                    if (fieldValue !== null && lang.trim(String(fieldValue)) !== "" && fieldValue !== sharedNls.showNullValue) {
+                                        if (fieldInfo && isSetDateFormat) {
+                                            //set date format
+                                            fieldValue = this._setDateFormat(popupInfoValue, fieldValue);
+                                        } else {
+                                            fieldInfo = this._hasDomainCodedValue(titleArray[j], featureSet, operationalLayer.layerDetails.layerObject);
+                                            if (fieldInfo) {
+                                                if (fieldInfo.isTypeIdField) {
+                                                    fieldValue = fieldInfo.name;
+                                                } else {
+                                                    domainValue = this._domainCodedValues(fieldInfo, fieldValue);
+                                                    fieldValue = domainValue.domainCodedValue;
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        fieldValue = sharedNls.showNullValue;
+                                    }
+                                    if (popupInfoValue.format) {
+                                        // Check whether format for digit separator is available
+                                        fieldValue = this._numberFormatCorverter(popupInfoValue, fieldValue);
+                                    }
+                                    headerFieldArray.push(fieldValue);
+                                }
+                            } else {
+                                headerFieldArray.push(titleArray[j]);
+                            }
+                        }
+                    }
+                }
+
+                // form a string from the headerFieldArray array, to display in header
+                for (j = 0; j < headerFieldArray.length; j++) {
+                    if (headerValue) {
+                        headerValue = headerValue + headerFieldArray[j];
+                    } else {
+                        headerValue = headerFieldArray[j];
+                    }
+                }
+            } else {
+                // if popup title is not empty, display popup field headerValue else display a configurable text
+                if (lang.trim(operationalLayer.layerDetails.popupInfo.title) !== "") {
+                    headerValue = operationalLayer.layerDetails.popupInfo.title;
+                }
+            }
+            if (headerValue === null) {
+                headerValue = sharedNls.showNullValue;
+            }
+            return headerValue;
+        },
+
+        /**
+        * Show attached images in the issue details
+        * @param{array} operationalLayer
+        * @param{object} parentDiv
+        * @param{string} objectID
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _showAttachments: function (operationalLayer, objectID, divInfoDetailsContainer) {
+            var i, divInfoRow, attchmentNode;
+            // Query attachments in layer
+            operationalLayer.queryAttachmentInfos(objectID, lang.hitch(this, function (infos) {
+                // If attachments found
+                if (infos.length > 0) {
+                    domConstruct.create("div", {
+                        "innerHTML": sharedNls.titles.attchementText,
+                        "class": "esriCTDisplayField"
+                    }, divInfoDetailsContainer);
+                }
+                for (i = 0; i < infos.length; i++) {
+                    //create a div with pop up info description and add it to details div
+                    divInfoRow = domConstruct.create("div", { "class": "esriCTDisplayRow" }, divInfoDetailsContainer);
+                    attchmentNode = domConstruct.create("div", {
+                        "innerHTML": infos[i].name,
+                        "class": "esriCTLink"
+                    }, divInfoRow);
+                    domClass.add(attchmentNode, "esriCTAttchmentInfo");
+                    domAttr.set(attchmentNode, "imgPath", infos[i].url);
+                    on(attchmentNode, "click", lang.hitch(this, this._openAttachment));
+                }
+            }), function (err) {
+                alert(err.message);
+            });
+        },
+
+        /**
+        * Show attachments in new window when user clicks on the attachment thumbnail
+        * @param{object} evt
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _openAttachment: function (evt) {
+            var node = evt.currentTarget || evt.srcElement, imgUrl;
+            imgUrl = domAttr.get(node, "imgPath");
+            window.open(imgUrl);
+        },
+
+
+
+        /**
+        * Get description from layer pop up info
+        * @param{array} featureSet
+        * @param{object} operationalLayer - operational layer data
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _getDescription: function (featureSet, operationalLayerDetails) {
+            var descriptionValue, i, field, splittedArrayForClosingBraces, popupInfoValue, fieldValue, fieldInfo, domainValue;
+            // Assuming Fields will be configure within the curly braces'{}'
+            // check if Custom Configuration has any fields Configured in it.
+            if (operationalLayerDetails.popupInfo.description.split("{").length > 0) {
+                // Add the data before 1st instance on curly '{' braces
+                descriptionValue = operationalLayerDetails.popupInfo.description.split("{")[0];
+                // Loop through the possible number of configured fields
+                for (i = 1; i < operationalLayerDetails.popupInfo.description.split("{").length; i++) {
+                    // check if string is having closing curly braces '}'. i.e. it has some field
+                    if (operationalLayerDetails.popupInfo.description.split("{")[i].indexOf("}") !== -1) {
+                        splittedArrayForClosingBraces = operationalLayerDetails.popupInfo.description.split("{")[i].split("}");
+                        field = string.substitute(splittedArrayForClosingBraces[0]);
+                        popupInfoValue = this._getPopupInfo(field, operationalLayerDetails.popupInfo);
+
+                        fieldInfo = this._isDateField(field, operationalLayerDetails.layerObject);
+                        if (fieldInfo && featureSet[lang.trim(field)] !== sharedNls.showNullValue) {
+                            //set date format
+                            fieldValue = this._setDateFormat(popupInfoValue, featureSet[lang.trim(field)]);
+                            if (popupInfoValue.format) {
+                                // Check whether format for digit separator is available
+                                fieldValue = this._numberFormatCorverter(popupInfoValue, fieldValue);
+                            }
+                            descriptionValue += fieldValue;
+                        } else {
+                            fieldInfo = this._hasDomainCodedValue(field, featureSet, operationalLayerDetails.layerObject);
+                            if (fieldInfo) {
+                                if (fieldInfo.isTypeIdField) {
+                                    descriptionValue += fieldInfo.name;
+                                } else {
+                                    domainValue = this._domainCodedValues(fieldInfo, featureSet[lang.trim(field)]);
+                                    descriptionValue += domainValue.domainCodedValue;
+                                }
+                            } else if (featureSet[field] || featureSet[field] === 0) {
+                                // Check if the field is valid field or not, if it is valid then substitute its value.
+                                fieldValue = featureSet[field];
+                                if (popupInfoValue.format) {
+                                    // Check whether format for digit separator is available
+                                    fieldValue = this._numberFormatCorverter(popupInfoValue, fieldValue);
+                                }
+                                descriptionValue += fieldValue;
+                            } else if (field === "") {
+                                // if field is empty means only curly braces are configured in pop-up
+                                descriptionValue += "{}";
+                            }
+                        }
+                        splittedArrayForClosingBraces.shift();
+                        // If splittedArrayForClosingBraces length is more than 1, then there are more closing braces in the string, so join the array with }
+                        if (splittedArrayForClosingBraces.length > 1) {
+                            descriptionValue += splittedArrayForClosingBraces.join("}");
+                        } else {
+                            descriptionValue += splittedArrayForClosingBraces.join("");
+                        }
+                    } else {
+                        // If there is no closing bracket then add the rest of the string prefixed with '{' as we have split it with '{'
+                        descriptionValue += "{" + operationalLayerDetails.popupInfo.description.split("{")[i];
+                    }
+                }
+            } else {
+                // No '{' braces means no field has been configured only Custom description is present in pop-up
+                descriptionValue = operationalLayerDetails.popupInfo.description;
+            }
+            return descriptionValue;
+        },
+
+        /**
+        * Check if field has domain coded values
+        * @param{string} fieldName
+        * @param{object} feature
+        * @param{object} layerObject
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _hasDomainCodedValue: function (fieldName, feature, layerObject) {
+            var i, j, fieldInfo;
+            for (i = 0; i < layerObject.fields.length; i++) {
+                if (layerObject.fields[i].name === fieldName) {
+                    if (layerObject.fields[i].domain && layerObject.fields[i].domain.codedValues) {
+                        fieldInfo = layerObject.fields[i];
+                    } else if (layerObject.typeIdField) {
+                        // get types from layer object, if typeIdField is available
+                        for (j = 0; j < layerObject.types.length; j++) {
+                            if (String(layerObject.types[j].id) === String(feature[layerObject.typeIdField])) {
+                                fieldInfo = layerObject.types[j];
+                                break;
+                            }
+                        }
+                        // if types info is found for current value of typeIdField then break the outer loop
+                        if (fieldInfo) {
+                            break;
+                        }
+                    }
+                }
+            }
+            // get domain values from layer types object according to the value of typeIdfield
+            if (fieldInfo && fieldInfo.domains) {
+                if (layerObject.typeIdField && layerObject.typeIdField !== fieldName) {
+                    fieldInfo.isTypeIdField = false;
+                    if (fieldInfo.domains.hasOwnProperty(fieldName)) {
+                        fieldInfo.domain = {};
+                        fieldInfo.domain = fieldInfo.domains[fieldName];
+                    } else {
+                        fieldInfo = null;
+                    }
+                } else {
+                    // Set isTypeIdField to true if current field is typeIdField
+                    fieldInfo.isTypeIdField = true;
+                }
+            }
+            return fieldInfo;
+        },
+
+        /**
+        * fetch domain coded value
+        * @param{object} operationalLayerDetails
+        * @param{string} fieldValue
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _domainCodedValues: function (operationalLayerDetails, fieldValue) {
+            var k, codedValues, domainValueObj;
+            domainValueObj = { domainCodedValue: sharedNls.showNullValue };
+            codedValues = operationalLayerDetails.domain.codedValues;
+            if (codedValues) {
+                // Loop for codedValue
+                for (k = 0; k < codedValues.length; k++) {
+                    // Check if the value is string or number
+                    if (isNaN(codedValues[k].code)) {
+                        // Check if the fieldValue and codedValue is equal
+                        if (codedValues[k].code === fieldValue) {
+                            fieldValue = codedValues[k].name;
+                        }
+                    } else if (codedValues[k].code === parseInt(fieldValue, 10)) {
+                        fieldValue = codedValues[k].name;
+                    }
+                }
+            }
+            domainValueObj.domainCodedValue = fieldValue;
+            return domainValueObj;
+        },
+
+        /**
+        * Format number value based on the format received from info popup
+        * @param{object} popupInfoValue
+        * @param{string} fieldValue
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _numberFormatCorverter: function (popupInfoValue, fieldValue) {
+            if (popupInfoValue.format && popupInfoValue.format.places !== null && popupInfoValue.format.places !== "" && !isNaN(parseFloat(fieldValue))) {
+                // Check if digit separator is available
+                if (popupInfoValue.format.digitSeparator) {
+                    fieldValue = parseFloat(fieldValue).toFixed(popupInfoValue.format.places);
+                    fieldValue = this._convertNumberToThousandSeperator(fieldValue);
+                } else if (popupInfoValue.format.places) {
+                    fieldValue = fieldValue.toFixed(popupInfoValue.format.places);
+                }
+            }
+            return fieldValue;
+        },
+
+        /**
+        * This function is used to convert number to thousand separator
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _convertNumberToThousandSeperator: function (number) {
+            return number.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
+        },
+
+        /**
+        * check if field type is date
+        * @param{object} layerObj - layer data
+        * @param{string} fieldName - current field
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _isDateField: function (fieldName, layerObj) {
+            var i, isDateField = null;
+            for (i = 0; i < layerObj.fields.length; i++) {
+                if (layerObj.fields[i].name === fieldName && layerObj.fields[i].type === "esriFieldTypeDate") {
+                    isDateField = layerObj.fields[i];
+                    break;
+                }
+            }
+            return isDateField;
+        },
+        /**
+        * Format date value based on the format received from info popup
+        * @param{object} dateFieldInfo
+        * @param{string} dataFieldValue
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _setDateFormat: function (dateFieldInfo, dateFieldValue) {
+            var dateObj = new Date(dateFieldValue), popupDateFormat;
+            if (dateFieldInfo.format && dateFieldInfo.format.dateFormat) {
+                popupDateFormat = this._getDateFormat(dateFieldInfo.format.dateFormat);
+                dateFieldValue = locale.format(this.utcTimestampFromMs(dateFieldValue), {
+                    datePattern: popupDateFormat,
+                    selector: "date"
+                });
+            } else {
+                dateFieldValue = dateObj.toLocaleDateString();
+            }
+            return dateFieldValue;
+        },
+
+        /**
+        * This function is used to convert ArcGIS date format constants to readable date formats
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _getDateFormat: function (type) {
+            var dateFormat;
+            switch (type) {
+                case "shortDate":
+                    dateFormat = "MM/dd/yyyy";
+                    break;
+                case "shortDateLE":
+                    dateFormat = "dd/MM/yyyy";
+                    break;
+                case "longMonthDayYear":
+                    dateFormat = "MMMM dd, yyyy";
+                    break;
+                case "dayShortMonthYear":
+                    dateFormat = "dd MMM yyyy";
+                    break;
+                case "longDate":
+                    dateFormat = "EEEE, MMMM dd, yyyy";
+                    break;
+                case "shortDateLongTime":
+                    dateFormat = "MM/dd/yyyy hh:mm:ss a";
+                    break;
+                case "shortDateLELongTime":
+                    dateFormat = "dd/MM/yyyy hh:mm:ss a";
+                    break;
+                case "shortDateShortTime":
+                    dateFormat = "MM/dd/yyyy hh:mm a";
+                    break;
+                case "shortDateLEShortTime":
+                    dateFormat = "dd/MM/yyyy hh:mm a";
+                    break;
+                case "shortDateShortTime24":
+                    dateFormat = "MM/dd/yyyy HH:mm";
+                    break;
+                case "shortDateLEShortTime24":
+                    dateFormat = "dd/MM/yyyy HH:mm";
+                    break;
+                case "longMonthYear":
+                    dateFormat = "MMMM yyyy";
+                    break;
+                case "shortMonthYear":
+                    dateFormat = "MMM yyyy";
+                    break;
+                case "year":
+                    dateFormat = "yyyy";
+                    break;
+                default:
+                    dateFormat = "MMMM dd, yyyy";
+            }
+            return dateFormat;
+        },
+
+        /**
+        * Fetch field from popup info
+        * @param{string} fieldName - current field
+        * @param{object} popupInfo - operational layer popupInfo object
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _getPopupInfo: function (fieldName, popupInfo) {
+            var i, fieldInfo;
+            for (i = 0; i < popupInfo.fieldInfos.length; i++) {
+                if (popupInfo.fieldInfos[i].fieldName === fieldName) {
+                    fieldInfo = popupInfo.fieldInfos[i];
+                    break;
+                }
+            }
+            return fieldInfo;
+        },
+        /**
         * create searchSettings collection for layers available on map
         * @memberOf widgets/mapSettings/mapSettings
         */
         _createSearchSettings: function () {
-            var i, j, k, deferredArray = [], deferredListResult;
-            for (i = 0; i < dojo.configData.SearchSettings.length; i++) {
-                if (dojo.configData.SearchSettings[i].QueryURL) {
-                    deferredArray.push(this._getLayerInfo(dojo.configData.SearchSettings[i], dojo.configData.SearchSettings[i].QueryURL + "?f=json"));
+            var i, j, k, deferredArray = [];
+            for (i = 0; i < appGlobals.configData.SearchSettings.length; i++) {
+                if (appGlobals.configData.SearchSettings[i].QueryURL) {
+                    deferredArray.push(this._getLayerInfo(appGlobals.configData.SearchSettings[i], appGlobals.configData.SearchSettings[i].QueryURL + "?f=json"));
                 }
             }
-            deferredListResult = new DeferredList(deferredArray);
-            deferredListResult.then(lang.hitch(this, function (result) {
+            all(deferredArray).then(lang.hitch(this, function (result) {
                 for (j = 0; j < result.length; j++) {
-                    if (result[j][0]) {
-                        for (k = 0; k < dojo.configData.SearchSettings.length; k++) {
-                            if (dojo.configData.SearchSettings[k].QueryURL && result[j][1].QueryURL === dojo.configData.SearchSettings[k].QueryURL) {
-                                this._validateStatisticField(dojo.configData.SearchSettings[k]);
-                                dojo.configSearchSettings.push(dojo.configData.SearchSettings[k]);
+                    if (result[j]) {
+                        for (k = 0; k < appGlobals.configData.SearchSettings.length; k++) {
+                            if (appGlobals.configData.SearchSettings[k].QueryURL && result[j].QueryURL === appGlobals.configData.SearchSettings[k].QueryURL) {
+                                this._validateStatisticField(appGlobals.configData.SearchSettings[k]);
+                                this._removeDuplicateFields(appGlobals.configData.SearchSettings[k]);
+                                appGlobals.configSearchSettings.push(appGlobals.configData.SearchSettings[k]);
                                 break;
                             }
                         }
@@ -526,7 +1226,7 @@ define([
             deferred = new Deferred();
             requestHandle.then(lang.hitch(this, function (response) {
                 //set objectIDField in searchSetting of a layer
-                if (!response.objectIDField) {
+                if (!response.objectIdField) {
                     for (i = 0; i < response.fields.length; i++) {
                         if (response.fields[i].type === "esriFieldTypeOID") {
                             settingsObject.objectIDField = response.fields[0].name;
@@ -534,12 +1234,12 @@ define([
                         }
                     }
                 } else {
-                    settingsObject.objectIDField = response.objectIDField;
+                    settingsObject.objectIDField = response.objectIdField;
                 }
                 deferred.resolve(settingsObject);
             }), lang.hitch(this, function (error) {
                 alert(sharedNls.errorMessages.getLayerInfoError + settingsObject.Title);
-                deferred.reject(error);
+                deferred.resolve();
             }));
             return deferred;
         },
@@ -555,6 +1255,27 @@ define([
                     alert(sharedNls.errorMessages.incorrectStatisticFieldUnit + searchSetting.SearchDisplayTitle);
                 }
             }
+        },
+
+        /**
+        * remove duplicate fields from the settings
+        * @param {object} searchSetting searchSettings object of a layer
+        * @memberOf widgets/mapSettings/mapSettings
+        */
+        _removeDuplicateFields: function (searchSetting) {
+            var detailSummaryReportFields = [], quickSummaryReportFields = [];
+            array.forEach(searchSetting.DetailSummaryReportFields, lang.hitch(this, function (field) {
+                if (array.indexOf(detailSummaryReportFields, field) < 0) {
+                    detailSummaryReportFields.push(field);
+                }
+            }));
+            array.forEach(searchSetting.QuickSummaryReportFields, lang.hitch(this, function (field) {
+                if (array.indexOf(quickSummaryReportFields, field) < 0) {
+                    quickSummaryReportFields.push(field);
+                }
+            }));
+            searchSetting.DetailSummaryReportFields = detailSummaryReportFields;
+            searchSetting.QuickSummaryReportFields = quickSummaryReportFields;
         },
 
         /**
@@ -621,7 +1342,7 @@ define([
         */
         _mapEvents: function () {
             this.map.on("extent-change", lang.hitch(this, function () {
-                this._onSetMapTipPosition(dojo.selectedMapPoint, this.map, this.infoWindowPanel);
+                this._onSetMapTipPosition(this.selectedMapPoint, this.map, this.infoWindowPanel);
             }));
             this.map.on("click", lang.hitch(this, function (evt) {
                 this._displayInfoWindow(evt);
@@ -637,10 +1358,8 @@ define([
         */
         _displayInfoWindow: function (evt) {
             try {
-                if (!dojo.activatedDrawTool && !dojo.locateInitialCoordinates && !dojo.selectFeatureEnabled) {
+                if (!appGlobals.activatedDrawTool && !appGlobals.locateInitialCoordinates && !appGlobals.selectFeatureEnabled) {
                     this._showInfoWindowOnMap(evt.mapPoint);
-                    topic.publish("infoWindowData", evt.mapPoint);
-                    topic.publish("infoWindowVisibilityStatus", true);
                 }
             } catch (err) {
                 alert(err.message);
@@ -648,26 +1367,26 @@ define([
         },
 
         /**
-        * on map load, default extent of map is set, basemap gallary is created and operational graphical layers are added on map
+        * on map load, default extent of map is set, basemap gallery is created and operational graphical layers are added on map
         * @memberOf widgets/mapSettings/mapSettings
         */
         _mapOnLoad: function () {
             var home, extentPoints, mapDefaultExtent, i, imgCustomLogo, imgSource, graphicsLayer, extent;
-            this.operationalLayers = [];
+            //this.operationalLayers = [];
             /**
             * set map extent to default extent specified in configuration file
-            * @param {string} dojo.configData.DefaultExtent Default extent of map specified in configuration file
+            * @param {string} appGlobals.configData.DefaultExtent Default extent of map specified in configuration file
             */
-            extentPoints = dojo.configData && dojo.configData.DefaultExtent && dojo.configData.DefaultExtent.split(",");
+            extentPoints = appGlobals.configData && appGlobals.configData.DefaultExtent && appGlobals.configData.DefaultExtent.split(",");
             extent = this._getQueryString('extent');
             if (extent === "") {
-                if (!dojo.configData.WebMapId) {
-                    mapDefaultExtent = new GeometryExtent({ "xmin": parseFloat(extentPoints[0]), "ymin": parseFloat(extentPoints[1]), "xmax": parseFloat(extentPoints[2]), "ymax": parseFloat(extentPoints[3]), "spatialReference": { "wkid": this.map.spatialReference.wkid} });
+                if (!(appGlobals.configData.WebMapId && lang.trim(appGlobals.configData.WebMapId).length !== 0)) {
+                    mapDefaultExtent = new GeometryExtent({ "xmin": parseFloat(extentPoints[0]), "ymin": parseFloat(extentPoints[1]), "xmax": parseFloat(extentPoints[2]), "ymax": parseFloat(extentPoints[3]), "spatialReference": { "wkid": this.map.spatialReference.wkid } });
                     this.map.setExtent(mapDefaultExtent);
                 }
             } else {
                 mapDefaultExtent = extent.split(',');
-                mapDefaultExtent = new GeometryExtent({ "xmin": parseFloat(mapDefaultExtent[0]), "ymin": parseFloat(mapDefaultExtent[1]), "xmax": parseFloat(mapDefaultExtent[2]), "ymax": parseFloat(mapDefaultExtent[3]), "spatialReference": { "wkid": this.map.spatialReference.wkid} });
+                mapDefaultExtent = new GeometryExtent({ "xmin": parseFloat(mapDefaultExtent[0]), "ymin": parseFloat(mapDefaultExtent[1]), "xmax": parseFloat(mapDefaultExtent[2]), "ymax": parseFloat(mapDefaultExtent[3]), "spatialReference": { "wkid": this.map.spatialReference.wkid } });
                 this.map.setExtent(mapDefaultExtent);
             }
             /**
@@ -676,35 +1395,45 @@ define([
             home = this._addHomeButton();
             home.extent = mapDefaultExtent;
             /* set position of home button widget after map is successfully loaded
-            * @param {array} dojo.configData.OperationalLayers List of operational Layers specified in configuration file
+            * @param {array} appGlobals.configData.OperationalLayers List of operational Layers specified in configuration file
             */
             domConstruct.place(home.domNode, query(".esriSimpleSliderIncrementButton")[0], "after");
             home.startup();
-            if (dojo.configData.CustomLogoUrl && lang.trim(dojo.configData.CustomLogoUrl).length !== 0) {
-                if (dojo.configData.CustomLogoUrl.match("http:") || dojo.configData.CustomLogoUrl.match("https:")) {
-                    imgSource = dojo.configData.CustomLogoUrl;
+            if (appGlobals.configData.CustomLogoUrl && lang.trim(appGlobals.configData.CustomLogoUrl).length !== 0) {
+                if (appGlobals.configData.CustomLogoUrl.match("http:") || appGlobals.configData.CustomLogoUrl.match("https:")) {
+                    imgSource = appGlobals.configData.CustomLogoUrl;
                 } else {
-                    imgSource = dojoConfig.baseURL + dojo.configData.CustomLogoUrl;
+                    imgSource = dojoConfig.baseURL + appGlobals.configData.CustomLogoUrl;
                 }
                 imgCustomLogo = domConstruct.create("img", { "src": imgSource, "class": "esriCTCustomMapLogo" }, dom.byId("esriCTParentDivContainer"));
-                if (dojo.configData.ShowLegend) {
+                if (appGlobals.configData.ShowLegend) {
                     domClass.add(imgCustomLogo, "esriCTCustomMapLogoBottom");
                 } else {
                     domClass.add(imgCustomLogo, "esriCTCustomMapLogoNoLegend");
                 }
             }
-            if (!dojo.configData.WebMapId) {
-                for (i in dojo.configData.OperationalLayers) {
-                    if (dojo.configData.OperationalLayers.hasOwnProperty(i)) {
-                        this._addOperationalLayerToMap(i, dojo.configData.OperationalLayers[i]);
+            if (!(appGlobals.configData.WebMapId && lang.trim(appGlobals.configData.WebMapId).length !== 0)) {
+                for (i in appGlobals.configData.OperationalLayers) {
+                    if (appGlobals.configData.OperationalLayers.hasOwnProperty(i)) {
+                        this._addOperationalLayerToMap(i, appGlobals.configData.OperationalLayers[i]);
+                    }
+                }
+                if (appGlobals.configData.OperationalLayers.length === 0) {
+                    if (appGlobals.configData.ShowLegend) {
+                        this._addLayerLegend([]);
                     }
                 }
             }
-            if (dojo.configData.BaseMapLayers.length > 1) {
+
+            if (appGlobals.configData.BaseMapLayers.length > 1) {
                 this._showBaseMapGallery();
             }
             graphicsLayer = new GraphicsLayer();
             graphicsLayer.id = this.tempGraphicsLayerId;
+            graphicsLayer.spatialReference = this.map.extent.spatialReference;
+            this.map.addLayer(graphicsLayer);
+            graphicsLayer = new GraphicsLayer();
+            graphicsLayer.id = "analysisShapeGraphicsLayer";
             graphicsLayer.spatialReference = this.map.extent.spatialReference;
             this.map.addLayer(graphicsLayer);
             graphicsLayer = new GraphicsLayer();
@@ -744,8 +1473,8 @@ define([
             this.infoWindowPanel.hide();
             this.infoWindowPanel.setTitle(infoTitle);
             this.infoWindowPanel.show(divInfoDetailsTab, screenPoint);
-            if (this.setExtent) {
-                this.setExtent = false;
+            if (this._setExtent) {
+                this._setExtent = false;
                 topic.publish("setMapExtent");
             }
         },
@@ -756,28 +1485,24 @@ define([
         * @memberOf widgets/mapSettings/mapSettings
         */
         _showInfoWindowOnMap: function (mapPoint) {
-            var index, deferredListResult,
-                onMapFeaturArray = [],
-                featureArray = [];
-
+            var index, onMapFeaturArray = [], featureArray = [];
             this.counter = 0;
-            for (index = 0; index < dojo.operationLayerSettings.length; index++) {
-                if (dojo.operationLayerSettings[index].infoWindowData) {
+            for (index = 0; index < appGlobals.operationLayerSettings.length; index++) {
+                if (appGlobals.operationLayerSettings[index].infoWindowData) {
                     this._executeQueryTask(index, mapPoint, onMapFeaturArray);
                 }
             }
-            deferredListResult = new DeferredList(onMapFeaturArray);
-            deferredListResult.then(lang.hitch(this, function (result) {
+            all(onMapFeaturArray).then(lang.hitch(this, function (result) {
                 var j, i;
                 if (result) {
                     for (j = 0; j < result.length; j++) {
-                        if (result[j][0] === true) {
-                            if (result[j][1].features.length > 0) {
-                                for (i = 0; i < result[j][1].features.length; i++) {
+                        if (result[j]) {
+                            if (result[j].features.length > 0) {
+                                for (i = 0; i < result[j].features.length; i++) {
                                     featureArray.push({
-                                        attr: result[j][1].features[i],
-                                        layerId: result[j][1].layerIndex,
-                                        fields: result[j][1].fields
+                                        attr: result[j].features[i],
+                                        layerId: result[j].layerIndex,
+                                        fields: result[j].fields
                                     });
                                 }
                             }
@@ -800,13 +1525,13 @@ define([
         _executeQueryTask: function (index, mapPoint, onMapFeaturArray) {
             var queryTask, queryParams, layerIndex = index, isLayerVisible, currentTime = new Date().getTime() + index.toString(),
                 deferred = new Deferred();
-            queryTask = new esri.tasks.QueryTask(dojo.operationLayerSettings[index].layerURL);
+            queryTask = new esri.tasks.QueryTask(appGlobals.operationLayerSettings[index].layerURL);
             queryParams = new esri.tasks.Query();
             queryParams.outSpatialReference = this.map.spatialReference;
             queryParams.returnGeometry = false;
             queryParams.geometry = this._extentFromPoint(mapPoint);
             queryParams.outFields = ["*"];
-            isLayerVisible = this._checkLayerVisibility(dojo.operationLayerSettings[index].layerURL);
+            isLayerVisible = this._checkLayerVisibility(appGlobals.operationLayerSettings[index].layerURL);
             if (isLayerVisible) {
                 queryParams.where = currentTime + "=" + currentTime;
             } else {
@@ -816,7 +1541,7 @@ define([
                 results.layerIndex = layerIndex;
                 deferred.resolve(results);
             }), function (err) {
-                deferred.reject();
+                deferred.resolve();
             });
             onMapFeaturArray.push(deferred);
         },
@@ -828,13 +1553,22 @@ define([
         * @memberOf widgets/mapSettings/mapSettings
         */
         _executeQueryForObjectID: function (mapPoint, featureIDArray) {
-            var i, queryTask, queryParams, layerInfoArray, featureArray = [], isLayerVisible, currentTime = new Date().getTime() + featureIDArray[1].toString(),
+            var i, j, queryTask, objID, queryParams, layerIndex, queryLayerID, queryLayerTitle, layerInfoArray, featureArray = [], isLayerVisible, currentTime = new Date().getTime() + featureIDArray[1].toString(),
                 deferred = new Deferred();
             layerInfoArray = featureIDArray[1].split("_");
-            for (i = 0; i < dojo.operationLayerSettings.length; i++) {
-                if (dojo.operationLayerSettings[i].layerID === Number(layerInfoArray[1]) && dojo.operationLayerSettings[i].layerTitle === layerInfoArray[0]) {
-                    queryTask = new esri.tasks.QueryTask(dojo.operationLayerSettings[i].layerURL);
-                    isLayerVisible = this._checkLayerVisibility(dojo.operationLayerSettings[i].layerURL);
+            queryLayerID = Number(layerInfoArray[layerInfoArray.length - 1]);
+            queryLayerTitle = layerInfoArray.slice(0, layerInfoArray.length - 1).join("_");
+            for (i = 0; i < appGlobals.operationLayerSettings.length; i++) {
+                if (Number(appGlobals.operationLayerSettings[i].layerID) === queryLayerID && appGlobals.operationLayerSettings[i].layerTitle === queryLayerTitle) {
+                    queryTask = new esri.tasks.QueryTask(appGlobals.operationLayerSettings[i].layerURL);
+                    for (j = 0; j < appGlobals.configSearchSettings.length; j++) {
+                        if (appGlobals.configSearchSettings[j].QueryURL === appGlobals.operationLayerSettings[i].layerURL) {
+                            objID = appGlobals.configSearchSettings[j].objectIDField;
+                            break;
+                        }
+                    }
+                    layerIndex = i;
+                    isLayerVisible = this._checkLayerVisibility(appGlobals.operationLayerSettings[i].layerURL);
                     break;
                 }
             }
@@ -844,12 +1578,12 @@ define([
             queryParams.geometry = mapPoint;
             queryParams.outFields = ["*"];
             if (isLayerVisible) {
-                queryParams.where = currentTime + "=" + currentTime;
+                queryParams.where = objID + "=" + featureIDArray[0];
             } else {
-                queryParams.where = "OBJECTID" + "=" + featureIDArray[0];
+                queryParams.where = currentTime + "=" + currentTime;
             }
             queryTask.execute(queryParams, lang.hitch(this, function (result) {
-                result.layerIndex = featureIDArray[1];
+                result.layerIndex = layerIndex;
                 featureArray.push({
                     attr: result.features[0],
                     layerId: result.layerIndex,
@@ -857,7 +1591,7 @@ define([
                 });
                 this._fetchQueryResults(mapPoint, featureArray);
             }), function (err) {
-                deferred.reject();
+                deferred.resolve();
             });
         },
 
@@ -939,13 +1673,17 @@ define([
             var _this = this;
 
             if (featureArray.length > 0) {
+                topic.publish("infoWindowData", mapPoint);
+                topic.publish("infoWindowVisibilityStatus", true);
                 if (featureArray.length === 1) {
                     domClass.remove(query(".esriCTInfoWindowRightArrow")[0], "esriCTShowInfoRightArrow");
-                    this._createInfoWindowContent(mapPoint, featureArray[0].attr.geometry, featureArray[0].attr.attributes, featureArray[0].fields, featureArray[0].layerId, null, null, false);
+                    domClass.add(query(".esriCTHeaderPanelContent")[0], "esriCTSingleFeatureHeader");
+                    this._createInfoWindowContent(mapPoint, featureArray[0].attr.geometry, featureArray[0].attr.attributes, featureArray[0].layerId, null, null, false);
                 } else {
                     this.count = 0;
                     domAttr.set(query(".esriCTdivInfoTotalFeatureCount")[0], "innerHTML", '/' + featureArray.length);
-                    this._createInfoWindowContent(mapPoint, featureArray[0].attr.geometry, featureArray[0].attr.attributes, featureArray[0].fields, featureArray[0].layerId, featureArray, this.count, false);
+                    domClass.remove(query(".esriCTHeaderPanelContent")[0], "esriCTSingleFeatureHeader");
+                    this._createInfoWindowContent(mapPoint, featureArray[0].attr.geometry, featureArray[0].attr.attributes, featureArray[0].layerId, featureArray, this.count, false);
                     topic.publish("hideProgressIndicator");
                     query(".esriCTInfoWindowRightArrow")[0].onclick = function () {
                         _this._nextInfoContent(mapPoint, featureArray);
@@ -960,7 +1698,7 @@ define([
         },
 
         /**
-        * set infoWindow creation of next page in multipages infoWindow
+        * set infoWindow creation of next page in multipage infoWindow
         * @param {object} mapPoint selected mapPoint
         * @param {array} featureArray feature query results collection
         * @memberOf widgets/mapSettings/mapSettings
@@ -970,12 +1708,12 @@ define([
                 this.count++;
             }
             if (featureArray[this.count]) {
-                this._createInfoWindowContent(mapPoint, featureArray[0].attr.geometry, featureArray[this.count].attr.attributes, featureArray[this.count].fields, featureArray[this.count].layerId, featureArray, this.count, false);
+                this._createInfoWindowContent(mapPoint, featureArray[0].attr.geometry, featureArray[this.count].attr.attributes, featureArray[this.count].layerId, featureArray, this.count, false);
             }
         },
 
         /**
-        * set infoWindow creation of previous page in multipages infoWindow
+        * set infoWindow creation of previous page in multipage infoWindow
         * @param {object} mapPoint selected mapPoint
         * @param {array} featureArray feature query results collection
         * @memberOf widgets/mapSettings/mapSettings
@@ -985,13 +1723,13 @@ define([
                 this.count--;
             }
             if (featureArray[this.count]) {
-                this._createInfoWindowContent(mapPoint, featureArray[0].attr.geometry, featureArray[this.count].attr.attributes, featureArray[this.count].fields, featureArray[this.count].layerId, featureArray, this.count, false);
+                this._createInfoWindowContent(mapPoint, featureArray[0].attr.geometry, featureArray[this.count].attr.attributes, featureArray[this.count].layerId, featureArray, this.count, false);
             }
         },
 
         /**
         * checks the url for the specific keyWord, in this case checking for map extent
-        * @param {string} a key value from the url used for seperation
+        * @param {string} a key value from the url used for separation
         * @memberOf widgets/mapSettings/mapSettings
         */
         _getQueryString: function (key) {
@@ -1011,9 +1749,9 @@ define([
         */
         _generateLayerURL: function (operationalLayers) {
             var searchSettings, i, str, layerTitle, layerId, index;
-            searchSettings = dojo.configData.SearchSettings;
+            searchSettings = appGlobals.configData.SearchSettings;
             for (i = 0; i < operationalLayers.length; i++) {
-                if (dojo.configData.WebMapId && lang.trim(dojo.configData.WebMapId).length !== 0) {
+                if (appGlobals.configData.WebMapId && lang.trim(appGlobals.configData.WebMapId).length !== 0) {
                     str = operationalLayers[i].url.split('/');
                     layerTitle = str[str.length - 3];
                     layerId = str[str.length - 1];
@@ -1054,7 +1792,7 @@ define([
         },
 
         /**
-        * create and display basemap gallary
+        * create and display basemap gallery
         * @return {object} basemapSwitcher widget
         * @memberOf widgets/mapSettings/mapSettings
         */
@@ -1153,7 +1891,6 @@ define([
             featureLayer.on("load", lang.hitch(this, function (evt) {
                 this._createOperationLayer(evt.layer);
             }));
-
         },
 
         /**
@@ -1229,58 +1966,79 @@ define([
                 title = urlArray[urlArray.length - 3];
             }
             if (layer.visibleLayers) {
-                //layer is addded as a dynamic
+                //layer is added as a dynamic
                 for (i = 0; i < layer.visibleLayers.length; i++) {
                     url = tempUrl + parseInt(layer.visibleLayers[i], 10);
-                    this._populateOperationLayerFields(layer, url, title, layer.visibleLayers[i]);
+                    this._populateOperationLayerFields(url, title, layer.visibleLayers[i], layer);
                 }
             } else {
                 //layer is added as feature service
-                this._populateOperationLayerFields(layer, tempUrl, title, urlArray[urlArray.length - 1]);
+                this._populateOperationLayerFields(tempUrl, title, urlArray[urlArray.length - 1], layer);
             }
-            if (this.operationLayersCount === dojo.configData.OperationalLayers.length) {
+            if (this.operationLayersCount === appGlobals.configData.OperationalLayers.length) {
                 this._createSearchSettings();
-                this._addLayerLegend(this.operationalLayers);
+                if (appGlobals.configData.ShowLegend) {
+                    this._addLayerLegend(this.operationalLayers);
+                }
             }
         },
 
         /**
         * populate searchSettings and infoWindow data if available in the operational layer object
-        * @param {object} layer webmap operational layer
         * @param {object} url operation layer URL
         * @param {object} title operation layer title
-        * @param {object} id operation layer ID
+        * @param {object} layerIndex operation layer server index
+        * @param {object} layer object
         * @memberOf widgets/mapSettings/mapSettings
         */
-        _populateOperationLayerFields: function (layer, url, title, id) {
-            var j, operationLayer = {}, searchSettings, infoWindowSettings;
-            searchSettings = dojo.configData.SearchSettings;
-            infoWindowSettings = dojo.configData.InfoWindowSettings;
-            //set the opertaion layer title
+        _populateOperationLayerFields: function (url, title, layerIndex, layer) {
+            var i, j, operationLayer = {}, searchSettings, infoWindowSettings, typeField, fieldInfos, field;
+            searchSettings = appGlobals.configData.SearchSettings;
+            infoWindowSettings = appGlobals.configData.InfoWindowSettings;
+            //set the operation layer title
             operationLayer.layerTitle = title;
-            //set the opertaion layer ID
-            operationLayer.layerID = id;
-            //set the opertaion layer service URL
+            //set the operation layer ID
+            operationLayer.layerID = layerIndex;
+            //set the operation layer service URL
             operationLayer.layerURL = url;
+            //set the layer object
+            operationLayer.layerDetails = layer;
+            fieldInfos = this._getLayerFieldsInfo(operationLayer.layerURL);
             //set infoWindowData for operation layer if available
             for (j = 0; j < infoWindowSettings.length; j++) {
-                if (title === infoWindowSettings[j].Title && parseInt(id, 10) === parseInt((infoWindowSettings[j].QueryLayerId), 10)) {
+                if (title === infoWindowSettings[j].Title && parseInt(layerIndex, 10) === parseInt((infoWindowSettings[j].QueryLayerId), 10)) {
+                    //set the typeIdField and types in case of domain coded values
+                    typeField = {};
+                    typeField.typeIdField = fieldInfos.typeIdField || "";
+                    typeField.types = fieldInfos.types || "";
+                    for (i = 0; i < fieldInfos.fields.length; i++) {
+                        //set the date format and domain if available
+                        for (field in infoWindowSettings[j].InfoWindowData) {
+                            if (infoWindowSettings[j].InfoWindowData.hasOwnProperty(field) && infoWindowSettings[j].InfoWindowData[field].FieldName && infoWindowSettings[j].InfoWindowData[field].FieldName !== "") {
+                                if (fieldInfos.fields[i].name === infoWindowSettings[j].InfoWindowData[field].FieldName.split("${")[1].split("}")[0]) {
+                                    infoWindowSettings[j].InfoWindowData[field].format = (fieldInfos.fields[i].type === "esriFieldTypeDate") ? {} : "";
+                                    infoWindowSettings[j].InfoWindowData[field].domain = fieldInfos.fields[i].domain || "";
+                                    break;
+                                }
+                            }
+                        }
+                    }
                     operationLayer.infoWindowData = {
                         "infoWindowHeader": infoWindowSettings[j].InfoWindowHeaderField,
-                        "infoWindowfields": infoWindowSettings[j].InfoWindowData
+                        "infoWindowfields": infoWindowSettings[j].InfoWindowData,
+                        "typeFieldSettings": typeField
                     };
                     break;
                 }
             }
             //set layer url in searchSetting if available
             for (j = 0; j < searchSettings.length; j++) {
-                if (title === searchSettings[j].Title && parseInt(id, 10) === parseInt((searchSettings[j].QueryLayerId), 10)) {
+                if (title === searchSettings[j].Title && parseInt(layerIndex, 10) === parseInt((searchSettings[j].QueryLayerId), 10)) {
                     searchSettings[j].QueryURL = operationLayer.layerURL;
                     break;
                 }
             }
-            dojo.operationLayerSettings.push(operationLayer);
-
+            appGlobals.operationLayerSettings.push(operationLayer);
         },
 
         /**
@@ -1318,14 +2076,14 @@ define([
             var mapServerArray = [], i, j, legendObject, layer;
             for (j = 0; j < webMapLayers.length; j++) {
                 if (webMapLayers[j].layerObject) {
-                    if (webMapLayers[j].layers) {
-                        for (i = 0; i < webMapLayers[j].layers.length; i++) {
-                            layer = webMapLayers[j].url + "/" + webMapLayers[j].layers[i].id;
-                            if (webMapLayers[j].layers[i].layerDefinition && webMapLayers[j].layers[i].layerDefinition.drawingInfo) {
+                    if (webMapLayers[j].resourceInfo && webMapLayers[j].resourceInfo.layers) {
+                        for (i = 0; i < webMapLayers[j].resourceInfo.layers.length; i++) {
+                            layer = webMapLayers[j].url + "/" + webMapLayers[j].resourceInfo.layers[i].id;
+                            if (webMapLayers[j].resourceInfo.layers[i].layerDefinition && webMapLayers[j].resourceInfo.layers[i].layerDefinition.drawingInfo) {
                                 hasLayers = true;
-                                webmapLayerList[layer] = webMapLayers[j].layers[i];
+                                webmapLayerList[layer] = webMapLayers[j].resourceInfo.layers[i];
                             } else {
-                                mapServerArray.push({ "url": layer, "title": webMapLayers[j].layers[i].name });
+                                mapServerArray.push({ "url": layer, "title": webMapLayers[j].resourceInfo.layers[i].name });
                             }
                         }
                     } else if (webMapLayers[j].layerObject.layerInfos) {
@@ -1346,169 +2104,6 @@ define([
             legendObject = this._addLegendBox();
             legendObject.startup(mapServerArray, webmapLayerList);
             topic.publish("setMaxLegendLength");
-        },
-
-        /**
-        * create infoWindow fields and set values for display
-        * @param {object} anchorPoint selected mapPoint
-        * @param {object} geometry selected graphic layer geometry
-        * @param {object} attributes attributes of a selected graphics layer
-        * @param {object} fields fields of a selected graphics layer
-        * @param {int} infoIndex Layer order specified in operationLayerSettings collection
-        * @param {array} featureArray feature query results collection
-        * @param {int} count index of the feature of a featureArray
-        * @param {boolean} zoomToFeature value sepecifying whether to zoom on the selected graphics or not
-        * @memberOf widgets/mapSettings/mapSettings
-        */
-        _createInfoWindowContent: function (anchorPoint, geometry, attributes, fields, infoIndex, featureArray, count, zoomToFeature) {
-            try {
-                var infoPopupFieldsCollection, infoPopupHeight, infoPopupWidth, fieldInfos,
-                    divInfoDetailsTab, key, divInfoRow, i, fieldNames, link, divLink, j, infoTitle, mapPoint, utcMilliseconds, attribute, k, domain, l;
-                this.map.infoWindow.hide();
-                mapPoint = anchorPoint || this._getMapPoint(geometry);
-                if (featureArray) {
-                    if (featureArray.length > 1 && count !== featureArray.length - 1) {
-                        domClass.add(query(".esriCTInfoWindowRightArrow")[0], "esriCTShowInfoRightArrow");
-                        domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", count);
-                    } else {
-                        domClass.remove(query(".esriCTInfoWindowRightArrow")[0], "esriCTShowInfoRightArrow");
-                        domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", "");
-                    }
-                    if (count > 0 && count < featureArray.length) {
-                        domClass.add(query(".esriCTInfoWindowLeftArrow")[0], "esriCTShowInfoLeftArrow");
-                        domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", count + 1);
-                    } else {
-                        domClass.remove(query(".esriCTInfoWindowLeftArrow")[0], "esriCTShowInfoLeftArrow");
-                        domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", count + 1);
-                    }
-                } else {
-                    domClass.remove(query(".esriCTInfoWindowRightArrow")[0], "esriCTShowInfoRightArrow");
-                    domClass.remove(query(".esriCTInfoWindowLeftArrow")[0], "esriCTShowInfoLeftArrow");
-                    domAttr.set(query(".esriCTdivInfoFeatureCount")[0], "innerHTML", "");
-                    domAttr.set(query(".esriCTdivInfoTotalFeatureCount")[0], "innerHTML", "");
-                }
-                if (dojo.operationLayerSettings[infoIndex].infoWindowData) {
-                    infoPopupFieldsCollection = dojo.operationLayerSettings[infoIndex].infoWindowData.infoWindowfields;
-                    divInfoDetailsTab = domConstruct.create("div", {
-                        "class": "esriCTInfoDetailsTab"
-                    }, null);
-                    this.divInfoDetailsContainer = domConstruct.create("div", {
-                        "class": "esriCTInfoDetailsContainer"
-                    }, divInfoDetailsTab);
-                } else {
-                    divInfoDetailsTab = domConstruct.create("div", {
-                        "class": "esriCTInfoDetailsTab"
-                    }, null);
-                    this.divInfoDetailsContainer = domConstruct.create("div", {
-                        "class": "esriCTInfoDetailsContainerError",
-                        "innerHTML": sharedNls.errorMessages.emptyInfoWindowContent
-                    }, divInfoDetailsTab);
-                }
-                infoPopupHeight = dojo.configData.InfoPopupHeight;
-                infoPopupWidth = dojo.configData.InfoPopupWidth;
-                if (infoPopupFieldsCollection) {
-                    fieldInfos = this._getLayerFieldsInfo(dojo.operationLayerSettings[infoIndex].layerURL);
-                    if (fieldInfos.isLayerAvailable) {
-                        for (attribute in attributes) {
-                            if (attributes.hasOwnProperty(attribute)) {
-                                if (!attributes[attribute]) {
-                                    attributes[attribute] = sharedNls.showNullValue;
-                                } else {
-                                    if (fieldInfos.fields) {
-                                        for (i = 0; i < fieldInfos.fields.length; i++) {
-                                            if (fieldInfos.fields[i].name === attribute) {
-                                                if (fieldInfos.fields[i].domain) {
-                                                    if (fieldInfos.fields[i].domain.codedValues) {
-                                                        for (j = 0; j < fieldInfos.fields[i].domain.codedValues.length; j++) {
-                                                            if (attributes[attribute] === fieldInfos.fields[i].domain.codedValues[j].code) {
-                                                                attributes[attribute] = fieldInfos.fields[i].domain.codedValues[j].name;
-                                                                break;
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        for (j = 0; j < fields.length; j++) {
-                            if (fields[j].type === "esriFieldTypeDate") {
-                                if (attributes[fields[j].name]) {
-                                    if (Number(attributes[fields[j].name])) {
-                                        utcMilliseconds = Number(attributes[fields[j].name]);
-                                        attributes[fields[j].name] = dojo.date.locale.format(this.utcTimestampFromMs(utcMilliseconds), {
-                                            datePattern: dojo.configData.DatePattern,
-                                            selector: "date"
-                                        });
-                                    }
-                                }
-                            }
-                        }
-                        if (fieldInfos.typeIdField && attributes[fieldInfos.typeIdField]) {
-                            for (k = 0; k < fieldInfos.types.length; k++) {
-                                if (attributes[fieldInfos.typeIdField] === fieldInfos.types[k].id) {
-                                    attributes[fieldInfos.typeIdField] = fieldInfos.types[k].name;
-                                    if (fieldInfos.types[k].domains) {
-                                        for (domain in fieldInfos.types[k].domains) {
-                                            if (fieldInfos.types[k].domains.hasOwnProperty(domain)) {
-                                                if (attributes[domain]) {
-                                                    if (fieldInfos.types[k].domains[domain].codedValues) {
-                                                        for (l = 0; l < fieldInfos.types[k].domains[domain].codedValues.length; l++) {
-                                                            if (attributes[domain] === fieldInfos.types[k].domains[domain].codedValues[l].code) {
-                                                                attributes[domain] = fieldInfos.types[k].domains[domain].codedValues[l].name;
-                                                                break;
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                        for (key = 0; key < infoPopupFieldsCollection.length; key++) {
-                            divInfoRow = domConstruct.create("div", {
-                                "className": "esriCTDisplayRow"
-                            }, this.divInfoDetailsContainer);
-                            // Create the row's label
-                            this.divInfoDisplayField = domConstruct.create("div", {
-                                "className": "esriCTDisplayField",
-                                "innerHTML": infoPopupFieldsCollection[key].DisplayText
-                            }, divInfoRow);
-                            this.divInfoFieldValue = domConstruct.create("div", {
-                                "className": "esriCTValueField"
-                            }, divInfoRow);
-                            fieldNames = string.substitute(infoPopupFieldsCollection[key].FieldName, attributes);
-                            if (string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("http:") || string.substitute(infoPopupFieldsCollection[key].FieldName, attributes).match("https:")) {
-                                link = fieldNames;
-                                divLink = domConstruct.create("div", {
-                                    "class": "esriCTLink",
-                                    "link": link,
-                                    "innerHTML": sharedNls.buttons.link
-                                }, this.divInfoFieldValue);
-                                on(divLink, "click", this._openDetailWindow);
-                            } else {
-                                this.divInfoFieldValue.innerHTML = fieldNames;
-                            }
-                        }
-                    }
-                }
-                if (dojo.operationLayerSettings[infoIndex].infoWindowData && dojo.operationLayerSettings[infoIndex].infoWindowData.infoWindowHeader) {
-                    infoTitle = string.substitute(dojo.operationLayerSettings[infoIndex].infoWindowData.infoWindowHeader, attributes);
-                } else {
-                    infoTitle = sharedNls.errorMessages.emptyInfoWindowTitle;
-                }
-                dojo.selectedMapPoint = mapPoint;
-                this._setInfoWindowZoomLevel(mapPoint, infoTitle, divInfoDetailsTab, infoPopupWidth, infoPopupHeight, count, zoomToFeature);
-                topic.publish("hideProgressIndicator");
-            } catch (err) {
-                alert(err.message);
-            }
         },
 
         /**
@@ -1571,19 +2166,19 @@ define([
         * @param {object} infoPopupWidth width of an infoWindow given in configuration file
         * @param {int} infoPopupHeight height of an infoWindow given in configuration file
         * @param {int} count index of the feature of a featureArray
-        * @param {boolean} zoomToFeature value sepecifying whether or not to zoom the map on the selected graphics
+        * @param {boolean} zoomToFeature value specifying whether or not to zoom the map on the selected graphics
         * @memberOf widgets/mapSettings/mapSettings
         */
         _setInfoWindowZoomLevel: function (mapPoint, infoTitle, divInfoDetailsTab, infoPopupWidth, infoPopupHeight, count, zoomToFeature) {
             var extentChanged, screenPoint, zoomDeferred;
-            if (this.map.getLevel() !== dojo.configData.ZoomLevel && zoomToFeature) {
-                zoomDeferred = this.map.setLevel(dojo.configData.ZoomLevel);
+            if (this.map.getLevel() !== appGlobals.configData.ZoomLevel && zoomToFeature) {
+                zoomDeferred = this.map.setLevel(appGlobals.configData.ZoomLevel);
                 this.map.infoWindow.hide();
                 zoomDeferred.then(lang.hitch(this, function () {
                     extentChanged = this.map.setExtent(this._calculateCustomMapExtent(mapPoint));
                     extentChanged.then(lang.hitch(this, function () {
                         topic.publish("hideProgressIndicator");
-                        screenPoint = this.map.toScreen(dojo.selectedMapPoint);
+                        screenPoint = this.map.toScreen(this.selectedMapPoint);
                         screenPoint.y = this.map.height - screenPoint.y;
                         this._onSetInfoWindowPosition(infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count);
                     }));
@@ -1593,7 +2188,7 @@ define([
                 this.map.infoWindow.hide();
                 extentChanged.then(lang.hitch(this, function () {
                     topic.publish("hideProgressIndicator");
-                    screenPoint = this.map.toScreen(dojo.selectedMapPoint);
+                    screenPoint = this.map.toScreen(this.selectedMapPoint);
                     screenPoint.y = this.map.height - screenPoint.y;
                     this._onSetInfoWindowPosition(infoTitle, divInfoDetailsTab, screenPoint, infoPopupWidth, infoPopupHeight, count);
                 }));
@@ -1601,7 +2196,7 @@ define([
         },
 
         /**
-        * get the map extent fron given point
+        * get the map extent from given point
         * @param {object} mapPoint selected mapPoint
         * @memberOf widgets/mapSettings/mapSettings
         */
@@ -1610,7 +2205,7 @@ define([
             width = this.map.extent.getWidth();
             height = this.map.extent.getHeight();
             ratioHeight = height / this.map.height;
-            totalYPoint = dojo.configData.InfoPopupHeight + 30 + 61;
+            totalYPoint = appGlobals.configData.InfoPopupHeight + 30 + 61;
             infoWindowHeight = height - (ratioHeight * totalYPoint);
             xmin = mapPoint.x - (width / 2);
             ymin = mapPoint.y - infoWindowHeight;
