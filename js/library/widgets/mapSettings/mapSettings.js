@@ -260,10 +260,10 @@ define([
             var highlightGraphic, highlightSymbol;
             if (geometry.type === "polyline") {
                 highlightSymbol = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([
-                        parseInt(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[0], 10),
-                        parseInt(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[1], 10),
-                        parseInt(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[2], 10),
-                        parseFloat(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolTransparency.split(",")[0], 10)
+                    parseInt(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[0], 10),
+                    parseInt(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[1], 10),
+                    parseInt(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[2], 10),
+                    parseFloat(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolTransparency.split(",")[0], 10)
                 ]), 2);
             } else if (geometry.type === "polygon") {
                 highlightSymbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID, new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
@@ -273,12 +273,12 @@ define([
                         parseInt(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolColor.split(",")[2], 10),
                         parseFloat(appGlobals.configData.HighlightFeaturesSymbology.LineSymbolTransparency.split(",")[0], 10)
                     ]), 2),
-                new Color([
-                    parseInt(appGlobals.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[0], 10),
-                    parseInt(appGlobals.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[1], 10),
-                    parseInt(appGlobals.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10),
-                    parseFloat(appGlobals.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)
-                ]));
+                    new Color([
+                        parseInt(appGlobals.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[0], 10),
+                        parseInt(appGlobals.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[1], 10),
+                        parseInt(appGlobals.configData.HighlightFeaturesSymbology.FillSymbolColor.split(",")[2], 10),
+                        parseFloat(appGlobals.configData.HighlightFeaturesSymbology.FillSymbolTransparency.split(",")[0], 10)
+                    ]));
             }
             highlightGraphic = new Graphic(geometry, highlightSymbol);
             this.map.getLayer("esriGraphicsLayerMapSettings").add(highlightGraphic);
@@ -1120,50 +1120,50 @@ define([
         _getDateFormat: function (type) {
             var dateFormat;
             switch (type) {
-                case "shortDate":
-                    dateFormat = "MM/dd/yyyy";
-                    break;
-                case "shortDateLE":
-                    dateFormat = "dd/MM/yyyy";
-                    break;
-                case "longMonthDayYear":
-                    dateFormat = "MMMM dd, yyyy";
-                    break;
-                case "dayShortMonthYear":
-                    dateFormat = "dd MMM yyyy";
-                    break;
-                case "longDate":
-                    dateFormat = "EEEE, MMMM dd, yyyy";
-                    break;
-                case "shortDateLongTime":
-                    dateFormat = "MM/dd/yyyy hh:mm:ss a";
-                    break;
-                case "shortDateLELongTime":
-                    dateFormat = "dd/MM/yyyy hh:mm:ss a";
-                    break;
-                case "shortDateShortTime":
-                    dateFormat = "MM/dd/yyyy hh:mm a";
-                    break;
-                case "shortDateLEShortTime":
-                    dateFormat = "dd/MM/yyyy hh:mm a";
-                    break;
-                case "shortDateShortTime24":
-                    dateFormat = "MM/dd/yyyy HH:mm";
-                    break;
-                case "shortDateLEShortTime24":
-                    dateFormat = "dd/MM/yyyy HH:mm";
-                    break;
-                case "longMonthYear":
-                    dateFormat = "MMMM yyyy";
-                    break;
-                case "shortMonthYear":
-                    dateFormat = "MMM yyyy";
-                    break;
-                case "year":
-                    dateFormat = "yyyy";
-                    break;
-                default:
-                    dateFormat = "MMMM dd, yyyy";
+            case "shortDate":
+                dateFormat = "MM/dd/yyyy";
+                break;
+            case "shortDateLE":
+                dateFormat = "dd/MM/yyyy";
+                break;
+            case "longMonthDayYear":
+                dateFormat = "MMMM dd, yyyy";
+                break;
+            case "dayShortMonthYear":
+                dateFormat = "dd MMM yyyy";
+                break;
+            case "longDate":
+                dateFormat = "EEEE, MMMM dd, yyyy";
+                break;
+            case "shortDateLongTime":
+                dateFormat = "MM/dd/yyyy hh:mm:ss a";
+                break;
+            case "shortDateLELongTime":
+                dateFormat = "dd/MM/yyyy hh:mm:ss a";
+                break;
+            case "shortDateShortTime":
+                dateFormat = "MM/dd/yyyy hh:mm a";
+                break;
+            case "shortDateLEShortTime":
+                dateFormat = "dd/MM/yyyy hh:mm a";
+                break;
+            case "shortDateShortTime24":
+                dateFormat = "MM/dd/yyyy HH:mm";
+                break;
+            case "shortDateLEShortTime24":
+                dateFormat = "dd/MM/yyyy HH:mm";
+                break;
+            case "longMonthYear":
+                dateFormat = "MMMM yyyy";
+                break;
+            case "shortMonthYear":
+                dateFormat = "MMM yyyy";
+                break;
+            case "year":
+                dateFormat = "yyyy";
+                break;
+            default:
+                dateFormat = "MMMM dd, yyyy";
             }
             return dateFormat;
         },
@@ -1932,9 +1932,8 @@ define([
             });
             this.map.addLayer(dynamicMapService);
             dynamicMapService.on("load", lang.hitch(this, function (evt) {
-                var idArray = evt.layer.id.split('_');
-                if (idArray && idArray.length > 0 && !isNaN(parseInt(idArray[1], 10))) {
-                    evt.layer.setVisibleLayers([parseInt(idArray[1], 10)]);
+                if (layerId && layerId !== "") {
+                    evt.layer.setVisibleLayers([parseInt(layerId, 10)]);
                 }
                 this._createOperationLayer(evt.layer);
             }));
