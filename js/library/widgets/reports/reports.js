@@ -72,9 +72,10 @@ define([
     "esri/tasks/PrintTask",
     "esri/tasks/ProjectParameters",
     "esri/SpatialReference",
-    "widgets/locator/locator"
+    "widgets/locator/locator",
+    "esri/renderers/UniqueValueRenderer"
 
-], function (declare, domConstruct, on, topic, lang, array, domStyle, domAttr, dom, query, domClass, keys, GeometryService, Dialog, string, html, locale, template, Color, SimpleLineSymbol, SimpleFillSymbol, SimpleMarkerSymbol, PictureMarkerSymbol, TooltipDialog, Place, CheckBox, Button, Graphic, BufferParameters, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, GraphicsLayer, Draw, HorizontalSlider, HorizontalRule, HorizontalRuleLabels, ScrollBar, Deferred, all, Query, QueryTask, esriRequest, dojoJson, Point, dojoNumber, Polyline, Geoprocessor, DataFile, ParameterValue, FeatureSet, PrintTask, ProjectParams, SpatialReference, LocatorTool) {
+], function (declare, domConstruct, on, topic, lang, array, domStyle, domAttr, dom, query, domClass, keys, GeometryService, Dialog, string, html, locale, template, Color, SimpleLineSymbol, SimpleFillSymbol, SimpleMarkerSymbol, PictureMarkerSymbol, TooltipDialog, Place, CheckBox, Button, Graphic, BufferParameters, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, sharedNls, GraphicsLayer, Draw, HorizontalSlider, HorizontalRule, HorizontalRuleLabels, ScrollBar, Deferred, all, Query, QueryTask, esriRequest, dojoJson, Point, dojoNumber, Polyline, Geoprocessor, DataFile, ParameterValue, FeatureSet, PrintTask, ProjectParams, SpatialReference, LocatorTool, UniqueValueRenderer) {
     //========================================================================================================================//
 
     return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
@@ -2718,18 +2719,18 @@ define([
                         //create buffer based on geomtery type of simplify result
                         for (k = 0; k < result[0].length; k++) {
                             switch (result[0][k].type) {
-                                case "point":
-                                    pointBufferCollection.push(result[0][k]);
-                                    break;
-                                case "multipoint":
-                                    multiPointBufferCollection.push(result[0][k]);
-                                    break;
-                                case "polyline":
-                                    polylineBufferCollection.push(result[0][k]);
-                                    break;
-                                case "polygon":
-                                    polygonBufferCollection.push(result[0][k]);
-                                    break;
+                            case "point":
+                                pointBufferCollection.push(result[0][k]);
+                                break;
+                            case "multipoint":
+                                multiPointBufferCollection.push(result[0][k]);
+                                break;
+                            case "polyline":
+                                polylineBufferCollection.push(result[0][k]);
+                                break;
+                            case "polygon":
+                                polygonBufferCollection.push(result[0][k]);
+                                break;
                             }
                         }
                         //create the buffer geometry for same type of geometry collection
@@ -3539,45 +3540,45 @@ define([
                 switch (unit) {
                 //conversion of area units into acres
                 case "SQUARE_FEET":
-                    result.features[i].attributes.Total = result.features[i].attributes.Total * 2.29568336506;
+                    result.features[i].attributes.total = result.features[i].attributes.total * 2.29568336506;
                     break;
                 case "SQUARE_KILOMETERS":
-                    result.features[i].attributes.Total = result.features[i].attributes.Total * 247.105407259;
+                    result.features[i].attributes.total = result.features[i].attributes.total * 247.105407259;
                     break;
                 case "SQUARE_METERS":
-                    result.features[i].attributes.Total = result.features[i].attributes.Total * 0.000247105;
+                    result.features[i].attributes.total = result.features[i].attributes.total * 0.000247105;
                     break;
                 case "SQUARE_MILES":
-                    result.features[i].attributes.Total = result.features[i].attributes.Total * 640.000066718;
+                    result.features[i].attributes.total = result.features[i].attributes.total * 640.000066718;
                     break;
                 case "SQUARE_YARDS":
-                    result.features[i].attributes.Total = result.features[i].attributes.Total * 0.000206611502856;
+                    result.features[i].attributes.total = result.features[i].attributes.total * 0.000206611502856;
                     break;
                 case "HECTARES":
-                    result.features[i].attributes.Total = result.features[i].attributes.Total * 2.47105407259;
+                    result.features[i].attributes.total = result.features[i].attributes.total * 2.47105407259;
                     break;
                 case "ACRES":
                     break;
                 case "ARES":
-                    result.features[i].attributes.Total = result.features[i].attributes.Total * 0.0247105381;
+                    result.features[i].attributes.total = result.features[i].attributes.total * 0.0247105381;
                     break;
                 //conversion of length units into miles
                 case "YARDS":
-                    result.features[i].attributes.Total = result.features[i].attributes.Total * 0.000568181818182;
+                    result.features[i].attributes.total = result.features[i].attributes.total * 0.000568181818182;
                     break;
                 case "FEET":
-                    result.features[i].attributes.Total = result.features[i].attributes.Total * 0.000189393939394;
+                    result.features[i].attributes.total = result.features[i].attributes.total * 0.000189393939394;
                     break;
                 case "KILOMETERS":
-                    result.features[i].attributes.Total = result.features[i].attributes.Total * 0.621371192237;
+                    result.features[i].attributes.total = result.features[i].attributes.total * 0.621371192237;
                     break;
                 case "METERS":
-                    result.features[i].attributes.Total = result.features[i].attributes.Total * 0.000621371192237;
+                    result.features[i].attributes.total = result.features[i].attributes.total * 0.000621371192237;
                     break;
                 case "MILES":
                     break;
                 case "NAUTICAL_MILES":
-                    result.features[i].attributes.Total = result.features[i].attributes.Total * 1.15077944802;
+                    result.features[i].attributes.total = result.features[i].attributes.total * 1.15077944802;
                     break;
                 default:
                     break;
@@ -4421,7 +4422,7 @@ define([
         },
 
         _addAnalysisShapefileOnMap: function (output) {
-            var geometryService = new GeometryService(appGlobals.configData.GeometryService), feature, symbol, lineColor, fillColor, graphicObj, rendererColor,
+            var geometryService = new GeometryService(appGlobals.configData.GeometryService), attributesObj, feature, symbol, lineColor, fillColor, graphicObj, rendererColor, analysisShapefileRenderer,
                 graphicsLayer = this.map.getLayer("analysisShapeGraphicsLayer");
             if (output.value) {
                 feature = output.value.features[0];
@@ -4446,7 +4447,11 @@ define([
                         fillColor.a = 0.25;
                         symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID, new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, lineColor, 3), fillColor);
                     }
-                    graphicObj = new Graphic(geometries[0], symbol);
+                    analysisShapefileRenderer = new UniqueValueRenderer(null, "layerType");
+                    analysisShapefileRenderer.addValue({ value: "Analysis", symbol: symbol, label: this.analysisFileName });
+                    graphicsLayer.setRenderer(analysisShapefileRenderer);
+                    attributesObj = { "layerType": "Analysis" };
+                    graphicObj = new Graphic(geometries[0], null, attributesObj);
                     if (this.shapeFileUploadedOnMap) {
                         graphicsLayer.remove(graphicsLayer.graphics[graphicsLayer.graphics.length - 1]);
                     }
@@ -5073,50 +5078,50 @@ define([
         _getDateFormat: function (type) {
             var dateFormat;
             switch (type) {
-                case "shortDate":
-                    dateFormat = "MM/dd/yyyy";
-                    break;
-                case "shortDateLE":
-                    dateFormat = "dd/MM/yyyy";
-                    break;
-                case "longMonthDayYear":
-                    dateFormat = "MMMM dd, yyyy";
-                    break;
-                case "dayShortMonthYear":
-                    dateFormat = "dd MMM yyyy";
-                    break;
-                case "longDate":
-                    dateFormat = "EEEE, MMMM dd, yyyy";
-                    break;
-                case "shortDateLongTime":
-                    dateFormat = "MM/dd/yyyy hh:mm:ss a";
-                    break;
-                case "shortDateLELongTime":
-                    dateFormat = "dd/MM/yyyy hh:mm:ss a";
-                    break;
-                case "shortDateShortTime":
-                    dateFormat = "MM/dd/yyyy hh:mm a";
-                    break;
-                case "shortDateLEShortTime":
-                    dateFormat = "dd/MM/yyyy hh:mm a";
-                    break;
-                case "shortDateShortTime24":
-                    dateFormat = "MM/dd/yyyy HH:mm";
-                    break;
-                case "shortDateLEShortTime24":
-                    dateFormat = "dd/MM/yyyy HH:mm";
-                    break;
-                case "longMonthYear":
-                    dateFormat = "MMMM yyyy";
-                    break;
-                case "shortMonthYear":
-                    dateFormat = "MMM yyyy";
-                    break;
-                case "year":
-                    dateFormat = "yyyy";
-                    break;
-                default:
-                    dateFormat = "MMMM dd, yyyy";
+            case "shortDate":
+                dateFormat = "MM/dd/yyyy";
+                break;
+            case "shortDateLE":
+                dateFormat = "dd/MM/yyyy";
+                break;
+            case "longMonthDayYear":
+                dateFormat = "MMMM dd, yyyy";
+                break;
+            case "dayShortMonthYear":
+                dateFormat = "dd MMM yyyy";
+                break;
+            case "longDate":
+                dateFormat = "EEEE, MMMM dd, yyyy";
+                break;
+            case "shortDateLongTime":
+                dateFormat = "MM/dd/yyyy hh:mm:ss a";
+                break;
+            case "shortDateLELongTime":
+                dateFormat = "dd/MM/yyyy hh:mm:ss a";
+                break;
+            case "shortDateShortTime":
+                dateFormat = "MM/dd/yyyy hh:mm a";
+                break;
+            case "shortDateLEShortTime":
+                dateFormat = "dd/MM/yyyy hh:mm a";
+                break;
+            case "shortDateShortTime24":
+                dateFormat = "MM/dd/yyyy HH:mm";
+                break;
+            case "shortDateLEShortTime24":
+                dateFormat = "dd/MM/yyyy HH:mm";
+                break;
+            case "longMonthYear":
+                dateFormat = "MMMM yyyy";
+                break;
+            case "shortMonthYear":
+                dateFormat = "MMM yyyy";
+                break;
+            case "year":
+                dateFormat = "yyyy";
+                break;
+            default:
+                dateFormat = "MMMM dd, yyyy";
             }
             return dateFormat;
         },
