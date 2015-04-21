@@ -29,7 +29,7 @@ define({
             browse: "Browse",
             upload: "Upload",
             add: "Add",
-            locate: "Locate ",
+            locate: "Locate",
             downLoad: "Download"
         },
         tooltips: {
@@ -41,10 +41,10 @@ define({
             clearEntry: "Clear",
             selectInitialCoordinates: "Select Initial Coordinates",
             selectFeature: "Click on a feature to select",
-            completeFeatureSelection: "Press double click to finish the opertaion",
-            selectCoordinates: "Please select the point",
-            clearAOI: "clear AOI",
-            reportFields: "Configure attributes to display"
+            completeFeatureSelection: "Double click to finish selection",
+            selectCoordinates: "Click map for starting point",
+            clearAOI: "Clear AOI",
+            reportFields: "Choose attributes to display"
         },
         titles: {
             webpageDisplayText: "Copy/Paste HTML into your web page",
@@ -75,7 +75,7 @@ define({
         messages: {
             legendLoadingText: "Loading...",
             sliderDisplayText: "Show results within ",
-            bufferSliderText: "Buffer distance (Optional for polygon AOIs)",
+            bufferSliderText: "Buffer distance (optional for polygon AOIs)",
             orText: "OR",
             latitude: "Latitude",
             longitude: "Longitude",

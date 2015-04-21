@@ -40,10 +40,10 @@ define({
         clearEntry: "@fr@ Clear",
         selectInitialCoordinates: "@fr@ Select Initial Coordinates",
         selectFeature: "@fr@ Click on a feature to select",
-        completeFeatureSelection: "@fr@ Press double click to finish the opertaion",
-        selectCoordinates: "@fr@ Please select the point",
-        clearAOI: "@fr@ clear AOI",
-        reportFields: "@fr@ Configure attributes to display"
+        completeFeatureSelection: "@fr@ Double click to finish selection",
+        selectCoordinates: "@fr@ Click map for starting point",
+        clearAOI: "@fr@ Clear AOI",
+        reportFields: "@fr@ Choose attributes to display"
     },
     titles: {
         webpageDisplayText: "@fr@ Copy/Paste HTML into your web page",
@@ -74,7 +74,7 @@ define({
     messages: {
         legendLoadingText: "@fr@ Loading...",
         sliderDisplayText: "@fr@ Show results within",
-        bufferSliderText: "@fr@ Buffer distance (Optional for polygon AOIs)",
+        bufferSliderText: "@fr@ Buffer distance (optional for polygon AOIs)",
         orText: "@fr@ OR",
         latitude: "@fr@ Latitude",
         longitude: "@fr@ Longitude",

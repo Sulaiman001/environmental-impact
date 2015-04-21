@@ -40,9 +40,9 @@ define({
         clearEntry: "@it@ Clear",
         selectInitialCoordinates: "@it@ Select Initial Coordinates",
         selectFeature: "@it@ Click on a feature to select",
-        completeFeatureSelection: "@it@ Press double click to finish the opertaion",
-        selectCoordinates: "@it@ Please select the point",
-        clearAOI: "@it@ clear AOI",
+        completeFeatureSelection: "@it@ Double click to finish selection",
+        selectCoordinates: "@it@ Click map for starting point",
+        clearAOI: "@it@ Clear AOI",
         reportFields: "@it@ Configure attributes to display"
     },
     titles: {
@@ -74,7 +74,7 @@ define({
     messages: {
         legendLoadingText: "@it@ Loading...",
         sliderDisplayText: "@it@ Show results within ${defaultDistance}",
-        bufferSliderText: "@it@ Buffer distance (Optional for polygon AOIs)",
+        bufferSliderText: "@it@ Buffer distance (optional for polygon AOIs)",
         orText: "@it@ OR",
         latitude: "@it@ Latitude",
         longitude: "@it@ Longitude",
