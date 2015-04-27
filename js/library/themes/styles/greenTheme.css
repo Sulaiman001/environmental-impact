@@ -249,7 +249,7 @@
 
 /*Start of Infowindow style*/
 
-.esriCTInfoWindow, .legenboxInner
+.esriCTInfoWindow, .esriCTDivLegendInnerBox
 {
     border: 1px solid #028D6A;
 }
@@ -323,18 +323,9 @@
     background-image: url('../images/img24x24/embeddingGreen.png');
 }
 
-.esriCTLeftArrow
+.esriCTRightArrow, .esriCTLeftArrow
 {
-    background-image: url('../images/leftGreen.png');
-    background-repeat: no-repeat;
-    background-position: center center;
-}
-
-.esriCTRightArrow
-{
-    background-image: url('../images/rightGreen.png');
-    background-repeat: no-repeat;
-    background-position: center center;
+    background-color: #028D6A !important;
 }
 
 .esriCTInfoWindowRightArrow

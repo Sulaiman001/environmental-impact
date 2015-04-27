@@ -29,7 +29,7 @@ define({
             browse: "Browse",
             upload: "Upload",
             add: "Add",
-            locate: "Locate ",
+            locate: "Locate",
             downLoad: "Download"
         },
         tooltips: {
@@ -41,10 +41,10 @@ define({
             clearEntry: "Clear",
             selectInitialCoordinates: "Select Initial Coordinates",
             selectFeature: "Click on a feature to select",
-            completeFeatureSelection: "Press double click to finish the opertaion",
-            selectCoordinates: "Please select the point",
-            clearAOI: "clear AOI",
-            reportFields: "Configure attributes to display"
+            completeFeatureSelection: "Double click to finish selection",
+            selectCoordinates: "Click map for starting point",
+            clearAOI: "Clear AOI",
+            reportFields: "Choose attributes to display"
         },
         titles: {
             webpageDisplayText: "Copy/Paste HTML into your web page",
@@ -53,11 +53,11 @@ define({
             rectangleToolText: "Rectangle",
             polygonToolText: "Polygon",
             selectFeatureText: "Select features",
-            areaStandardUnit: "Acres",
-            lengthStandardUnit: "Miles",
-            lengthMetricUnit: "Kilometer",
-            areaMetricUnit: "Sq.Km.",
-            lengthMetricUnitLabel: "Km",
+            areaStandardUnit: "acres",
+            lengthStandardUnit: "miles",
+            lengthMetricUnit: "kilometer",
+            areaMetricUnit: "sq.km.",
+            lengthMetricUnitLabel: "km",
             standardUnitLabel: "Standard Units",
             metricUnitLabel: "Show areas in ",
             unitLabel: "Metric Units",
@@ -69,13 +69,13 @@ define({
             summaryReportTitle: "Summary Report Title:",
             distanceLabel: "Distance",
             bearingLabel: "Bearing",
-            reportTitleValue: "Area of Interest (AOI) Information"
+            reportTitleValue: "Area of Interest (AOI) Information",
+            attchementText: "Attachments"
         },
         messages: {
             legendLoadingText: "Loading...",
-            noLegend: "No Legend Available",
             sliderDisplayText: "Show results within ",
-            bufferSliderText: "Buffer distance (Optional for polygon AOIs)",
+            bufferSliderText: "Buffer distance (optional for polygon AOIs)",
             orText: "OR",
             latitude: "Latitude",
             longitude: "Longitude",
@@ -112,19 +112,22 @@ define({
             browseFile: "Please browse to a file.",
             noFeaturesInAOI: "No features found in AOI.",
             noFieldsSelected: "No fields selected.",
+            noConfigForImpactAnalysis: "No layers configured for impact analysis",
             selectFeatureError: "Please double click on map to complete the select Feature.",
             inValideNumericErrorMessage: "Please enter valid input",
             inValideZipFile: "Incorrect File extension\n Should be zip.",
             portalUrlNotFound: "Portal URL cannot be empty",
-            queryRequestStringExceeded : "The length of the query string for this request exceeds the configured maxQueryStringLength value.",
-            defineStartPointMessage : "Please define start point",
-            unableToShareURL : "Application could not be shared with current data",
+            queryRequestStringExceeded: "The length of the query string for this request exceeds the configured maxQueryStringLength value.",
+            defineStartPointMessage: "Please define start point",
+            unableToShareURL: "Application could not be shared with current data",
             getLayerInfoError: "Unable to get layer info for layer",
-            simplifyGeometryFailed: "Failed to simplify geometry",
+            unabletToBuffer: "Unable to buffer feature",
+            unableToUnion: "Unable to union the features and create AOI",
             incorrectFields: "Incorrect fields configured",
             noFieldsConfigured: "No fields configured",
             incorrectStatisticFieldUnit: "Incorrect Statistic field unit specified for ",
-            unionGeometryFailed: "Failed to union geometry"
+            noLegend: "No Legend Available",
+            noHeaderField: ""
         },
         // End of shared nls
 

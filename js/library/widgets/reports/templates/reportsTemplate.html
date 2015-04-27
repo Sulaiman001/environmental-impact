@@ -156,6 +156,9 @@
         <div class="esriCTReportHeader">
             ${sharedNls.messages.reportPanelHeader}
         </div>
+        <div data-dojo-attach-point="reportsLoaderDiv">
+            <img class="esriCTInfoLoader" data-dojo-attach-point="reportsLoader" />
+        </div>
         <div class="esriCTReportDisplayPanel" data-dojo-attach-point="reportContent">
             <div class="esriCTReportScrollContent" data-dojo-attach-point="reportScrollContent">
             </div>
@@ -198,7 +201,10 @@
             <div class="esriCTlabel">
                 ${sharedNls.titles.summaryReportTitle}
             </div>
-            <input type="text" data-dojo-attach-point="summaryReportTitle" data-dojo-props="intermediateChanges:true" class="esriCTReportTitleText" value="${sharedNls.titles.reportTitleValue}"/>
+            <div>
+                <input type="text" data-dojo-attach-point="summaryReportTitle" data-dojo-props="intermediateChanges:true"
+                    class="esriCTReportTitleText" value="${sharedNls.titles.reportTitleValue}" />
+            </div>
         </div>
         <div class="esriCTDownloadReportRow" data-dojo-attach-point="downloadReportType">
             <div class="esriCTlabel">

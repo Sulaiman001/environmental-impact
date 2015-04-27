@@ -40,9 +40,9 @@ define({
         clearEntry: "@it@ Clear",
         selectInitialCoordinates: "@it@ Select Initial Coordinates",
         selectFeature: "@it@ Click on a feature to select",
-        completeFeatureSelection: "@it@ Press double click to finish the opertaion",
-        selectCoordinates: "@it@ Please select the point",
-        clearAOI: "@it@ clear AOI",
+        completeFeatureSelection: "@it@ Double click to finish selection",
+        selectCoordinates: "@it@ Click map for starting point",
+        clearAOI: "@it@ Clear AOI",
         reportFields: "@it@ Configure attributes to display"
     },
     titles: {
@@ -53,10 +53,10 @@ define({
         polygonToolText: "@it@ Polygon",
         selectFeatureText: "@it@ Select features",
         areaStandardUnit: "@it@ acres",
-        lengthStandardUnit: "@it@ Miles",
-        lengthMetricUnit: "@it@ Kilometer",
-        areaMetricUnit: "@it@ Sq.Km.",
-        lengthMetricUnitLabel: "@it@ Km",
+        lengthStandardUnit: "@it@ miles",
+        lengthMetricUnit: "@it@ kilometer",
+        areaMetricUnit: "@it@ sq.km.",
+        lengthMetricUnitLabel: "@it@ km",
         standardUnitLabel: "@it@ Standard Units",
         metricUnitLabel: "@it@ Show areas in ",
         unitLabel: "@it@ Metric Units",
@@ -68,13 +68,13 @@ define({
         summaryReportTitle: "@it@ Summary Report Title:",
         distanceLabel: "@it@ Distance",
         bearingLabel: "@it@ Bearing",
-        reportTitleValue: "@it@ Area of Interest (AOI) Information"
+        reportTitleValue: "@it@ Area of Interest (AOI) Information",
+        attchementText: "@it@ Attachments"
     },
     messages: {
         legendLoadingText: "@it@ Loading...",
-        noLegend: "@it@ No Legend Available",
         sliderDisplayText: "@it@ Show results within ${defaultDistance}",
-        bufferSliderText: "@it@ Buffer distance (Optional for polygon AOIs)",
+        bufferSliderText: "@it@ Buffer distance (optional for polygon AOIs)",
         orText: "@it@ OR",
         latitude: "@it@ Latitude",
         longitude: "@it@ Longitude",
@@ -111,6 +111,7 @@ define({
         browseFile: "@it@ Please browse to a file.",
         noFeaturesInAOI: "@it@ No features found in AOI.",
         noFieldsSelected: "@it@ No fields selected.",
+        noConfigForImpactAnalysis: "@it@ No layers configured for impact analysis",
         selectFeatureError: "@it@ Please double click on map to complete the select Feature.",
         inValideNumericErrorMessage: "@it@ Please enter valid inputs.",
         inValideZipFile: "@it@ Incorrect File extension\n Should be zip",
@@ -119,11 +120,13 @@ define({
 	    defineStartPointMessage : "@it@ Please define start point",
         unableToShareURL : "@it@ Application could not be shared with current data",
         getLayerInfoError: "@it@ Unable to get layer info for layer",
-        simplifyGeometryFailed: "@it@ Failed to simplify geometry",
+        unabletToBuffer: "@it@ Unable to buffer feature",
+        unableToUnion: "@it@ Unable to union the features and create AOI",
         incorrectFields: "@it@ Incorrect fields configured",
         noFieldsConfigured: "@it@ No fields configured",
         incorrectStatisticFieldUnit: "@it@ Incorrect Statistic field unit specified for ",
-        unionGeometryFailed: "@it@ Failed to union geometry"
+        noLegend: "@it@ No Legend Available",
+        noHeaderField: ""
     },
     // End of shared nls
 

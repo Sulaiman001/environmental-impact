@@ -111,7 +111,7 @@ define([], function () {
         DrawTab: {
             Title: "Draw",
             AddressSearchHintLabel: "Navigate to geography",
-            DefineAOILabel: "Use the Drawing tools to define your AOI",
+            DefineAOILabel: "Use the drawing tools to define your AOI",
             SelectFeaturesLabel: "Select features from the map"
         },
 
@@ -130,7 +130,7 @@ define([], function () {
         // EnterBearingDistanceLabel: Specify text to display as a hint to add bearing and distance
         CoordinatesTab: {
             Title: "Coordinates",
-            DefineStartPointAddressLabel: "Define Start point using address search",
+            DefineStartPointAddressLabel: "Define start point using and address",
             DefineStartPointMapClickLabel: "Click on map to select start point",
             EnterBearingDistanceLabel: "Enter bearings and distances from start point"
         },
@@ -573,7 +573,7 @@ define([], function () {
                 height: 35
             },
             DisplayText: "Address",
-            LocatorDefaultAddress: "SE 13th St, Miami, FL",
+            LocatorDefaultAddress: "1111 Parrot Jungle Trail, Miami, FL 33132",
             LocatorDefaultPlaceNameSearchAddress: "Largo, Florida",
             LocatorDefaultAOIAddress: "Sun City, Florida",
             LocatorDefaultAOIBearingAddress: "Mulberry, Florida",

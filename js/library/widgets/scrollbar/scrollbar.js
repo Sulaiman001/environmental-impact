@@ -18,9 +18,12 @@
 //============================================================================================================================//
 define([
     "dojo/_base/declare",
+    "dojo/_base/lang",
+    "dojo/_base/html",
+    "dojo/dom-construct",
     "dojo/dom-geometry",
     "dijit/_WidgetBase"
-], function (declare, domGeom, WidgetBase) {
+], function (declare, lang, html, domConstruct, domGeom, WidgetBase) {
 
     //========================================================================================================================//
 
@@ -50,17 +53,17 @@ define([
 
         postCreate: function () {
             this.inherited(arguments);
-            var coords = dojo.coords(this.domNode);
+            var coords = html.coords(this.domNode);
             this._containerHeight = coords.h;
             this._containerWidth = coords.w;
 
-            this._scrollBarContainer = dojo.create("div", {}, this.domNode);
-            this._scrollBarContent = dojo.create("div", { "class": "scrollbar_content" }, this._scrollBarContainer);
+            this._scrollBarContainer = domConstruct.create("div", { "class": "scrollbar_container" }, this.domNode);
+            this._scrollBarContent = domConstruct.create("div", { "class": "scrollbar_content" }, this._scrollBarContainer);
             this._scrollBarContent.style.height = this._containerHeight + "px";
         },
 
         /**
-        * set content of scrollbar conatiner
+        * set content of scrollbar container
         * @memberOf widgets/scrollbar/scrollbar
         */
         setContent: function (content) {
@@ -69,19 +72,19 @@ define([
         },
 
         /**
-        * remove content of scrollbar conatiner
+        * remove content of scrollbar container
         * @memberOf widgets/scrollbar/scrollbar
         */
         removeContent: function () {
-            dojo.destroy(this._scrollableContent);
+            domConstruct.destroy(this._scrollableContent);
         },
 
         /**
-        * reset scrollbar conatiner
+        * reset scrollbar container
         * @memberOf widgets/scrollbar/scrollbar
         */
         resetScrollBar: function (duration) {
-            setTimeout(dojo.hitch(this, function () {
+            setTimeout(lang.hitch(this, function () {
                 this._registerScrollbar();
             }), duration);
         },

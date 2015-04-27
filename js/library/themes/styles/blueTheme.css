@@ -121,6 +121,7 @@
 {
     color: #007ac2 !important;
 }
+
 .esriSimpleSliderDecrementButton, .esriSimpleSliderIncrementButton, .esriCTAOILinkSelect
 {
     background-color: #007ac2 !important;
@@ -224,7 +225,7 @@
 
 /*Start of Infowindow style*/
 
-.esriCTInfoWindow, .legenboxInner
+.esriCTInfoWindow, .esriCTDivLegendInnerBox
 {
     border: 1px solid #007ac2;
 }
@@ -280,18 +281,9 @@
     background-image: url('../images/img24x24/embeddingBlue.png');
 }
 
-.esriCTLeftArrow
+.esriCTRightArrow, .esriCTLeftArrow
 {
-    background-image: url('../images/left.png');
-    background-repeat: no-repeat;
-    background-position: center center;
-}
-
-.esriCTRightArrow
-{
-    background-image: url('../images/right.png');
-    background-repeat: no-repeat;
-    background-position: center center;
+    background-color: #007ac2 !important;
 }
 
 .esriCTInfoWindowRightArrow

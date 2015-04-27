@@ -111,7 +111,7 @@ define([], function () {
         DrawTab: {
             Title: "Draw",
             AddressSearchHintLabel: "Navigate to geography",
-            DefineAOILabel: "Use the Drawing tools to define your AOI",
+            DefineAOILabel: "Use the drawing tools to define your AOI",
             SelectFeaturesLabel: "Select features from the map"
         },
 
@@ -130,7 +130,7 @@ define([], function () {
         // EnterBearingDistanceLabel: Specify text to display as a hint to add bearing and distance
         CoordinatesTab: {
             Title: "Coordinates",
-            DefineStartPointAddressLabel: "Define Start point using address search",
+            DefineStartPointAddressLabel: "Define start point using an address",
             DefineStartPointMapClickLabel: "Click on map to select start point",
             EnterBearingDistanceLabel: "Enter bearings and distances from start point"
         },
@@ -242,7 +242,7 @@ define([], function () {
             SearchExpression: "UPPER(NAME) LIKE UPPER('%${0}%')",
             QuickSummaryReportFields: ["NAME", "MGMTAGENCY"],
             SummaryStatisticField: "Shape_Area",
-			SummaryStatisticFieldUnits: "SQUARE_METERS",
+            SummaryStatisticFieldUnits: "SQUARE_METERS",
             DetailSummaryReportFields: ["SITEID", "NAME", "GOVBODY", "MGMTAGENCY"],
             UnifiedSearch: "true"
         }],
@@ -295,21 +295,25 @@ define([], function () {
         // Set the various units to be used for buffer distance
         DistanceUnitSettings: [{
             DistanceUnitName: "Miles",
+            DistanceUnit: "Miles",
             MinimumValue: 0,
             MaximumValue: 100,
             Selected: true
         }, {
             DistanceUnitName: "Feet",
+            DistanceUnit: "Feet",
             MinimumValue: 0,
             MaximumValue: 1000,
             Selected: false
         }, {
             DistanceUnitName: "Meters",
+            DistanceUnit: "Meters",
             MinimumValue: 0,
             MaximumValue: 1000,
             Selected: false
         }, {
             DistanceUnitName: "Kilometers",
+            DistanceUnit: "Kilometers",
             MinimumValue: 0,
             MaximumValue: 100,
             Selected: false
@@ -352,8 +356,7 @@ define([], function () {
         // AddressMatchScore: Required parameters to specify the accuracy of address match.
         //   Field: Set the outfield of geocode service that contains the Address Match Score.
         //   Value: Set the minimum score value for filtering the candidate results. The value should a number between 0-100.
-        // FilterFieldName: Set the feature type for results returned by the geocode request. e.g. For World GeoCode, the field that contains the feature type is 'Type'.
-        // FilterFieldValues: Specify the feature types to filter search results. e.g. 'county', 'city' etc.
+        // CategoryFilters: Specify the category types for filtering search results. e.g. 'Street Address', 'city' etc.
         // MaxResults: Maximum number of locations to display in the results menu.
 
         LocatorSettings: {
@@ -363,7 +366,7 @@ define([], function () {
                 height: 35
             },
             DisplayText: "Address",
-            LocatorDefaultAddress: "SE 13th St, Miami, FL",
+            LocatorDefaultAddress: "1111 Parrot Jungle Trail, Miami, FL 33132",
             LocatorDefaultPlaceNameSearchAddress: "Largo, Florida",
             LocatorDefaultAOIAddress: "Sun City, Florida",
             LocatorDefaultAOIBearingAddress: "Mulberry, Florida",
@@ -378,8 +381,7 @@ define([], function () {
                 Field: "Score",
                 Value: 80
             },
-            FilterFieldName: 'Addr_Type',
-            FilterFieldValues: ["StreetAddress", "StreetName", "PointAddress", "POI"],
+            CategoryFilters: ["Street Address", "Street Name", "Point Address", "City", "Park", "Lake", "Mountain"],
             MaxResults: 200
         },
 
@@ -397,7 +399,7 @@ define([], function () {
         GeometryService: "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer",
 
         // Set GP service for creating AOI from shapefile and uploading shapefile for analysis
-        ShapefileTools: "http://54.203.249.87/arcgis/rest/services/ShapefileTools/GPServer/ShapefileTools",
+        GPServiceURL: "http://54.203.249.87/arcgis/rest/services/ShapefileTools/GPServer/ShapefileTools",
 
         // ReportDownloadSettings: Settings for downloading quick and detailed summary reports in PDF format
         // GPServiceURL: url to geoprocessing service

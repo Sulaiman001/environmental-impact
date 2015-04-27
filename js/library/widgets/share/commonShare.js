@@ -71,21 +71,23 @@ define([
          * @param {string} site Selected share option
          */
         share: function (waitForUrl, mapSharingOptions, site) {
+            var windowObj = (site === "facebook" || site === "twitter") ? window.open('', '_blank') : null;
             waitForUrl.then(function (urlToShare) {
                 //var encodedUri = encodeURIComponent(urlToShare);
                 switch (site) {
-                case "facebook":
-                    window.open(string.substitute(mapSharingOptions.FacebookShareURL, [urlToShare]));
-                    break;
-                case "twitter":
-                    window.open(string.substitute(mapSharingOptions.TwitterShareURL, [urlToShare]));
-                    break;
-                case "email":
-                    parent.location = string.substitute(mapSharingOptions.ShareByMailLink, [urlToShare]);
-                    break;
+                    case "facebook":
+                        windowObj.location = string.substitute(mapSharingOptions.FacebookShareURL, [urlToShare]);
+                        break;
+                    case "twitter":
+                        windowObj.location = string.substitute(mapSharingOptions.TwitterShareURL, [urlToShare]);
+                        break;
+                    case "email":
+                        parent.location = string.substitute(mapSharingOptions.ShareByMailLink, [urlToShare]);
+                        break;
                 }
             });
         }
+
 
     });
     // create singleton if it doesn't already exist
