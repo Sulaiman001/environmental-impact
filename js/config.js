@@ -399,12 +399,12 @@ define([], function () {
         GeometryService: "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer",
 
         // Set GP service for creating AOI from shapefile and uploading shapefile for analysis
-        GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_6/EnvironmentalImpactTools/GPServer/ShapefileTools",
+        GPServiceURL: "http://54.203.249.87/arcgis/rest/services/ShapefileTools/GPServer/ShapefileTools",
 
         // ReportDownloadSettings: Settings for downloading quick and detailed summary reports in PDF format
         // GPServiceURL: url to geoprocessing service
         ReportDownloadSettings: {
-            GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_6/EnvironmentalImpactTools/GPServer/GeneratePDFReport",
+            GPServiceURL: "http://54.203.249.87/arcgis/rest/services/GenerateImpactReportWater/GPServer/GenerateImpactReport",
             ReportSettings: [
                 {
                     Type: "Quick",
@@ -427,19 +427,19 @@ define([], function () {
                 Enabled: true,
                 Label: "Excel",
                 Format: "Excel",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_6/EnvironmentalImpactTools/GPServer/ClipToExcel"
+                GPServiceURL: "http://54.203.249.87/arcgis/rest/services/ClipToExcelWater/GPServer/ClipToExcel"
             },
             {
                 Enabled: true,
                 Label: "File GDB",
                 Format: "File Geodatabase - GDB - .gdb",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_6/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+                GPServiceURL: "http://54.203.249.87/arcgis/rest/services/ExtractDataTaskWater/GPServer/Extract%20Data%20Task"
             },
             {
                 Enabled: true,
                 Label: "Shapefile",
                 Format: "Shapefile - SHP - .shp",
-                GPServiceURL: "http://203.199.47.114/arcgis/rest/services/EnvironmentalImpactV3_6/EnvironmentalImpactTools/GPServer/ClipZipandShip"
+                GPServiceURL: "http://54.203.249.87/arcgis/rest/services/ExtractDataTaskWater/GPServer/Extract%20Data%20Task"
             }
         ],
 
