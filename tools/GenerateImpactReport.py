@@ -242,7 +242,7 @@ def create_image_to_print(web_map_as_json):
         # Exporting web map as json into image
 
         webmap_img_path = arcpy.ExportWebMap_server(
-            str(converted_web_json), output_file, image_format,
+            str(converted_web_json), output_file, image_format, "",
             Layout_Template="A4 Portrait")[0]
 
         for img in os.listdir(SCRATCH):
