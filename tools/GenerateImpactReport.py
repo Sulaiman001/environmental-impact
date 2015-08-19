@@ -451,7 +451,7 @@ def get_stat_table(lyr, area_of_interest, lyr_fields, shape_type, shp_name):
     #   If clipped feature class has some features then performs Statistic
     #   analysis on provided fields
     if int(arcpy.GetCount_management(out_features)[0]) > 0:
-        lyr_summary_info += ["Potential Impact", "0", "0", "0"]
+        lyr_summary_info += ["Potential Impact", "N/A", "N/A", "N/A"]
 
         #   Add field to the output feature class to store calculated area
         if arcpy.Describe(in_features).shapeType.upper() in \
@@ -511,7 +511,8 @@ def get_stat_table(lyr, area_of_interest, lyr_fields, shape_type, shp_name):
         layer_summary_data[layer_name] = [lyr_summary_info]
         return out_stat_table, lyr_summary_info, invalid_fields
     else:
-        lyr_summary_info += ["No known Impact", "0", "0", "0"]
+        lyr_summary_info += ["No known Impact", "N/A", "N/A", "N/A"]
+        lyr_summary_info[shape_type[0]] = [Paragraph("0", STYLES["Right"])]
         layer_summary_data[layer_name] = [lyr_summary_info]
         return None, lyr_summary_info, ""
 
@@ -1183,3 +1184,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
