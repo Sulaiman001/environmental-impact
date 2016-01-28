@@ -226,7 +226,7 @@ def convert(data):
     else:
         return data
 
-def create_image_to_print(web_map_as_json):
+def create_image_to_print(web_map_as_json, connection_files):
     """
     This function helps to create PNG format Image which will be inserted into
     PDF report
@@ -234,16 +234,20 @@ def create_image_to_print(web_map_as_json):
     try:
         arcpy.AddMessage("Printing Image..")
         # Setting parameters for Export web map server
-        output_file = SCRATCH  + os.sep + "image.png"
-        image_format = "PNG32"
+        output_file = os.path.join(SCRATCH, "image.png")
+        installDir = arcpy.GetInstallInfo()["InstallDir"]
+        template_mxd = os.path.join(installDir, "Templates",
+            "ExportWebMapTemplates", "A4 Portrait.mxd")
 
         converted_web_json = convert(web_map_as_json)
 
         # Exporting web map as json into image
 
-        webmap_img_path = arcpy.ExportWebMap_server(
-            str(converted_web_json), output_file, image_format, "",
-            Layout_Template="A4 Portrait")[0]
+        mxd = arcpy.mapping.ConvertWebMapToMapDocument(
+        str(converted_web_json), template_mxd,
+        extra_conversion_options=connection_files).mapDocument
+
+        webmap_img_path = arcpy.mapping.ExportToPNG(mxd, output_file)
 
         for img in os.listdir(SCRATCH):
             if img.endswith(".png"):
@@ -263,7 +267,7 @@ def create_image_to_print(web_map_as_json):
 
 
 def validate_detailed_report(web_map_as_json, area_of_interest, uploaded_zip,
-                             report_units, detailed_fields):
+                             report_units, detailed_fields, connection_files):
     """This function helps to validate input parameters for detailed report type
     """
     aoi_area = ""
@@ -278,7 +282,7 @@ def validate_detailed_report(web_map_as_json, area_of_interest, uploaded_zip,
 
     #   If WebMapJSON is provided, include image in the PDF Report
     if web_map_as_json != "":
-        image = create_image_to_print(web_map_as_json)
+        image = create_image_to_print(web_map_as_json, connection_files)
         if not image:
             arcpy.AddWarning("Failed to get image from web map." +
                              " It will not be drawn on report.")
@@ -1060,7 +1064,7 @@ def get_image(image_url):
         sys.exit()
 
 def validate_quick_report(web_map_as_json, quick_summary_json,
-                          area_of_interest):
+                          area_of_interest, connection_files):
     """This function helps to validate input parameters for quick report type.
     """
     try:
@@ -1081,7 +1085,7 @@ def validate_quick_report(web_map_as_json, quick_summary_json,
 
         #   If WebMapJSON is provided, include image in the PDF Report
         if web_map_as_json != "":
-            image = create_image_to_print(web_map_as_json)
+            image = create_image_to_print(web_map_as_json, connection_files)
             if not image:
                 arcpy.AddWarning("Failed to get image from web map." +
                                  " It will not be drawn on report.")
@@ -1129,6 +1133,37 @@ def main():
     quick_summary_json = arcpy.GetParameterAsText(6).strip()
     report_units = arcpy.GetParameterAsText(7)
 
+    server_connection = "SERVER_CONNECTION_FILE"
+    wms_connection = "WMS_CONNECTION_FILE"
+    wmts_connection = "WMTS_CONNECTION_FILE"
+
+    connections = arcpy.GetParameter(11)
+    connection_files = {server_connection:[],
+                        wms_connection:[],
+                        wmts_connection:[]}
+
+    for connection in connections:
+        ext = os.path.splitext(connection.value)[1]
+        if ext == '.ags':
+            connection_files[server_connection].append(connection.value)
+        elif ext == '.wms':
+            connection_files[wms_connection].append(connection.value)
+        elif ext == '.wmts':
+            connection_files[wmts_connection].append(connection.value)
+
+    version = arcpy.GetInstallInfo()['Version']
+    if version == "10.2":
+        if len(connection_files[server_connection]) > 1 or len(connection_files[wms_connection]) > 1 or len(connection_files[wmts_connection]) > 1:
+            arcpy.AddError("At version 10.2 only one .ags, one .wms, and one .wmts connection file can be used to connect to secured services.")
+            return
+        ags = "" if len(connection_files[server_connection]) == 0 else connection_files[server_connection][0]
+        wms = "" if len(connection_files[wms_connection]) == 0 else connection_files[wms_connection][0]
+        wmts = "" if len(connection_files[wmts_connection]) == 0 else connection_files[wmts_connection][0]
+
+        connection_files = {server_connection:ags,
+                        wms_connection:wms,
+                        wmts_connection:wmts}
+
     #encoded_text = encode_text(REPORT_SUBTITLE)
 
     #   Check if valid AOI is provided. It should have at least 1 polygon
@@ -1162,7 +1197,7 @@ def main():
 
         pdf_path = validate_detailed_report(
             web_map_as_json, area_of_interest, uploaded_zip,
-            report_units, detailed_fields)
+            report_units, detailed_fields, connection_files)
         if not pdf_path:
             return
         else:
@@ -1175,7 +1210,8 @@ def main():
             arcpy.AddError("Layer JSON for Quick report must be provided.")
             return
         pdf_path = validate_quick_report(
-            web_map_as_json, quick_summary_json, area_of_interest)
+            web_map_as_json, quick_summary_json,
+            area_of_interest, connection_files)
         if not pdf_path:
             return
         else:
