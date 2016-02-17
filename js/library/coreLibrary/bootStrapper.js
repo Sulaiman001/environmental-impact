@@ -21,8 +21,9 @@ require([
     "coreLibrary/widgetLoader",
     "application/js/config",
     "esri/config",
+	"esri/urlUtils",
     "dojo/domReady!"
-], function (WidgetLoader, config, esriConfig) {
+], function (WidgetLoader, config, esriConfig, urlUtils) {
     //========================================================================================================================//
 
     try {
@@ -31,9 +32,30 @@ require([
         if (appGlobals.configData.ProxyUrl && (!appGlobals.configData.ProxyUrl.match("http://") && (!appGlobals.configData.ProxyUrl.match("https://")))) {
             appGlobals.configData.ProxyUrl = dojoConfig.baseURL + appGlobals.configData.ProxyUrl;
         }
-        esriConfig.defaults.io.proxyUrl = appGlobals.configData.ProxyUrl;
-        esriConfig.defaults.io.timeout = 180000;
-        /**
+        
+		esriConfig.defaults.io.proxyUrl = appGlobals.configData.ProxyUrl;
+		
+		/**
+		* Uncomment out the following lines and update with your secured ArcGIS Services Directory. 
+		* The URL should match what was configured in the proxy.config.
+		* For each unique secured URL configured in the proxy, 
+		*       copy the addProxyRule section and configure with the appropriate URL.
+		*/
+		
+		// urlUtils.addProxyRule({
+        //        urlPrefix: "http://54.203.249.87/arcgis/rest/services/",
+        //        proxyUrl: appGlobals.configData.ProxyUrl
+        //    });
+        
+		/** 
+		* Use the following section if your configured webmap is also secured (not public)
+		*/
+		// urlUtils.addProxyRule({
+        //         urlPrefix: "http://www.arcgis.com/sharing/rest/",
+        //         proxyUrl: appGlobals.configData.ProxyUrl
+        //     });  
+		
+		/**
         * load application configuration settings from configuration file
         * create an object of widget loader class
         */
