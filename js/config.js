@@ -460,13 +460,17 @@ define([], function () {
         //------------------------------------------------------------------------------------------------------------------------
         // Set widgets settings such as widget title, widgetPath, mapInstanceRequired to be displayed in header panel
         // WidgetPath: path of the widget respective to the widgets package.
+        // The geolocation button has been hidden from the user interface by commenting out the widgetpath for geolocation below. You can enable geolocation by uncommenting the widgetpath for geolocation. The geolocation button, however, will only work on browsers supporting geolocation over HTTP connections.  If a browser requires a HTTPS connection to support geolocation and the button is enabled, the button will not work, but the application will work correctly otherwise.
+        
         AppHeaderWidgets: [{
             WidgetPath: "widgets/locator/locator"
         }, {
             WidgetPath: "widgets/reports/reports"
-        }, {
-            WidgetPath: "widgets/geoLocation/geoLocation"
-        }, {
+        }, 
+        //{
+        //    WidgetPath: "widgets/geoLocation/geoLocation"
+        //},
+        {
             WidgetPath: "widgets/share/share"
         }, {
             WidgetPath: "widgets/help/help"
