@@ -37,7 +37,7 @@ define([], function () {
         // GENERAL SETTINGS
         // ------------------------------------------------------------------------------------------------------------------------
         // Set application title
-        ApplicationName: "Environmental Impact (Water)",
+        ApplicationName: "Environmental Screening (Water)",
 
         // Set application icon path
         ApplicationIcon: "/js/library/themes/images/logoGreen.png",
@@ -56,7 +56,7 @@ define([], function () {
 
         // Set splash window content - Message that appears when the application starts
         SplashScreen: {
-            SplashScreenContent: "The Environmental Impact application helps environmental agencies and organizations evaluate and report on the potential impact of development, research, or other activities on the natural environment, sensitive species, and other important factors. Access to this information facilitates better decisions and helps to ensure that investments in the area are sustainable and minimize disruption to the natural environment.<br><br>Search for a location, define a project area by drawing on the map, uploading a shapefile, or entering a traverse, and generate reports that can be shared with others.",
+            SplashScreenContent: "The Environmental Screening application helps environmental agencies and organizations evaluate and report on the potential impact of development, research, or other activities on the natural environment, sensitive species, and other important factors. Access to this information facilitates better decisions and helps to ensure that investments in the area are sustainable and minimize disruption to the natural environment.<br><br>Search for a location, define a project area by drawing on the map, uploading a shapefile, or entering a traverse, and generate reports that can be shared with others.",
             IsVisible: true
         },
 
@@ -464,9 +464,11 @@ define([], function () {
             WidgetPath: "widgets/locator/locator"
         }, {
             WidgetPath: "widgets/reports/reports"
-        }, {
+        }, 
+		/* {
             WidgetPath: "widgets/geoLocation/geoLocation"
-        }, {
+        },  */
+		{
             WidgetPath: "widgets/share/share"
         }, {
             WidgetPath: "widgets/help/help"
