@@ -37,7 +37,7 @@ define([], function () {
         // GENERAL SETTINGS
         // ------------------------------------------------------------------------------------------------------------------------
         // Set application title
-        ApplicationName: "Environmental Impact (Water)",
+        ApplicationName: "Environmental Screening (Water)",
 
         // Set application icon path
         ApplicationIcon: "/js/library/themes/images/logoGreen.png",
@@ -56,7 +56,7 @@ define([], function () {
 
         // Set splash window content - Message that appears when the application starts
         SplashScreen: {
-            SplashScreenContent: "The Environmental Impact application helps environmental agencies and organizations evaluate and report on the potential impact of development, research, or other activities on the natural environment, sensitive species, and other important factors. Access to this information facilitates better decisions and helps to ensure that investments in the area are sustainable and minimize disruption to the natural environment.<br><br>Search for a location, define a project area by drawing on the map, uploading a shapefile, or entering a traverse, and generate reports that can be shared with others.",
+            SplashScreenContent: "The Environmental Screening application helps environmental agencies and organizations evaluate and report on the potential impact of development, research, or other activities on the natural environment, sensitive species, and other important factors. Access to this information facilitates better decisions and helps to ensure that investments in the area are sustainable and minimize disruption to the natural environment.<br><br>Search for a location, define a project area by drawing on the map, uploading a shapefile, or entering a traverse, and generate reports that can be shared with others.",
             IsVisible: true
         },
 
@@ -460,17 +460,15 @@ define([], function () {
         //------------------------------------------------------------------------------------------------------------------------
         // Set widgets settings such as widget title, widgetPath, mapInstanceRequired to be displayed in header panel
         // WidgetPath: path of the widget respective to the widgets package.
-        // The geolocation button has been hidden from the user interface by commenting out the widgetpath for geolocation below. You can enable geolocation by uncommenting the widgetpath for geolocation. The geolocation button, however, will only work on browsers supporting geolocation over HTTP connections.  If a browser requires a HTTPS connection to support geolocation and the button is enabled, the button will not work, but the application will work correctly otherwise.
-        
         AppHeaderWidgets: [{
             WidgetPath: "widgets/locator/locator"
         }, {
             WidgetPath: "widgets/reports/reports"
         }, 
-        //{
-        //    WidgetPath: "widgets/geoLocation/geoLocation"
-        //},
-        {
+		/* {
+            WidgetPath: "widgets/geoLocation/geoLocation"
+        },  */
+		{
             WidgetPath: "widgets/share/share"
         }, {
             WidgetPath: "widgets/help/help"
