@@ -399,12 +399,12 @@ define([], function () {
         GeometryService: "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer",
 
         // Set GP service for creating AOI from shapefile and uploading shapefile for analysis
-        GPServiceURL: "http://54.203.249.87/arcgis/rest/services/ShapefileTools/GPServer/ShapefileTools",
+        GPServiceURL: "http://52.26.253.224:6080/arcgis/rest/services/ShapefileTools/GPServer/ShapefileTools",
 
         // ReportDownloadSettings: Settings for downloading quick and detailed summary reports in PDF format
         // GPServiceURL: url to geoprocessing service
         ReportDownloadSettings: {
-            GPServiceURL: "http://54.203.249.87/arcgis/rest/services/GenerateImpactReportWater/GPServer/GenerateImpactReport",
+            GPServiceURL: "http://52.26.253.224:6080/arcgis/rest/services/GenerateImpactReportWater/GPServer/GenerateImpactReport",
             ReportSettings: [
                 {
                     Type: "Quick",
@@ -427,19 +427,19 @@ define([], function () {
                 Enabled: true,
                 Label: "Excel",
                 Format: "Excel",
-                GPServiceURL: "http://54.203.249.87/arcgis/rest/services/ClipToExcelWater/GPServer/ClipToExcel"
+                GPServiceURL: "http://52.26.253.224:6080/arcgis/rest/services/ClipToExcelWater/GPServer/ClipToExcel"
             },
             {
                 Enabled: true,
                 Label: "File GDB",
                 Format: "File Geodatabase - GDB - .gdb",
-                GPServiceURL: "http://54.203.249.87/arcgis/rest/services/ExtractDataTaskWater/GPServer/Extract%20Data%20Task"
+                GPServiceURL: "http://52.26.253.224:6080/arcgis/rest/services/ExtractDataTaskWater/GPServer/Extract%20Data%20Task"
             },
             {
                 Enabled: true,
                 Label: "Shapefile",
                 Format: "Shapefile - SHP - .shp",
-                GPServiceURL: "http://54.203.249.87/arcgis/rest/services/ExtractDataTaskWater/GPServer/Extract%20Data%20Task"
+                GPServiceURL: "http://52.26.253.224:6080/arcgis/rest/services/ExtractDataTaskWater/GPServer/Extract%20Data%20Task"
             }
         ],
 
