@@ -39,7 +39,7 @@ SCRATCH = arcpy.env.scratchFolder
 SCRATCH_GDB = arcpy.env.scratchGDB
 
 #   Geometry Service to calculate area of input AOI
-GEOMETRY_SERVICE_INSTANCE = "http://tasks.arcgisonline.com/ArcGIS/rest/services"
+GEOMETRY_SERVICE_INSTANCE = "http://utility.arcgisonline.com/arcgis/rest/services"
 GEOMETRY_SERVICE_TASK = "/Geometry/GeometryServer/areasAndLengths"
 GEOMTRY_SERVICE_URL = GEOMETRY_SERVICE_INSTANCE + GEOMETRY_SERVICE_TASK
 
