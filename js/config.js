@@ -396,7 +396,7 @@ define([], function () {
         // ------------------------------------------------------------------------------------------------------------------------
 
         // Set geometry service URL
-        GeometryService: "http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer",
+        GeometryService: "http://utility.arcgisonline.com/arcgis/rest/services/Geometry/GeometryServer",
 
         // Set GP service for creating AOI from shapefile and uploading shapefile for analysis
         GPServiceURL: "http://52.26.253.224:6080/arcgis/rest/services/ShapefileTools/GPServer/ShapefileTools",
