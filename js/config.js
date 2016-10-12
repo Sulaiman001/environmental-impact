@@ -396,7 +396,7 @@ define([], function () {
         // ------------------------------------------------------------------------------------------------------------------------
 
         // Set geometry service URL
-		// Do not use the ArcGIS Online geometry service (http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer) in this parameter. Using this geometry service because of its version 10.04, may cause the application to calculate buffers incorrectly. Please use the provided geometry service or your own local geometry service. 
+	// Do not use the ArcGIS Online geometry service (http://tasks.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer) in this parameter. Using this geometry service because of its version 10.04, may cause the application to calculate buffers incorrectly. Please use the provided geometry service or your own local geometry service. 
         GeometryService: "http://utility.arcgisonline.com/arcgis/rest/services/Geometry/GeometryServer",
 
         // Set GP service for creating AOI from shapefile and uploading shapefile for analysis
